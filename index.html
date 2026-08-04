@@ -93,9 +93,6 @@ footer{max-width:1200px;margin:0 auto 28px;padding:25px 20px 5px;display:grid;gr
 .recommendation-box{border-style:solid;background:linear-gradient(180deg,#f8fbff,#f5f8ff)}
 .step-actions{margin-top:12px}
 .step-actions button{min-height:54px;border-radius:14px;font-size:12px;letter-spacing:.1px}
-.application-card[data-active-step="1"] .wizard-progress-bar span{width:33.33%}
-.application-card[data-active-step="2"] .wizard-progress-bar span{width:66.66%}
-.application-card[data-active-step="3"] .wizard-progress-bar span{width:100%}
 .application-card[data-active-step="1"] .step-dot:nth-child(1),.application-card[data-active-step="2"] .step-dot:nth-child(3),.application-card[data-active-step="3"] .step-dot:nth-child(5){}
 .application-card[data-active-step="1"] .wizard-hero{background:linear-gradient(145deg,#0f1f3f,#152854 55%,#352b76)}
 .application-card[data-active-step="2"] .wizard-hero{background:linear-gradient(145deg,#132544,#102f55 55%,#154e67)}
@@ -248,6 +245,86 @@ footer{max-width:1200px;margin:0 auto 28px;padding:25px 20px 5px;display:grid;gr
   .step-actions button{width:100%}
 }
 
+
+/* =========================================================
+   Targeted production corrections — progress, step labels,
+   and admin access. No other landing-page sections changed.
+   ========================================================= */
+
+/* The application progress is controlled by JavaScript and starts at 0%. */
+#wizardProgress{width:0!important}
+
+/* Reserve real space for the labels so the next container cannot cover them. */
+.wizard-steps{
+  position:relative;
+  margin-bottom:4px;
+  padding-bottom:34px;
+  overflow:visible;
+}
+.wizard-steps .step-dot{
+  overflow:visible;
+}
+.wizard-steps .step-dot small{
+  top:49px;
+  z-index:4;
+  min-width:72px;
+  color:#58677e;
+  font-size:10px;
+  font-weight:800;
+  line-height:1.2;
+  text-align:center;
+  opacity:1;
+}
+.wizard-steps .step-dot.locked{
+  opacity:1;
+  color:#9aa6b7;
+  background:#f7f9fc;
+  border-color:#dbe2ef;
+}
+.wizard-steps .step-dot.locked small{
+  color:#8390a3;
+  opacity:1;
+}
+.wizard-steps .step-dot.active small,
+.wizard-steps .step-dot.completed small{
+  color:#4058d8;
+}
+.form-stage{margin-top:8px}
+
+/* Clearly visible but unobtrusive admin entry in the footer. */
+footer nav .admin-login-link{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 11px;
+  border:1px solid #d8e1ee;
+  border-radius:10px;
+  background:#fff;
+  color:#243753;
+  box-shadow:0 7px 18px rgba(25,43,76,.07);
+}
+footer nav .admin-login-link:hover{
+  border-color:#aebee0;
+  color:#3f58d7;
+}
+
+@media(max-width:600px){
+  .wizard-steps{
+    margin-top:13px;
+    margin-bottom:2px;
+    padding-bottom:31px;
+  }
+  .wizard-steps .step-dot small{
+    top:41px;
+    min-width:62px;
+    font-size:9px;
+  }
+  .form-stage{margin-top:6px}
+  footer nav{
+    flex-wrap:wrap;
+  }
+}
+
 </style>
 <style id="critical-step-visibility">
   /* Critical fallback: only the active application step can be visible. */
@@ -256,7 +333,7 @@ footer{max-width:1200px;margin:0 auto 28px;padding:25px 20px 5px;display:grid;gr
   #internshipForm .form-step[hidden]{display:none!important;visibility:hidden!important}
 </style>
 </head>
-<body data-build="skillpath-final-production-v11">
+<body data-build="skillpath-final-production-v12-progress-admin-fix">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 <header class="site-header">
   <a class="brand" href="#home" aria-label="SkillPath home">
@@ -557,7 +634,7 @@ footer{max-width:1200px;margin:0 auto 28px;padding:25px 20px 5px;display:grid;gr
 <footer id="contact">
   <a class="footer-brand" href="#home"><img class="brand-mark" src="skillpath-mark.png" alt=""><span><strong>SkillPath</strong><small>LEARN · BUILD · GROW</small></span></a>
   <p>Practical learning and career preparation for students.</p>
-  <div><small>© 2026 SkillPath Internship Programme</small><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a></nav></div>
+  <div><small>© 2026 SkillPath Internship Programme</small><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a></nav></div>
   <button id="backToTop" type="button" aria-label="Back to top">↑</button>
 </footer>
 
@@ -779,11 +856,13 @@ function motivationFor(progress) {
 
 function updateJourney(triggerBoost = false) {
   const progress = calculateProgress();
+  const wizardProgress = document.getElementById('wizardProgress');
   const bar = document.getElementById('journeyBar');
   const rocket = document.getElementById('journeyRocket');
   const percent = document.getElementById('journeyPercent');
   const text = document.getElementById('motivationText');
   const journey = document.getElementById('journeyCard');
+  if (wizardProgress) wizardProgress.style.setProperty('width', `${progress}%`, 'important');
   if (bar) bar.style.width = `${progress}%`;
   if (rocket) rocket.style.left = `${progress}%`;
   if (percent) percent.textContent = `${progress}%`;

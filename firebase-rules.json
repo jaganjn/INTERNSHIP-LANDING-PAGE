@@ -1,0 +1,51 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "liveVisitors": {
+      ".read": "auth != null",
+      "$visitorId": {
+        ".write": true
+      }
+    },
+    "submittedApplications": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$applicationId": {
+        ".write": "auth != null || !data.exists()",
+        ".validate": "newData.val() === null || newData.hasChildren(['name','phone','email','college','department','year','domain','referralCode','submittedAt'])"
+      }
+    },
+    "referrals": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$referralCode": {
+        ".write": "auth != null || !data.exists()",
+        ".validate": "newData.val() === null || newData.hasChildren(['ownerApplicationId','ownerName','createdAt'])"
+      }
+    },
+    "referralJoins": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$referralCode": {
+        "$applicationId": {
+          ".write": "auth != null || !data.exists()",
+          ".validate": "newData.val() === null || newData.hasChildren(['applicantName','joinedAt'])"
+        }
+      }
+    },
+    "connectionTest": {
+      ".read": "auth != null",
+      ".write": true
+    },
+    "referralShares": {
+      ".read": "auth != null",
+      "$referralCode": {
+        "$shareId": {
+          ".write": "auth != null || !data.exists()",
+          ".validate": "newData.val() === null || newData.hasChildren(['applicationId','method','sharedAt'])"
+        }
+      }
+    }
+  }
+}

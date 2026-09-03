@@ -4,7 +4,9 @@ document.body.style.visibility = "hidden";
 const ACTIVE_MS = 90_000;
 const ABANDON_MS = 150_000;
 const RETAIN_MS = 24 * 60 * 60 * 1000;
-const ALERT_STORAGE_KEY = "apexAdminAlertSettingsV2";
+const ALERT_STORAGE_KEY = "apexAdminAlertSettingsV3";
+const LEGACY_ALERT_STORAGE_KEY = "apexAdminAlertSettingsV2";
+const BROWSER_ALERT_STORAGE_KEY = "apexAdminBrowserAlertsV1";
 const SEEN_APPLICATIONS_KEY = "apexAdminSeenApplicationsV1";
 
 const el = id => document.getElementById(id);
@@ -65,19 +67,36 @@ const isToday = value => {
 };
 
 function getAlertSettings() {
+  const defaults = { enabled: false, volume: 90 };
   try {
+    // Keep the notification sound preference in persistent localStorage.
+    // Migrate the previous key once so an already-enabled admin stays enabled.
+    let raw = localStorage.getItem(ALERT_STORAGE_KEY);
+    if (!raw) {
+      raw = localStorage.getItem(LEGACY_ALERT_STORAGE_KEY);
+      if (raw) localStorage.setItem(ALERT_STORAGE_KEY, raw);
+    }
+    const parsed = raw ? JSON.parse(raw) : {};
     return {
-      enabled: false,
-      volume: 90,
-      ...JSON.parse(localStorage.getItem(ALERT_STORAGE_KEY) || "{}")
+      enabled: parsed.enabled === true,
+      volume: Math.min(100, Math.max(0, Number(parsed.volume ?? defaults.volume) || defaults.volume))
     };
   } catch {
-    return { enabled: false, volume: 90 };
+    return defaults;
   }
 }
 
 function saveAlertSettings(settings) {
-  localStorage.setItem(ALERT_STORAGE_KEY, JSON.stringify(settings));
+  const normalized = {
+    enabled: settings?.enabled === true,
+    volume: Math.min(100, Math.max(0, Number(settings?.volume ?? 90) || 90))
+  };
+  try {
+    localStorage.setItem(ALERT_STORAGE_KEY, JSON.stringify(normalized));
+  } catch {
+    // If storage is unavailable, keep the current in-memory UI state.
+  }
+  return normalized;
 }
 
 function getSeenApplicationIds() {
@@ -428,7 +447,36 @@ function playNotificationSound() {
   });
 }
 
+function getBrowserAlertEnabled() {
+  try {
+    const stored = localStorage.getItem(BROWSER_ALERT_STORAGE_KEY);
+    if (stored === null) return ("Notification" in window && Notification.permission === "granted");
+    return stored === "true";
+  } catch {
+    return false;
+  }
+}
+
+function saveBrowserAlertEnabled(enabled) {
+  localStorage.setItem(BROWSER_ALERT_STORAGE_KEY, String(Boolean(enabled)));
+}
+
+function updateBrowserAlertUi() {
+  const button = el("browserNotificationButton");
+  if (!button) return;
+  const enabled = getBrowserAlertEnabled();
+  const supported = "Notification" in window;
+  const permission = supported ? Notification.permission : "unsupported";
+  button.textContent = enabled && permission === "granted" ? "Disable Browser Alerts" : "Enable Browser Alerts";
+  button.classList.toggle("secondary", !(enabled && permission === "granted"));
+  button.setAttribute("aria-pressed", String(enabled && permission === "granted"));
+  button.title = enabled && permission === "granted"
+    ? "Browser alerts are enabled. Click to disable them."
+    : "Enable browser alerts for new application notifications.";
+}
+
 function sendBrowserNotification(count, latest) {
+  if (!getBrowserAlertEnabled()) return;
   if (!("Notification" in window) || Notification.permission !== "granted") return;
   if (!document.hidden) return;
 
@@ -623,15 +671,30 @@ function setupNotificationSettings() {
       showToast("Not supported", "This browser does not support system notifications.", "error");
       return;
     }
-    const permission = await Notification.requestPermission();
-    showToast(
-      permission === "granted" ? "Browser alerts enabled" : "Permission not granted",
-      permission === "granted"
-        ? "Notifications can appear while the dashboard tab is in the background."
-        : "You can change this later in your browser site settings.",
-      permission === "granted" ? "success" : "info"
-    );
+
+    const currentlyEnabled = getBrowserAlertEnabled() && Notification.permission === "granted";
+    if (currentlyEnabled) {
+      saveBrowserAlertEnabled(false);
+      updateBrowserAlertUi();
+      showToast("Browser alerts disabled", "New application notifications are now turned off.", "info");
+      return;
+    }
+
+    const permission = Notification.permission === "granted"
+      ? "granted"
+      : await Notification.requestPermission();
+
+    if (permission === "granted") {
+      saveBrowserAlertEnabled(true);
+      updateBrowserAlertUi();
+      showToast("Browser alerts enabled", "Notifications can appear while the dashboard tab is in the background.", "success");
+    } else {
+      saveBrowserAlertEnabled(false);
+      updateBrowserAlertUi();
+      showToast("Permission not granted", "You can change this later in your browser site settings.", "info");
+    }
   });
+  updateBrowserAlertUi();
 
   document.addEventListener("pointerdown", unlockAudio, { once: true });
   document.addEventListener("keydown", unlockAudio, { once: true });

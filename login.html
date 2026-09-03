@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Secure administrator login for the InternsForge platform.">
+  <title>InternsForge | Admin Login</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body class="crm-login-page">
+
+  <a href="index.html" class="back-application" aria-label="Back to application page">
+    <span>←</span>
+    Back to Application
+  </a>
+
+  <div class="login-background-shape shape-one"></div>
+  <div class="login-background-shape shape-two"></div>
+  <div class="login-background-grid"></div>
+
+  <main class="crm-login-shell">
+
+    <section class="crm-login-intro">
+      <div class="crm-login-brand">
+        <img src="skillpath-mark.png" alt="InternsForge logo">
+        <div>
+          <strong>InternsForge</strong>
+          <small>LEARN · EXPERIENCE · GROW</small>
+        </div>
+      </div>
+
+      <div class="crm-login-copy">
+        <span class="login-eyebrow">SECURE ADMIN ACCESS</span>
+        <h1>Manage your internship platform with confidence.</h1>
+        <p>
+          Monitor live visitors, review applications and manage your internship
+          programme from one secure CRM dashboard.
+        </p>
+
+        <div class="crm-login-features">
+          <div><span>✓</span> Firebase-authenticated access</div>
+          <div><span>✓</span> Realtime visitor monitoring</div>
+          <div><span>✓</span> Application and analytics dashboard</div>
+        </div>
+      </div>
+
+      <div class="crm-login-intro-footer">
+        <span class="connection-dot"></span>
+        Firebase Authentication Enabled
+      </div>
+    </section>
+
+    <section class="crm-login-panel">
+      <div class="crm-login-card">
+
+        <div class="crm-mobile-logo">
+          <img src="skillpath-mark.png" alt="InternsForge">
+        </div>
+
+        <div class="login-console-badge"><span></span> ADMIN CONSOLE</div>
+        <h2>Welcome Back</h2>
+        <p class="crm-login-subtitle">
+          Sign in securely to monitor applications and live form activity.
+        </p>
+        <div class="login-system-row" aria-label="System status">
+          <span><i></i> Firebase connected</span>
+          <span>Realtime monitoring</span>
+        </div>
+
+        <div class="crm-field">
+          <label for="username">Admin Email</label>
+          <div class="crm-input-wrap">
+            <span class="input-icon">✉</span>
+            <input
+              id="username"
+              type="text"
+              placeholder="Enter your Firebase admin email"
+              autocomplete="username"
+            >
+          </div>
+        </div>
+
+        <div class="crm-field">
+          <label for="password">Password</label>
+          <div class="crm-input-wrap">
+            <span class="input-icon">●</span>
+            <input
+              id="password"
+              type="password"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+            >
+            <button
+              type="button"
+              class="password-toggle"
+              aria-label="Show or hide password"
+              onclick="
+                const input=document.getElementById('password');
+                input.type=input.type==='password'?'text':'password';
+                this.textContent=input.type==='password'?'Show':'Hide';
+              "
+            >Show</button>
+          </div>
+        </div>
+
+        <button id="loginButton" type="button" onclick="login()" class="crm-login-button">
+          Login to Dashboard
+          <span>→</span>
+        </button>
+
+        <div id="error" aria-live="polite"></div>
+
+        <div class="crm-secure-note">
+          <span>🔒</span>
+          Secure administrator access
+        </div>
+
+        <a href="index.html" class="mobile-back-link">← Back to Application</a>
+      </div>
+
+      <footer class="crm-login-footer">
+        <span>© 2026 InternsForge</span>
+        <span>Secure Admin Console</span>
+      </footer>
+    </section>
+
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+  <script src="firebase.js"></script>
+  <script src="login.js"></script>
+
+</body>
+</html>

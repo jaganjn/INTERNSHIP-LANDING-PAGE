@@ -1,0 +1,103 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "liveVisitors": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$visitorId": {
+        ".write": true,
+        ".validate": "newData.val() === null || newData.hasChildren(['page','status','presence','lastActive'])"
+      }
+    },
+    "submittedApplications": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$applicationId": {
+        ".write": "auth != null || !data.exists()",
+        ".validate": "newData.val() === null || newData.hasChildren(['name','phone','email','college','department','year','domain','referralCode','submittedAt'])"
+      }
+    },
+    "referrals": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$referralCode": {
+        ".write": "auth != null || !data.exists()",
+        ".validate": "newData.val() === null || newData.hasChildren(['ownerApplicationId','ownerName','createdAt'])"
+      }
+    },
+    "referralCodes": {
+      ".read": false,
+      ".write": "auth != null",
+      "$referralCode": {
+        ".read": true,
+        ".write": "auth != null || !data.exists()",
+        ".validate": "newData.val() === null || newData.hasChildren(['ownerApplicationId','active','createdAt'])"
+      }
+    },
+    "referralJoins": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$referralCode": {
+        "$applicationId": {
+          ".write": "auth != null || !data.exists()",
+          ".validate": "newData.val() === null || newData.hasChildren(['applicantName','joinedAt'])"
+        }
+      }
+    },
+    "referralEvents": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$referralCode": {
+        "$eventId": {
+          ".write": "auth != null || !data.exists()",
+          ".validate": "newData.val() === null || newData.hasChildren(['type','createdAt'])"
+        }
+      }
+    },
+    "referralShares": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$referralCode": {
+        "$shareId": {
+          ".write": "auth != null || !data.exists()",
+          ".validate": "newData.val() === null || newData.hasChildren(['applicationId','method','sharedAt'])"
+        }
+      }
+    },
+    "connectionTest": {
+      ".read": "auth != null",
+      ".write": true
+    },
+    "technologyServiceInquiries": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$inquiryId": {
+        ".write": "auth != null || !data.exists()",
+        ".validate": "newData.val() === null || newData.hasChildren(['reference','fullName','email','phone','service','requirements','status','submittedAt'])",
+        "status": {
+          ".validate": "newData.val() === null || (newData.isString() && (auth != null || newData.val() === 'new'))"
+        },
+        "fullName": {
+          ".validate": "newData.val() === null || (newData.isString() && newData.val().length >= 2 && newData.val().length <= 100)"
+        },
+        "email": {
+          ".validate": "newData.val() === null || (newData.isString() && newData.val().length <= 160)"
+        },
+        "phone": {
+          ".validate": "newData.val() === null || (newData.isString() && newData.val().length >= 7 && newData.val().length <= 30)"
+        },
+        "requirements": {
+          ".validate": "newData.val() === null || (newData.isString() && newData.val().length >= 20 && newData.val().length <= 6000)"
+        }
+      }
+    },
+    "publicAnnouncements": {
+      ".read": true,
+      ".write": "auth != null",
+      "$announcementId": {
+        ".validate": "newData.val() === null || newData.hasChildren(['title','message','audience','active','createdAt'])"
+      }
+    }
+  }
+}

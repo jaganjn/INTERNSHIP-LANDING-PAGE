@@ -333,7 +333,7 @@ footer nav .admin-login-link:hover{
   #internshipForm .form-step[hidden]{display:none!important;visibility:hidden!important}
 </style>
 </head>
-<body data-build="skillpath-final-production-v12-progress-admin-fix">
+<body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 <header class="site-header">
   <a class="brand" href="#home" aria-label="InternsForge home">
@@ -1236,11 +1236,26 @@ async function submitApplication() {
   }
 }
 
-// Privacy-preserving live visitor status: progress is tracked, but unfinished field values are not stored.
+// Live visitor tracking. The admin dashboard mirrors the form fields that are
+// currently visible to the student so staff can see live filling progress.
 const visitorId = sessionStorage.getItem(VISITOR_KEY) || `visitor_${Date.now()}_${Math.floor(Math.random() * 100000)}`;
 sessionStorage.setItem(VISITOR_KEY, visitorId);
 let visitorRef = null;
 let visitorComplete = false;
+
+function collectLiveFieldData() {
+  return {
+    name: getField('name')?.value.trim() || '',
+    phone: getField('phone')?.value.trim() || '',
+    email: getField('email')?.value.trim().toLowerCase() || '',
+    college: getField('college')?.value.trim() || '',
+    department: getField('department')?.value.trim() || '',
+    year: getField('year')?.value || '',
+    domain: getField('domain')?.value || '',
+    consent: !!getField('consent')?.checked
+  };
+}
+
 function updateVisitor(patch = {}, complete = false) {
   if (typeof db === 'undefined') return;
   visitorRef ||= db.ref(`liveVisitors/${visitorId}`);
@@ -1253,11 +1268,15 @@ function updateVisitor(patch = {}, complete = false) {
     status: nextStatus,
     formProgress: progress,
     currentStep,
+    currentField: patch.currentField || (progress > 0 ? `Step ${currentStep}` : 'Viewing page'),
+    hasStartedFilling: progress > 0,
+    fieldData: collectLiveFieldData(),
     lastActive: firebase.database.ServerValue.TIMESTAMP,
     referredBy: referralSource || null,
     ...patch
   }).catch(error => console.warn('Live visitor update failed:', error));
 }
+
 function initialiseVisitor() {
   if (typeof db === 'undefined') return;
   visitorRef = db.ref(`liveVisitors/${visitorId}`);
@@ -1270,6 +1289,7 @@ function initialiseVisitor() {
     currentStep,
     currentField: initialProgress > 0 ? 'Application form' : 'Viewing page',
     hasStartedFilling: initialProgress > 0,
+    fieldData: collectLiveFieldData(),
     startedAt: firebase.database.ServerValue.TIMESTAMP,
     lastActive: firebase.database.ServerValue.TIMESTAMP,
     referredBy: referralSource || null
@@ -1310,6 +1330,7 @@ if (form) {
     updateJourney(true);
     refreshStepAccess(true);
     moveTypingAura(field);
+    updateVisitor({ currentField: field.name, status: 'filling_form' });
   });
   form.addEventListener('focusout', event => {
     const field = event.target.closest('input[name],select[name]');

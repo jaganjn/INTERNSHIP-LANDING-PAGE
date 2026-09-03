@@ -1,6 +1,6 @@
-# SkillPath Final Production Landing Page
+# InternsForge Final Production Landing Page
 
-This is the clean deployment package for the SkillPath 2026 internship landing page.
+This is the clean deployment package for the InternsForge 2026 internship landing page.
 
 ## Deploy
 

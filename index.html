@@ -1245,22 +1245,35 @@ function updateVisitor(patch = {}, complete = false) {
   if (typeof db === 'undefined') return;
   visitorRef ||= db.ref(`liveVisitors/${visitorId}`);
   visitorComplete = visitorComplete || complete;
+  const progress = Number.isFinite(Number(patch.formProgress)) ? Number(patch.formProgress) : calculateProgress();
+  const nextStatus = patch.status || (progress > 0 ? 'filling_form' : 'online');
   visitorRef.update({
     page: 'Application Portal Final V11',
     presence: 'active',
+    status: nextStatus,
+    formProgress: progress,
+    currentStep,
     lastActive: firebase.database.ServerValue.TIMESTAMP,
     referredBy: referralSource || null,
     ...patch
-  }).catch(() => {});
+  }).catch(error => console.warn('Live visitor update failed:', error));
 }
 function initialiseVisitor() {
   if (typeof db === 'undefined') return;
   visitorRef = db.ref(`liveVisitors/${visitorId}`);
+  const initialProgress = calculateProgress();
   visitorRef.set({
-    page: 'Application Portal Final V11', status: 'online', presence: 'active', formProgress: calculateProgress(), currentStep,
-    currentField: 'Viewing page', startedAt: firebase.database.ServerValue.TIMESTAMP, lastActive: firebase.database.ServerValue.TIMESTAMP,
+    page: 'Application Portal Final V11',
+    status: initialProgress > 0 ? 'filling_form' : 'online',
+    presence: 'active',
+    formProgress: initialProgress,
+    currentStep,
+    currentField: initialProgress > 0 ? 'Application form' : 'Viewing page',
+    hasStartedFilling: initialProgress > 0,
+    startedAt: firebase.database.ServerValue.TIMESTAMP,
+    lastActive: firebase.database.ServerValue.TIMESTAMP,
     referredBy: referralSource || null
-  }).catch(() => {});
+  }).catch(error => console.warn('Live visitor initialization failed:', error));
   visitorRef.onDisconnect().update({ presence: 'disconnected', status: 'left', leftAt: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
 }
 
@@ -1350,8 +1363,17 @@ updateJourney();
 refreshStepAccess(false);
 initialiseVisitor();
 window.setInterval(() => {
-  if (!visitorComplete) updateVisitor({ formProgress: calculateProgress(), currentStep });
-}, 12000);
+  if (visitorComplete) return;
+  const liveProgress = calculateProgress();
+  const liveStatus = liveProgress > 0 ? 'filling_form' : 'online';
+  updateVisitor({
+    formProgress: liveProgress,
+    currentStep,
+    status: liveStatus,
+    presence: 'active',
+    currentField: liveProgress > 0 ? (getField(document.activeElement?.name)?.name || `Step ${currentStep}`) : 'Viewing page'
+  });
+}, 5000);
 
 // Visible in DevTools so the deployed build can be verified without guessing.
 console.info('SkillPath guided form build: Final V11');

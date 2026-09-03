@@ -1,7 +1,7 @@
 
 document.body.style.visibility = "hidden";
 
-const ACTIVE_MS = 75_000;
+const ACTIVE_MS = 90_000;
 const ABANDON_MS = 150_000;
 const RETAIN_MS = 24 * 60 * 60 * 1000;
 const ALERT_STORAGE_KEY = "apexAdminAlertSettingsV2";
@@ -680,7 +680,7 @@ function listeners() {
     renderReferrals();
   });
 
-  window.setInterval(() => renderVisitors(), 5_000);
+  window.setInterval(() => renderVisitors(), 2_000);
   window.setInterval(() => cleanupStale().catch(console.warn), 30_000);
 
   E.referralSearch?.addEventListener("input", () => {

@@ -471,7 +471,7 @@ function handleNewApplications(nextApplications) {
 
   document.title = `(${newItems.length}) New Application${newItems.length > 1 ? "s" : ""} — Apex Admin`;
   window.setTimeout(() => {
-    document.title = "Apex Skill Technologies — Admin Command Center";
+    document.title = "InternsForge — Admin Command Center";
   }, 8000);
 
   return new Set(newItems.map(app => app.id));
@@ -548,7 +548,7 @@ function exportApplicationsCsv() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `apex-applications-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.download = `internsforge-applications-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.appendChild(anchor);
   anchor.click();
   anchor.remove();

@@ -45,3 +45,13 @@ The included `firebase-rules.json` must be published in Firebase Realtime Databa
 ## Publishing note
 
 After replacing an older deployment, open the public link in a private/incognito tab. The `_headers` file prevents the landing page from being held by an old browser or CDN cache on Netlify.
+
+## Admin data controls
+
+The admin dashboard includes Clear Tracking, Delete Applications, Delete Referrals and Full Reset.
+The bundled `firebase-rules.json` permits authenticated admin deletion of the collection-level paths while
+preserving public live-visitor writes at individual visitor IDs. Publish these rules to the same Firebase
+Realtime Database used by `firebase.js` before using the destructive controls in production.
+
+Example Firebase CLI deployment from this project root:
+`firebase deploy --only database`

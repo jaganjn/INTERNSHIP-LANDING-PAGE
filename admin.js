@@ -747,34 +747,99 @@ function logout() {
   auth.signOut().then(() => location.replace("login.html"));
 }
 
-async function del(path, message) {
-  if (confirm(message)) await db.ref(path).remove();
-}
+async function del(path, message, successText) {
+  if (!confirm(message)) return false;
+  const user = auth?.currentUser;
+  if (!user) {
+    showToast("Authentication required", "Please sign in again before changing dashboard data.", "error", 6000);
+    return false;
+  }
 
-function deleteLiveVisitors() {
-  return del("liveVisitors", "Delete all live tracking data?");
-}
+  try {
+    await db.ref(path).remove();
 
-function deleteApplications() {
-  return del("submittedApplications", "Delete all submitted applications?");
-}
+    // Keep the currently rendered dashboard in sync immediately.
+    if (path === "submittedApplications") {
+      applications = [];
+      renderApplications();
+      renderApplications();
+    }
+    if (path === "referrals" || path === "referralJoins") {
+      renderReferrals();
+    }
 
-function deleteReferralData() {
-  if (confirm("Delete all referral data?")) {
-    return Promise.all([
-      db.ref("referrals").remove(),
-      db.ref("referralJoins").remove()
-    ]);
+    showToast("Data cleared", successText || "The selected data was deleted successfully.", "success", 4500);
+    return true;
+  } catch (error) {
+    console.error(`Firebase delete failed for ${path}:`, error);
+    const code = error?.code || "";
+    const detail = /permission|PERMISSION_DENIED/i.test(`${code} ${error?.message || ""}`)
+      ? "Firebase denied the delete. Publish the included firebase-rules.json to your Firebase Realtime Database."
+      : "Check your Firebase connection and try again.";
+    showToast("Delete failed", detail, "error", 8000);
+    return false;
   }
 }
 
-function resetDashboard() {
-  if (confirm("Reset all dashboard data?")) {
-    return Promise.all([
+function deleteLiveVisitors() {
+  return del("liveVisitors", "Delete all live tracking data?", "All live visitor/session tracking data was deleted.");
+}
+
+function deleteApplications() {
+  return del("submittedApplications", "Delete all submitted applications?", "All submitted applications were deleted.");
+}
+
+async function deleteReferralData() {
+  if (!confirm("Delete all referral data?")) return false;
+  const user = auth?.currentUser;
+  if (!user) {
+    showToast("Authentication required", "Please sign in again before changing dashboard data.", "error", 6000);
+    return false;
+  }
+
+  try {
+    await Promise.all([
+      db.ref("referrals").remove(),
+      db.ref("referralJoins").remove(),
+      db.ref("referralShares").remove()
+    ]);
+    renderReferrals();
+    showToast("Data cleared", "All referral data was deleted.", "success", 4500);
+    return true;
+  } catch (error) {
+    console.error("Firebase referral delete failed:", error);
+    showToast("Delete failed", "Firebase denied the operation or the connection was interrupted. Check the published Firebase rules.", "error", 8000);
+    return false;
+  }
+}
+
+async function resetDashboard() {
+  if (!confirm("Reset all dashboard data?")) return false;
+  const user = auth?.currentUser;
+  if (!user) {
+    showToast("Authentication required", "Please sign in again before resetting dashboard data.", "error", 6000);
+    return false;
+  }
+
+  try {
+    await Promise.all([
       db.ref("liveVisitors").remove(),
       db.ref("submittedApplications").remove(),
       db.ref("referrals").remove(),
-      db.ref("referralJoins").remove()
+      db.ref("referralJoins").remove(),
+      db.ref("referralShares").remove()
     ]);
+
+    applications = [];
+    renderApplications();
+    renderApplications();
+    renderReferrals();
+
+    showToast("Dashboard reset", "All dashboard data was successfully cleared.", "success", 5000);
+    return true;
+  } catch (error) {
+    console.error("Firebase dashboard reset failed:", error);
+    showToast("Reset failed", "Firebase denied one or more deletes. Publish the included Firebase rules and try again.", "error", 8000);
+    return false;
   }
 }

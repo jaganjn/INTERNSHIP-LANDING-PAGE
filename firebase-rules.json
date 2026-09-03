@@ -5,8 +5,9 @@
     "liveVisitors": {
       ".read": "auth != null",
       "$visitorId": {
-        ".write": true
-      }
+        ".write": "true"
+      },
+      ".write": "auth != null"
     },
     "submittedApplications": {
       ".read": "auth != null",

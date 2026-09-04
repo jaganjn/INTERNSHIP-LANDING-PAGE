@@ -8,6 +8,7 @@ const ALERT_STORAGE_KEY = "apexAdminAlertSettingsV3";
 const LEGACY_ALERT_STORAGE_KEY = "apexAdminAlertSettingsV2";
 const BROWSER_ALERT_STORAGE_KEY = "apexAdminBrowserAlertsV1";
 const SEEN_APPLICATIONS_KEY = "apexAdminSeenApplicationsV1";
+const PUSH_TOKEN_STORAGE_KEY = "apexAdminPushTokenV1";
 
 const el = id => document.getElementById(id);
 const E = {
@@ -475,6 +476,83 @@ function updateBrowserAlertUi() {
     : "Enable browser alerts for new application notifications.";
 }
 
+function getPushTokenStorage() {
+  try { return localStorage.getItem(PUSH_TOKEN_STORAGE_KEY) || ""; } catch { return ""; }
+}
+
+function savePushTokenStorage(token) {
+  try { if (token) localStorage.setItem(PUSH_TOKEN_STORAGE_KEY, token); else localStorage.removeItem(PUSH_TOKEN_STORAGE_KEY); } catch {}
+}
+
+function pushTokenKey(token) {
+  return token.replace(/[.#$\[\]\/]/g, "_").slice(0, 700);
+}
+
+async function registerAdminPush() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || typeof firebase.messaging !== 'function') {
+    throw new Error('This browser does not support web push notifications.');
+  }
+  const user = auth?.currentUser;
+  if (!user) throw new Error('Administrator authentication is required.');
+
+  const permission = Notification.permission === 'granted'
+    ? 'granted'
+    : await Notification.requestPermission();
+  if (permission !== 'granted') throw new Error('Browser notification permission was not granted.');
+
+  const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js', { scope: './' });
+  await navigator.serviceWorker.ready;
+  const messaging = firebase.messaging();
+  const token = await messaging.getToken({ serviceWorkerRegistration: registration });
+  if (!token) throw new Error('Firebase could not create a push token.');
+
+  await db.ref(`adminPushTokens/${user.uid}/${pushTokenKey(token)}`).set({
+    token,
+    adminUid: user.uid,
+    enabled: true,
+    updatedAt: firebase.database.ServerValue.TIMESTAMP,
+    userAgent: navigator.userAgent.slice(0, 500)
+  });
+  savePushTokenStorage(token);
+  return token;
+}
+
+async function unregisterAdminPush() {
+  const user = auth?.currentUser;
+  const token = getPushTokenStorage();
+  if (user && token) {
+    await db.ref(`adminPushTokens/${user.uid}/${pushTokenKey(token)}`).remove();
+  }
+  savePushTokenStorage('');
+}
+
+function getBrowserAlertEnabled() {
+  try {
+    const stored = localStorage.getItem(BROWSER_ALERT_STORAGE_KEY);
+    if (stored === null) return false;
+    return stored === 'true';
+  } catch { return false; }
+}
+
+function saveBrowserAlertEnabled(enabled) {
+  localStorage.setItem(BROWSER_ALERT_STORAGE_KEY, String(Boolean(enabled)));
+}
+
+function updateBrowserAlertUi() {
+  const button = el("browserNotificationButton");
+  if (!button) return;
+  const enabled = getBrowserAlertEnabled();
+  const supported = "Notification" in window;
+  const permission = supported ? Notification.permission : "unsupported";
+  const active = enabled && permission === "granted";
+  button.textContent = active ? "Disable Browser Alerts" : "Enable Browser Alerts";
+  button.classList.toggle("secondary", !active);
+  button.setAttribute("aria-pressed", String(active));
+  button.title = active
+    ? "Browser push alerts are enabled. Click to disable them."
+    : "Enable browser push alerts for new applications.";
+}
+
 function sendBrowserNotification(count, latest) {
   if (!getBrowserAlertEnabled()) return;
   if (!("Notification" in window) || Notification.permission !== "granted") return;
@@ -667,33 +745,35 @@ function setupNotificationSettings() {
   });
 
   el("browserNotificationButton")?.addEventListener("click", async () => {
-    if (!("Notification" in window)) {
-      showToast("Not supported", "This browser does not support system notifications.", "error");
-      return;
-    }
-
-    const currentlyEnabled = getBrowserAlertEnabled() && Notification.permission === "granted";
-    if (currentlyEnabled) {
+    if (getBrowserAlertEnabled() && ("Notification" in window) && Notification.permission === "granted") {
+      try {
+        await unregisterAdminPush();
+      } catch (error) {
+        console.error("Push disable failed:", error);
+      }
       saveBrowserAlertEnabled(false);
       updateBrowserAlertUi();
-      showToast("Browser alerts disabled", "New application notifications are now turned off.", "info");
+      showToast("Browser alerts disabled", "New application push notifications are now turned off.", "info");
       return;
     }
 
-    const permission = Notification.permission === "granted"
-      ? "granted"
-      : await Notification.requestPermission();
-
-    if (permission === "granted") {
+    try {
+      await registerAdminPush();
       saveBrowserAlertEnabled(true);
       updateBrowserAlertUi();
-      showToast("Browser alerts enabled", "Notifications can appear while the dashboard tab is in the background.", "success");
-    } else {
+      showToast("Browser alerts enabled", "You will receive a browser notification for new applications even when this dashboard is closed, as long as your browser/device allows background notifications.", "success", 7000);
+    } catch (error) {
+      console.error("Push registration failed:", error);
       saveBrowserAlertEnabled(false);
       updateBrowserAlertUi();
-      showToast("Permission not granted", "You can change this later in your browser site settings.", "info");
+      showToast("Could not enable browser alerts", error?.message || "Check notification permission and Firebase web push setup.", "error", 7000);
     }
   });
+
+  // Restore the push registration after refresh/reopening the dashboard.
+  if (getBrowserAlertEnabled() && "Notification" in window && Notification.permission === "granted") {
+    registerAdminPush().catch(error => console.warn("Push restore failed:", error));
+  }
   updateBrowserAlertUi();
 
   document.addEventListener("pointerdown", unlockAudio, { once: true });

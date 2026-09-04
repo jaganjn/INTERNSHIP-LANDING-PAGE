@@ -65,6 +65,15 @@
         }
       }
     },
+    "adminPushTokens": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        "$tokenKey": {
+          ".validate": "newData.val() === null || newData.hasChildren(['token','adminUid','enabled','updatedAt'])"
+        }
+      }
+    },
     "connectionTest": {
       ".read": "auth != null",
       ".write": true

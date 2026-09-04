@@ -24,15 +24,30 @@ exports.notifyAdminsOnNewApplication = onValueCreated('/submittedApplications/{a
   for (const chunk of chunks) {
     const response = await getMessaging().sendEachForMulticast({
       tokens: chunk.map(x => x.token),
+      notification: {
+        title: 'New Application Received',
+        body: `${String(app.name || 'A student')} • ${String(app.college || 'New application')}`
+      },
       data: {
         type: 'new_application',
         count: '1',
         applicationId: String(event.params.applicationId || ''),
         name: String(app.name || 'A student'),
-        college: String(app.college || 'New application')
+        college: String(app.college || 'New application'),
+        url: 'admin.html'
       },
       webpush: {
-        headers: { Urgency: 'high', TTL: '86400' }
+        headers: { Urgency: 'high', TTL: '86400' },
+        notification: {
+          title: 'New Application Received',
+          body: `${String(app.name || 'A student')} • ${String(app.college || 'New application')}`,
+          icon: 'https://mnc-internship-live.web.app/skillpath-mark.png',
+          badge: 'https://mnc-internship-live.web.app/skillpath-mark.png',
+          tag: 'internsforge-new-application',
+          renotify: true,
+          requireInteraction: true
+        },
+        fcmOptions: { link: 'https://mnc-internship-live.web.app/admin.html' }
       }
     });
 

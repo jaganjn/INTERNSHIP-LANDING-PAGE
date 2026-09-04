@@ -28,8 +28,8 @@ messaging.setBackgroundMessageHandler(function(payload) {
     badge: 'skillpath-mark.png',
     tag: 'internsforge-new-applications',
     renotify: true,
-    requireInteraction: false,
-    data: { url: 'admin.html' }
+    requireInteraction: true,
+    data: { url: data.url || 'admin.html' }
   });
 });
 

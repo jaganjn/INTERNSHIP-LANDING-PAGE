@@ -55,3 +55,17 @@ Realtime Database used by `firebase.js` before using the destructive controls in
 
 Example Firebase CLI deployment from this project root:
 `firebase deploy --only database`
+
+
+## Background Admin Push Notifications (required one-time setup)
+
+This project uses Firebase Cloud Messaging (FCM) so new-application notifications can arrive even when `admin.html` is closed. FCM web push requires HTTPS, a root `firebase-messaging-sw.js`, and a Firebase Web Push (VAPID) public key.
+
+1. In Firebase Console, open **Project settings -> Cloud Messaging -> Web Push certificates** and generate a Web Push key pair.
+2. Copy the **public** key into `push-config.js` as `vapidKey`. Do not put the private key in the website.
+3. Deploy the website over HTTPS.
+4. From the project root, run `firebase deploy --only functions,database,hosting` (or deploy the equivalent Hosting target you use).
+5. Open Admin Dashboard, sign in, click **Enable Browser Alerts**, and allow notifications.
+6. Test by submitting a new application from another device/browser, then close the Admin Dashboard.
+
+The Cloud Function sends an FCM notification payload and the service worker handles background delivery. The browser/OS controls the final notification presentation and sound when the page is closed.

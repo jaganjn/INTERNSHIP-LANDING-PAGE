@@ -503,7 +503,11 @@ async function registerAdminPush() {
   const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js', { scope: './' });
   await navigator.serviceWorker.ready;
   const messaging = firebase.messaging();
-  const token = await messaging.getToken({ serviceWorkerRegistration: registration });
+  const vapidKey = (window.INTERNFORGE_PUSH_CONFIG && window.INTERNFORGE_PUSH_CONFIG.vapidKey || '').trim();
+  if (!vapidKey || vapidKey === 'PASTE_YOUR_FIREBASE_WEB_PUSH_CERTIFICATE_KEY_HERE') {
+    throw new Error('FCM Web Push is not configured yet. Add the Firebase Web Push certificate key in push-config.js.');
+  }
+  const token = await messaging.getToken({ serviceWorkerRegistration: registration, vapidKey });
   if (!token) throw new Error('Firebase could not create a push token.');
 
   await db.ref(`adminPushTokens/${user.uid}/${pushTokenKey(token)}`).set({

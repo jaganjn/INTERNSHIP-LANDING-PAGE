@@ -1056,7 +1056,7 @@ function buildReferralUrl(code) {
 }
 
 function buildShareText(referralUrl) {
-  return `🔥 *I JUST APPLIED — YOU SHOULD TOO!* 🔥\n\n🚀 *ONLINE INTERNSHIP PROGRAMME 2026*\n\n✨ Build real project experience\n🎯 Guided learning + mentorship\n📜 Completion-based certification\n💼 Career & placement preparation\n💰 *Stipend opportunities up to ₹15,000* (eligibility applies)\n🎁 *Referral benefits may be available for eligible participants*\n\n👥 Share this with your friends, classmates & WhatsApp groups!\n\n🔗 *Apply through my referral link:*\n${referralUrl}\n\n⏳ Don’t miss the opportunity!`;
+  return `🚀 *ONLINE INTERNSHIP PROGRAMME 2026*\n\nOpen to students from 1st year to final year across any degree or department.\n\n✅ Practical projects\n✅ Guided learning\n✅ Completion-based certification\n✅ Career preparation\n\nApply here:\n${referralUrl}`;
 }
 
 async function copyText(text, button, successLabel = 'Copied!') {
@@ -1125,13 +1125,6 @@ function showSuccess(data, applicationId, referralCode, referralUrl) {
   document.getElementById('smsShare')?.addEventListener('click', () => recordReferralShare(referralCode, applicationId, 'sms'));
   document.getElementById('emailShare')?.addEventListener('click', () => recordReferralShare(referralCode, applicationId, 'email'));
   document.getElementById('newApplication')?.addEventListener('click', () => location.assign(location.pathname));
-
-  // After a successful submission, automatically hand the student off to WhatsApp.
-  // A short delay lets the confirmation/referral UI render before navigation.
-  window.setTimeout(() => {
-    recordReferralShare(referralCode, applicationId, 'auto_whatsapp');
-    window.location.href = whatsappUrl;
-  }, 1200);
 }
 
 function recordReferralShare(code, applicationId, method) {

@@ -488,9 +488,20 @@ function pushTokenKey(token) {
   return token.replace(/[.#$\[\]\/]/g, "_").slice(0, 700);
 }
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+}
+
+function getPushSubscriptionKey(endpoint) {
+  return btoa(unescape(encodeURIComponent(endpoint))).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 700);
+}
+
 async function registerAdminPush() {
-  if (!('Notification' in window) || !('serviceWorker' in navigator) || typeof firebase.messaging !== 'function') {
-    throw new Error('This browser does not support web push notifications.');
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    throw new Error('This browser does not support background web push notifications.');
   }
   const user = auth?.currentUser;
   if (!user) throw new Error('Administrator authentication is required.');
@@ -500,32 +511,50 @@ async function registerAdminPush() {
     : await Notification.requestPermission();
   if (permission !== 'granted') throw new Error('Browser notification permission was not granted.');
 
+  const publicKey = String(window.INTERNFORGE_PUSH_CONFIG?.vapidPublicKey || '').trim();
+  if (!publicKey) throw new Error('Background push configuration is missing.');
+
   const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js', { scope: './' });
   await navigator.serviceWorker.ready;
-  const messaging = firebase.messaging();
-  const vapidKey = (window.INTERNFORGE_PUSH_CONFIG && window.INTERNFORGE_PUSH_CONFIG.vapidKey || '').trim();
-  if (!vapidKey || vapidKey === 'PASTE_YOUR_FIREBASE_WEB_PUSH_CERTIFICATE_KEY_HERE') {
-    throw new Error('FCM Web Push is not configured yet. Add the Firebase Web Push certificate key in push-config.js.');
+  let subscription = await registration.pushManager.getSubscription();
+  if (!subscription) {
+    subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey)
+    });
   }
-  const token = await messaging.getToken({ serviceWorkerRegistration: registration, vapidKey });
-  if (!token) throw new Error('Firebase could not create a push token.');
 
-  await db.ref(`adminPushTokens/${user.uid}/${pushTokenKey(token)}`).set({
-    token,
+  const subscriptionJson = subscription.toJSON();
+  if (!subscriptionJson.endpoint || !subscriptionJson.keys?.p256dh || !subscriptionJson.keys?.auth) {
+    throw new Error('The browser did not return a valid push subscription.');
+  }
+
+  const key = getPushSubscriptionKey(subscriptionJson.endpoint);
+  await db.ref(`adminPushTokens/${user.uid}/${key}`).set({
+    token: subscriptionJson.endpoint,
+    endpoint: subscriptionJson.endpoint,
+    subscription: subscriptionJson,
     adminUid: user.uid,
     enabled: true,
     updatedAt: firebase.database.ServerValue.TIMESTAMP,
     userAgent: navigator.userAgent.slice(0, 500)
   });
-  savePushTokenStorage(token);
-  return token;
+  savePushTokenStorage(subscriptionJson.endpoint);
+  return subscriptionJson.endpoint;
 }
 
 async function unregisterAdminPush() {
   const user = auth?.currentUser;
-  const token = getPushTokenStorage();
-  if (user && token) {
-    await db.ref(`adminPushTokens/${user.uid}/${pushTokenKey(token)}`).remove();
+  const endpoint = getPushTokenStorage();
+  if (user && endpoint) {
+    await db.ref(`adminPushTokens/${user.uid}/${getPushSubscriptionKey(endpoint)}`).remove();
+  }
+  try {
+    const registration = await navigator.serviceWorker.getRegistration('firebase-messaging-sw.js');
+    const subscription = await registration?.pushManager?.getSubscription();
+    if (subscription) await subscription.unsubscribe();
+  } catch (error) {
+    console.warn('Could not unsubscribe browser push:', error);
   }
   savePushTokenStorage('');
 }

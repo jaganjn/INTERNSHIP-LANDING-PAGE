@@ -59,13 +59,14 @@ Example Firebase CLI deployment from this project root:
 
 ## Background Admin Push Notifications (required one-time setup)
 
-This project uses Firebase Cloud Messaging (FCM) so new-application notifications can arrive even when `admin.html` is closed. FCM web push requires HTTPS, a root `firebase-messaging-sw.js`, and a Firebase Web Push (VAPID) public key.
+This project uses Firebase Cloud Messaging (FCM) so new-application notifications can arrive even when `admin.html` is closed. Background notifications now use standard Web Push with a bundled public VAPID key. No Firebase Console Web Push certificate key is required in the frontend.
 
-1. In Firebase Console, open **Project settings -> Cloud Messaging -> Web Push certificates** and generate a Web Push key pair.
-2. Copy the **public** key into `push-config.js` as `vapidKey`. Do not put the private key in the website.
-3. Deploy the website over HTTPS.
-4. From the project root, run `firebase deploy --only functions,database,hosting` (or deploy the equivalent Hosting target you use).
-5. Open Admin Dashboard, sign in, click **Enable Browser Alerts**, and allow notifications.
-6. Test by submitting a new application from another device/browser, then close the Admin Dashboard.
+Deploy the included Firebase Cloud Function after installing the `functions/` dependencies. The function sends the push notification when a new `submittedApplications` record is created.
 
-The Cloud Function sends an FCM notification payload and the service worker handles background delivery. The browser/OS controls the final notification presentation and sound when the page is closed.
+
+Background push setup:
+1. Deploy the site over HTTPS.
+2. From the functions directory run `npm install`, then deploy with `firebase deploy --only functions`.
+3. Open Admin Dashboard, click Enable Browser Alerts, and allow notifications.
+4. Close the Admin Dashboard and submit a test application from another device. The registered admin device should receive the notification.
+5. The notification sound is controlled by the browser/OS when the page is closed.

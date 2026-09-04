@@ -1,66 +1,54 @@
 const { onValueCreated } = require('firebase-functions/v2/database');
 const { initializeApp } = require('firebase-admin/app');
 const { getDatabase } = require('firebase-admin/database');
-const { getMessaging } = require('firebase-admin/messaging');
+const webpush = require('web-push');
 
 initializeApp();
+
+// Standard Web Push VAPID identity. Keep the private key server-side only.
+webpush.setVapidDetails(
+  'mailto:admin@mnc-internship-live.web.app',
+  'BC82nLMYMOPpZhjlzXiZ3KHHZ9RTDsgibtEkVwUj01sXpJ2ah1o2MMOVRzxDxUEeW6mdJOfg3lmRFMqAsF-9iHE',
+  '88Iaxn6WXWrC873LnRDQH1sISY_7lDWb3RpeALEINes'
+);
 
 exports.notifyAdminsOnNewApplication = onValueCreated('/submittedApplications/{applicationId}', async event => {
   const app = event.data?.val() || {};
   const snapshot = await getDatabase().ref('adminPushTokens').get();
-  const tokenEntries = [];
+  const subscriptions = [];
+
   snapshot.forEach(userSnap => {
-    userSnap.forEach(tokenSnap => {
-      const value = tokenSnap.val();
-      if (value?.enabled && value.token) tokenEntries.push({ userUid: userSnap.key, key: tokenSnap.key, token: value.token });
+    userSnap.forEach(subscriptionSnap => {
+      const value = subscriptionSnap.val();
+      if (value?.enabled && value.subscription?.endpoint && value.subscription?.keys?.p256dh && value.subscription?.keys?.auth) {
+        subscriptions.push({ userUid: userSnap.key, key: subscriptionSnap.key, subscription: value.subscription });
+      }
     });
   });
 
-  if (!tokenEntries.length) return null;
+  if (!subscriptions.length) return null;
 
-  const chunks = [];
-  for (let i = 0; i < tokenEntries.length; i += 500) chunks.push(tokenEntries.slice(i, i + 500));
+  const payload = JSON.stringify({
+    title: 'New Application Received',
+    body: `${String(app.name || 'A student')} • ${String(app.college || 'New application')}`,
+    icon: 'skillpath-mark.png',
+    badge: 'skillpath-mark.png',
+    tag: 'internsforge-new-application',
+    url: 'admin.html'
+  });
 
-  for (const chunk of chunks) {
-    const response = await getMessaging().sendEachForMulticast({
-      tokens: chunk.map(x => x.token),
-      notification: {
-        title: 'New Application Received',
-        body: `${String(app.name || 'A student')} • ${String(app.college || 'New application')}`
-      },
-      data: {
-        type: 'new_application',
-        count: '1',
-        applicationId: String(event.params.applicationId || ''),
-        name: String(app.name || 'A student'),
-        college: String(app.college || 'New application'),
-        url: 'admin.html'
-      },
-      webpush: {
-        headers: { Urgency: 'high', TTL: '86400' },
-        notification: {
-          title: 'New Application Received',
-          body: `${String(app.name || 'A student')} • ${String(app.college || 'New application')}`,
-          icon: 'https://mnc-internship-live.web.app/skillpath-mark.png',
-          badge: 'https://mnc-internship-live.web.app/skillpath-mark.png',
-          tag: 'internsforge-new-application',
-          renotify: true,
-          requireInteraction: true
-        },
-        fcmOptions: { link: 'https://mnc-internship-live.web.app/admin.html' }
+  await Promise.allSettled(subscriptions.map(async entry => {
+    try {
+      await webpush.sendNotification(entry.subscription, payload, { ttl: 86400, urgency: 'high' });
+    } catch (error) {
+      const status = Number(error?.statusCode || 0);
+      if (status === 404 || status === 410) {
+        await getDatabase().ref(`adminPushTokens/${entry.userUid}/${entry.key}`).remove();
+      } else {
+        console.error('Web Push send failed:', status, error?.message || error);
       }
-    });
-
-    const deletes = [];
-    response.responses.forEach((result, index) => {
-      const code = result.error?.code || '';
-      if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
-        const entry = chunk[index];
-        deletes.push(getDatabase().ref(`adminPushTokens/${entry.userUid}/${entry.key}`).remove());
-      }
-    });
-    if (deletes.length) await Promise.allSettled(deletes);
-  }
+    }
+  }));
 
   return null;
 });

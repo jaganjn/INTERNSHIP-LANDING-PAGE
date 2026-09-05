@@ -362,9 +362,11 @@ function renderApplications(newIds = new Set()) {
   renderRank(E.topColleges, college);
   renderRank(E.topDomains, domain);
 
+  const today = getTodayISTKey();
   const days = [...Array(7)].map((_, index) => {
-    const date = new Date();
-    date.setDate(date.getDate() - (6 - index));
+    const [year, month, day] = today.split("-").map(Number);
+    // Build the day from an IST noon anchor to avoid DST/local-midnight shifts.
+    const date = new Date(Date.UTC(year, month - 1, day, 6, 30, 0) - (6 - index) * 24 * 60 * 60 * 1000);
     return {
       date,
       key: getISTDateKey(date.getTime())

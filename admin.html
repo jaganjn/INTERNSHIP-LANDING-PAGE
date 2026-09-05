@@ -18,7 +18,17 @@
     <p>REFERRALS</p><a href="#referralOverview">♙ <span>Overview</span></a><a href="#referralLeaderboard">★ <span>Leaderboard</span></a><a href="#referralFriends">♧ <span>Friends Joined</span></a>
     <p>SETTINGS</p><a href="#settings">⚙ <span>Data Controls</span></a>
   </nav>
-  <div class="side-profile"><span class="avatar">A</span><div><strong>Administrator</strong><small>Super Admin</small></div><button onclick="logout()" aria-label="Logout">↪</button></div>
+  <div class="side-profile" id="adminProfile">
+    <span class="avatar" id="adminAvatar">A</span>
+    <div class="side-profile-main">
+      <strong id="adminProfileName">Administrator</strong>
+      <small id="adminProfileEmail">Super Admin</small>
+    </div>
+    <div class="side-profile-actions">
+      <button type="button" onclick="resetAdminPassword()" aria-label="Reset password" title="Reset password">🔑</button>
+      <button type="button" onclick="logout()" aria-label="Sign out" title="Sign out">↪</button>
+    </div>
+  </div>
 </aside>
 <div class="mobile-overlay" id="mobileOverlay"></div>
 <section class="workspace">

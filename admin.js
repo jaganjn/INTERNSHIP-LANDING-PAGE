@@ -968,13 +968,96 @@ auth.onAuthStateChanged(user => {
     location.replace("login.html");
     return;
   }
+
+  // Show the signed-in administrator in the dashboard profile.
+  const profileEmail = document.getElementById("adminProfileEmail");
+  const profileName = document.getElementById("adminProfileName");
+  const avatar = document.getElementById("adminAvatar");
+
+  if (profileEmail) profileEmail.textContent = user.email || "Administrator";
+  if (profileName) profileName.textContent = user.displayName || "Administrator";
+  if (avatar) {
+    const source = user.displayName || user.email || "A";
+    avatar.textContent = source.trim().charAt(0).toUpperCase() || "A";
+  }
+
   document.body.style.visibility = "visible";
   setupUI();
   listeners();
 });
 
-function logout() {
-  auth.signOut().then(() => location.replace("login.html"));
+async function resetAdminPassword() {
+  const user = auth.currentUser;
+
+  if (!user || !user.email) {
+    showToast(
+      "Authentication required",
+      "Please sign in again before resetting your password.",
+      "error",
+      6000
+    );
+    return;
+  }
+
+  const confirmed = confirm(
+    `Send a password reset link to ${user.email}?\n\nYou will be signed out after requesting the reset link.`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await auth.sendPasswordResetEmail(user.email);
+
+    showToast(
+      "Password reset email sent",
+      `Check ${user.email} for the reset link.`,
+      "success",
+      7000
+    );
+
+    // Give the toast a moment to render, then sign out so the next login
+    // requires the new password.
+    window.setTimeout(async () => {
+      try {
+        await auth.signOut();
+        location.replace("login.html");
+      } catch (signOutError) {
+        console.error("Sign-out after password reset failed:", signOutError);
+      }
+    }, 1200);
+
+  } catch (error) {
+    console.error("Firebase password reset failed:", error);
+
+    const friendlyMessages = {
+      "auth/invalid-email": "The administrator email address is invalid.",
+      "auth/user-not-found": "No administrator account exists for this email.",
+      "auth/too-many-requests": "Too many reset attempts. Please try again later.",
+      "auth/network-request-failed": "Network error. Check your connection and try again."
+    };
+
+    showToast(
+      "Password reset failed",
+      friendlyMessages[error.code] || error.message || "Unable to send the password reset email.",
+      "error",
+      8000
+    );
+  }
+}
+
+async function logout() {
+  try {
+    await auth.signOut();
+    location.replace("login.html");
+  } catch (error) {
+    console.error("Firebase sign-out failed:", error);
+    showToast(
+      "Sign out failed",
+      error.message || "Unable to sign out right now. Please try again.",
+      "error",
+      7000
+    );
+  }
 }
 
 async function del(path, message, successText) {

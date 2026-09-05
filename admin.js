@@ -47,16 +47,61 @@ const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
 }[char]));
 
+const IST_TIME_ZONE = "Asia/Kolkata";
+
 const asMs = value => {
-  if (typeof value === "number") return value;
-  const parsed = Date.parse(value || "");
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (value && typeof value === "object") {
+    if (typeof value.toMillis === "function") return value.toMillis();
+    if (typeof value.seconds === "number") return value.seconds * 1000;
+  }
+
+  const raw = String(value || "").trim();
+  if (!raw) return 0;
+
+  // Legacy landing-page records used en-IN strings such as DD/MM/YYYY, HH:MM:SS.
+  // Parse this format first so JavaScript cannot reinterpret 05/09/YYYY as MM/DD/YYYY.
+  const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:,?\s+(\d{1,2}):(\d{2})(?::(\d{2})(?:\s*([AP]M))?)?)?$/i);
+  if (match) {
+    let [, dd, mm, yyyy, hh = "0", min = "0", sec = "0", ampm] = match;
+    let hour = Number(hh);
+    if (ampm) {
+      const upper = ampm.toUpperCase();
+      if (upper === "PM" && hour < 12) hour += 12;
+      if (upper === "AM" && hour === 12) hour = 0;
+    }
+    // Interpret legacy local timestamps as IST.
+    const utc = Date.UTC(Number(yyyy), Number(mm) - 1, Number(dd), hour, Number(min), Number(sec));
+    return utc - (5 * 60 + 30) * 60 * 1000;
+  }
+
+  const parsed = Date.parse(raw);
   return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getISTDateKey = value => {
+  const timestamp = asMs(value);
+  if (!timestamp) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: IST_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date(timestamp));
+  const map = Object.fromEntries(parts.map(part => [part.type, part.value]));
+  return `${map.year}-${map.month}-${map.day}`;
+};
+
+const getTodayISTKey = () => {
+  const now = new Date();
+  return getISTDateKey(now.getTime());
 };
 
 const fmt = value => {
   const timestamp = asMs(value);
   return timestamp
     ? new Intl.DateTimeFormat("en-IN", {
+        timeZone: IST_TIME_ZONE,
         day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
       }).format(new Date(timestamp))
     : "—";
@@ -64,7 +109,7 @@ const fmt = value => {
 
 const isToday = value => {
   const timestamp = asMs(value);
-  return timestamp ? new Date(timestamp).toDateString() === new Date().toDateString() : false;
+  return timestamp ? getISTDateKey(timestamp) === getTodayISTKey() : false;
 };
 
 function getAlertSettings() {
@@ -208,16 +253,22 @@ function renderVisitors() {
   const abandoned = rows.filter(visitor => visitor.state === "abandoned");
   const recentInactive = rows.filter(visitor => ["abandoned", "left"].includes(visitor.state)).slice(0, 20);
 
+  const todayKey = getTodayISTKey();
+  const todayApplications = applications.filter(app =>
+    getISTDateKey(app.submittedAtMs || app.submittedAt) === todayKey
+  );
+  const todaySessions = rows.filter(visitor =>
+    getISTDateKey(visitor.startedAt) === todayKey
+  );
+
   E.onlineCount.textContent = active.length;
   E.fillingCount.textContent = filling.length;
   E.abandonedCount.textContent = abandoned.length;
-  E.submittedCount.textContent = applications.filter(app =>
-    isToday(app.submittedAt || app.submittedAtMs)
-  ).length;
+  E.submittedCount.textContent = todayApplications.length;
 
-  const meaningfulSessions = rows.filter(visitor => visitor.state !== "left").length;
-  E.conversionRate.textContent = meaningfulSessions
-    ? `${Math.min(100, Math.round((applications.length / meaningfulSessions) * 100))}%`
+  const sessionDenominator = Math.max(todaySessions.length, todayApplications.length);
+  E.conversionRate.textContent = sessionDenominator
+    ? `${Math.min(100, Math.round((todayApplications.length / sessionDenominator) * 100))}%`
     : "0%";
 
   const activeMarkup = active.length
@@ -288,9 +339,9 @@ function renderApplications(newIds = new Set()) {
   applications.forEach(app => {
     if (app.college) college[app.college] = (college[app.college] || 0) + 1;
     if (app.domain) domain[app.domain] = (domain[app.domain] || 0) + 1;
-    const timestamp = asMs(app.submittedAt || app.submittedAtMs);
+    const timestamp = asMs(app.submittedAtMs || app.submittedAt);
     if (timestamp) {
-      const key = new Date(timestamp).toISOString().slice(0, 10);
+      const key = getISTDateKey(timestamp);
       daily[key] = (daily[key] || 0) + 1;
     }
   });
@@ -304,7 +355,7 @@ function renderApplications(newIds = new Set()) {
         </div>
         <span class="status submitted">Submitted</span>
       </div>
-      <small>${fmt(app.submittedAt || app.submittedAtMs)}</small>
+      <small>${fmt(app.submittedAtMs || app.submittedAt)}</small>
     </article>
   `).join("") || '<p class="empty">No applications yet.</p>';
 
@@ -314,12 +365,15 @@ function renderApplications(newIds = new Set()) {
   const days = [...Array(7)].map((_, index) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - index));
-    return date;
+    return {
+      date,
+      key: getISTDateKey(date.getTime())
+    };
   });
-  const max = Math.max(1, ...days.map(date => daily[date.toISOString().slice(0, 10)] || 0));
+  const max = Math.max(1, ...days.map(item => daily[item.key] || 0));
 
-  E.applicationsChart.innerHTML = days.map(date => {
-    const count = daily[date.toISOString().slice(0, 10)] || 0;
+  E.applicationsChart.innerHTML = days.map(({ date, key }) => {
+    const count = daily[key] || 0;
     return `
       <div class="chart-day" title="${count} applications">
         <span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span>
@@ -660,7 +714,7 @@ async function performFullRefresh() {
     visitors = visitorSnapshot.val() || {};
     applications = Object.entries(applicationSnapshot.val() || {})
       .map(([id, app]) => ({ id, ...app }))
-      .sort((a, b) => asMs(b.submittedAt || b.submittedAtMs) - asMs(a.submittedAt || a.submittedAtMs));
+      .sort((a, b) => asMs(b.submittedAtMs || b.submittedAt) - asMs(a.submittedAtMs || a.submittedAt));
     referralProfiles = referralSnapshot.val() || {};
     referralJoins = joinSnapshot.val() || {};
 
@@ -696,7 +750,7 @@ function exportApplicationsCsv() {
   const rows = applications.map(app => [
     app.name, app.phone, app.email, app.college, app.department, app.year,
     app.domain, app.referralCode || app.referredBy || "",
-    new Date(asMs(app.submittedAt || app.submittedAtMs) || Date.now()).toISOString()
+    new Date(asMs(app.submittedAtMs || app.submittedAt) || Date.now()).toISOString()
   ]);
 
   const csv = [headers, ...rows]

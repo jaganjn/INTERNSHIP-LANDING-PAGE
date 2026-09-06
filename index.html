@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071426">
 <title>InternsForge — Online Internship Programme 2026</title>
-<meta name="description" content="Apply for InternsForge's 2026 online internship programme. Build practical projects, develop career skills and prepare for placements across 20+ domains.">
+<meta name="description" content="Apply for InternsForge's 2026 online internship programme. Build practical projects, develop career skills and prepare for placements across 35 domains.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
@@ -332,6 +332,19 @@ footer nav .admin-login-link:hover{
   #internshipForm .form-step.active:not([hidden]){display:grid!important}
   #internshipForm .form-step[hidden]{display:none!important;visibility:hidden!important}
 </style>
+
+<style id="conversion-redesign-overrides">
+/* Conversion-focused frontend redesign: backend/Firebase untouched. */
+.application-zone.is-modal{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;max-width:none;margin:0;padding:24px;background:rgba(8,18,39,.62);backdrop-filter:blur(10px);overflow:auto}
+.application-zone.is-modal .application-intro{display:none!important}
+.application-zone.is-modal .application-card{width:min(760px,100%);max-height:calc(100vh - 48px);overflow:auto;margin:0;box-shadow:0 30px 90px rgba(5,15,35,.35)}
+.application-modal-close{position:absolute;right:16px;top:16px;width:38px;height:38px;border:1px solid #dbe2ef;border-radius:50%;background:#fff;color:#263653;font-size:24px;line-height:1;cursor:pointer;z-index:8}
+body.application-modal-open{overflow:hidden}
+.domain-explorer-card{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:28px 30px;border:1px solid rgba(255,255,255,.15);border-radius:24px;background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.045));box-shadow:0 20px 55px rgba(0,0,0,.18)}
+.explorer-kicker{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#9eafff}.domain-explorer-card h3{margin:7px 0 5px;font-size:24px;color:#fff}.domain-explorer-card p{margin:0;color:#b8c3d8;font-size:13px;max-width:700px}.domain-explorer-btn{flex:none;min-height:52px;padding:0 20px;border:0;border-radius:13px;color:#fff;background:linear-gradient(100deg,var(--blue),var(--violet));font-weight:800;cursor:pointer;box-shadow:0 12px 30px rgba(70,80,220,.28)}
+.domain-modal{position:fixed;inset:0;z-index:1300;display:none}.domain-modal.open{display:block}.domain-modal-backdrop{position:absolute;inset:0;background:rgba(5,12,28,.72);backdrop-filter:blur(9px)}.domain-modal-panel{position:relative;width:min(1100px,calc(100% - 28px));height:min(850px,calc(100vh - 36px));margin:18px auto;background:#f8faff;border:1px solid #dce4ef;border-radius:26px;box-shadow:0 35px 100px rgba(0,0,0,.3);overflow:hidden;display:flex;flex-direction:column}.domain-modal-close{position:absolute;right:18px;top:18px;width:40px;height:40px;border:1px solid #dbe2ef;border-radius:50%;background:#fff;color:#263653;font-size:25px;cursor:pointer;z-index:2}.domain-modal-head{display:flex;justify-content:space-between;gap:20px;padding:30px 72px 20px 30px;background:#fff;border-bottom:1px solid #e6ebf3}.domain-modal-head>div:first-child>span{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#5368e9}.domain-modal-head h2{margin:5px 0;font-size:29px;color:#16243b}.domain-modal-head p{margin:0;color:#748197;font-size:12px}.domain-count{text-align:center;min-width:70px;font:800 27px Manrope;color:#4f62df}.domain-count small{font:700 9px Inter;color:#8792a5;letter-spacing:1px}.domain-search-wrap{margin:18px 24px 10px;display:flex;align-items:center;border:1px solid #dbe2ed;border-radius:13px;background:#fff;height:50px}.domain-search-wrap span{padding-left:15px;color:#71809a;font-size:21px}.domain-search-wrap input{flex:1;border:0;outline:0;background:transparent;padding:0 14px;font-size:13px;color:#15243c}.domain-category-filter{display:flex;gap:8px;overflow:auto;padding:4px 24px 13px;scrollbar-width:none}.domain-category-filter::-webkit-scrollbar{display:none}.domain-category-filter button{white-space:nowrap;border:1px solid #dbe2ed;background:#fff;border-radius:999px;padding:8px 12px;font-size:10px;font-weight:800;color:#5e6b82;cursor:pointer}.domain-category-filter button.active{color:#fff;border-color:#596be8;background:linear-gradient(100deg,var(--blue),var(--violet))}.domain-cards{overflow:auto;padding:8px 24px 28px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.domain-program-card{border:1px solid #dde4ef;background:#fff;border-radius:16px;padding:17px;display:flex;flex-direction:column;min-height:165px;box-shadow:0 7px 20px rgba(31,49,83,.05);transition:.2s}.domain-program-card:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(31,49,83,.09);border-color:#bdc9ec}.domain-program-card .domain-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:#eef2ff;color:#5368e9;font-size:17px}.domain-program-card h3{margin:11px 0 5px;font-size:15px;color:#20304a}.domain-program-card p{margin:0;color:#758197;font-size:10.5px;line-height:1.55}.domain-program-card .program-actions{margin-top:auto;padding-top:13px;display:flex;align-items:center;justify-content:space-between;gap:8px}.domain-program-card small{font-size:8px;color:#8b96a8}.domain-apply-btn{border:0;background:transparent;color:#4259d6;font-size:10px;font-weight:850;cursor:pointer;padding:5px 0}.domain-empty{grid-column:1/-1;text-align:center;padding:45px;color:#77849a;font-size:13px}
+@media(max-width:760px){.domain-explorer-card{display:grid;padding:22px}.domain-explorer-btn{width:100%}.domain-modal-panel{width:100%;height:100%;margin:0;border-radius:0}.domain-modal-head{padding:24px 64px 18px 18px}.domain-modal-head h2{font-size:23px}.domain-count{display:none}.domain-search-wrap{margin:14px 16px 8px}.domain-category-filter{padding-left:16px;padding-right:16px}.domain-cards{grid-template-columns:1fr;padding:6px 16px 24px}.domain-program-card{min-height:145px}.application-zone.is-modal{padding:0}.application-zone.is-modal .application-card{width:100%;height:100%;max-height:none;border-radius:0;padding:20px 15px}.application-modal-close{right:12px;top:12px}.application-zone.is-modal .application-title{padding-right:38px}}
+</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -518,7 +531,7 @@ footer nav .admin-login-link:hover{
           </div>
           <div class="field-wrap full glow-field">
             <label for="domain">Interested Domain</label>
-            <div class="field-control"><select id="domain" name="domain" required><option value="">Select Interested Domain</option><option>Web Development</option><option>App Development</option><option>Java</option><option>Python</option><option>Artificial Intelligence</option><option>Machine Learning</option><option>Data Science</option><option>Cyber Security</option><option>AWS & Cloud</option><option>VLSI</option><option>IoT</option><option>Robotics</option><option>Embedded Systems</option><option>Hybrid Electric Vehicle</option><option>AutoCAD</option><option>Car Designing</option><option>Construction Planning</option><option>Digital Marketing</option><option>Finance</option><option>Business Analytics</option><option>Human Resources</option><option>Bioinformatics</option><option>Genetic Engineering</option></select><span class="valid-mark">✓</span></div>
+            <div class="field-control"><select id="domain" name="domain" required><option value="">Select Interested Domain</option><option>Full Stack Web Development</option><option>Artificial Intelligence</option><option>Machine Learning</option><option>Data Science</option><option>Programming in Python</option><option>Programming in Java</option><option>Cloud Computing</option><option>Cyber Security</option><option>Advance Cyber Security</option><option>UI/UX Design</option><option>Data Structure & Algorithm</option><option>Web Development</option><option>Game Development</option><option>Graphic Design</option><option>Embedded Systems</option><option>Internet of Things (IoT)</option><option>VLSI</option><option>Robotics Engineering</option><option>Hybrid Electric Vehicles</option><option>IC Engine</option><option>AutoCAD</option><option>Construction Planning</option><option>Drone Mechanics</option><option>Battery Electric Vehicles (BEVs)</option><option>Nano Technology</option><option>Genetic Engineering</option><option>Bio-Informatics</option><option>Digital Marketing</option><option>Finance</option><option>Operations Management</option><option>Human Resources</option><option>Business Analytics</option><option>Stock Market</option><option>Psychology</option><option>Medical Coding</option></select><span class="valid-mark">✓</span></div>
             <small class="field-error" id="domainError"></small>
           </div>
         </div>
@@ -574,23 +587,11 @@ footer nav .admin-login-link:hover{
   </div>
 </section>
 
-<section class="section domain-section" id="domains">
-  <div class="section-heading inverted"><span>CAREER TRACKS</span><h2>Choose a domain that moves you forward.</h2><p>Tap a track to explore the skills and direction covered.</p></div>
-  <div class="domain-tabs" role="tablist" aria-label="Career domains">
-    <button class="domain-tab active" type="button" role="tab" aria-selected="true" data-domain="web"><b>01</b><span>Web & App</span></button>
-    <button class="domain-tab" type="button" role="tab" aria-selected="false" data-domain="ai"><b>02</b><span>AI & Data</span></button>
-    <button class="domain-tab" type="button" role="tab" aria-selected="false" data-domain="cloud"><b>03</b><span>Cyber & Cloud</span></button>
-    <button class="domain-tab" type="button" role="tab" aria-selected="false" data-domain="core"><b>04</b><span>Core Engineering</span></button>
-    <button class="domain-tab" type="button" role="tab" aria-selected="false" data-domain="business"><b>05</b><span>Business</span></button>
-    <button class="domain-tab" type="button" role="tab" aria-selected="false" data-domain="life"><b>06</b><span>Life Sciences</span></button>
-  </div>
-  <div class="domain-detail-wrap">
-    <article class="domain-detail active" data-domain-panel="web"><div class="domain-number">01</div><div><span>DEVELOPMENT TRACK</span><h3>Web & App Development</h3><p>Build responsive websites and applications through practical development workflows.</p><div class="domain-skill-row"><b>HTML</b><b>CSS</b><b>JavaScript</b><b>React</b><b>App Development</b></div></div><div class="domain-visual"><i>&lt;/&gt;</i><small>BUILD · TEST · DEPLOY</small></div></article>
-    <article class="domain-detail" data-domain-panel="ai" hidden><div class="domain-number">02</div><div><span>INTELLIGENCE TRACK</span><h3>AI & Data</h3><p>Explore Artificial Intelligence, Machine Learning, Python and data-driven problem solving.</p><div class="domain-skill-row"><b>AI</b><b>Machine Learning</b><b>Python</b><b>Data Science</b></div></div><div class="domain-visual"><i>AI</i><small>LEARN · MODEL · ANALYSE</small></div></article>
-    <article class="domain-detail" data-domain-panel="cloud" hidden><div class="domain-number">03</div><div><span>SECURITY TRACK</span><h3>Cyber & Cloud</h3><p>Understand digital security, cloud technology and networking fundamentals.</p><div class="domain-skill-row"><b>Cyber Security</b><b>AWS</b><b>Cloud</b><b>Networking</b></div></div><div class="domain-visual"><i>☁</i><small>SECURE · SCALE · CONNECT</small></div></article>
-    <article class="domain-detail" data-domain-panel="core" hidden><div class="domain-number">04</div><div><span>ENGINEERING TRACK</span><h3>Core Engineering</h3><p>Explore VLSI, IoT, Robotics, Embedded Systems, HEV, AutoCAD and related pathways.</p><div class="domain-skill-row"><b>VLSI</b><b>IoT</b><b>Robotics</b><b>Embedded</b><b>HEV</b><b>AutoCAD</b></div></div><div class="domain-visual"><i>⚙</i><small>DESIGN · CONNECT · ENGINEER</small></div></article>
-    <article class="domain-detail" data-domain-panel="business" hidden><div class="domain-number">05</div><div><span>MANAGEMENT TRACK</span><h3>Business & Management</h3><p>Develop practical exposure in marketing, finance, HR and business analytics.</p><div class="domain-skill-row"><b>Marketing</b><b>Finance</b><b>HR</b><b>Analytics</b><b>Accounting</b></div></div><div class="domain-visual"><i>↗</i><small>PLAN · ANALYSE · GROW</small></div></article>
-    <article class="domain-detail" data-domain-panel="life" hidden><div class="domain-number">06</div><div><span>SCIENCE TRACK</span><h3>Life Sciences</h3><p>Explore biotechnology, bioinformatics, nanoscience and genetic engineering.</p><div class="domain-skill-row"><b>Biotech</b><b>Bioinformatics</b><b>Nanoscience</b><b>Genetics</b></div></div><div class="domain-visual"><i>DNA</i><small>RESEARCH · DISCOVER · APPLY</small></div></article>
+<section class="section domain-section conversion-domains" id="domains">
+  <div class="section-heading inverted"><span>35 BEGINNER-FRIENDLY PROGRAMS</span><h2>Choose a domain that fits your interest.</h2><p><strong>No prerequisite knowledge required.</strong> Explore the complete program catalogue without crowding the landing page.</p></div>
+  <div class="domain-explorer-card">
+    <div><span class="explorer-kicker">PROGRAM CATALOGUE</span><h3>Explore internship domains</h3><p>Browse by discipline, read a short description, and apply directly for the program that interests you.</p></div>
+    <button type="button" class="domain-explorer-btn" id="openDomainExplorer">Explore All Domains <span>→</span></button>
   </div>
 </section>
 
@@ -638,6 +639,16 @@ footer nav .admin-login-link:hover{
   <button id="backToTop" type="button" aria-label="Back to top">↑</button>
 </footer>
 
+<div class="domain-modal" id="domainModal" aria-hidden="true">
+  <div class="domain-modal-backdrop" data-close-domain></div>
+  <section class="domain-modal-panel" role="dialog" aria-modal="true" aria-labelledby="domainModalTitle">
+    <button class="domain-modal-close" type="button" data-close-domain aria-label="Close domain explorer">×</button>
+    <div class="domain-modal-head"><div><span>PROGRAM CATALOGUE</span><h2 id="domainModalTitle">Explore all internship domains</h2><p>No prerequisite knowledge required.</p></div><div class="domain-count">35<br><small>programs</small></div></div>
+    <div class="domain-search-wrap"><span>⌕</span><input id="domainSearch" type="search" placeholder="Search a domain..." autocomplete="off"></div>
+    <div class="domain-category-filter" id="domainCategoryFilter"></div>
+    <div class="domain-cards" id="domainCards"></div>
+  </section>
+</div>
 <a class="floating-cta" id="floatingCta" href="#apply"><span>Applications Open</span><strong>Apply in 60 Seconds →</strong></a>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -1511,6 +1522,93 @@ console.info('SkillPath guided form build: Final V11');
   updateScroll();
 })();
 
+
+// === Conversion redesign: application modal + 35-domain explorer ===
+(function(){
+  const applyZone=document.querySelector('.application-zone');
+  const applyCard=document.getElementById('apply');
+  if(applyZone&&applyCard){
+    const close=document.createElement('button');
+    close.type='button'; close.className='application-modal-close'; close.setAttribute('aria-label','Close application'); close.textContent='×';
+    close.hidden=true; applyCard.appendChild(close);
+    const openApplication=()=>{
+      applyZone.classList.add('is-modal'); document.body.classList.add('application-modal-open'); close.hidden=false;
+      setTimeout(()=>applyCard.querySelector('input,select,button')?.focus({preventScroll:true}),80);
+    };
+    const closeApplication=()=>{
+      applyZone.classList.remove('is-modal'); document.body.classList.remove('application-modal-open'); close.hidden=true;
+      if(location.hash==='#apply') history.replaceState(null,'',location.pathname+location.search);
+    };
+    document.querySelectorAll('a[href="#apply"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();openApplication();}));
+    close.addEventListener('click',closeApplication);
+    applyZone.addEventListener('click',e=>{if(e.target===applyZone)closeApplication();});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&applyZone.classList.contains('is-modal'))closeApplication();});
+    window.openInternshipApplication=openApplication;
+  }
+  const domains=[
+    ['IT / Computer Science & Engineering','Full Stack Web Development','Build modern full-stack web applications through practical development workflows.'],
+    ['IT / Computer Science & Engineering','Artificial Intelligence','Explore AI concepts and practical applications in intelligent systems.'],
+    ['IT / Computer Science & Engineering','Machine Learning','Learn the foundations of machine learning and practical model-building concepts.'],
+    ['IT / Computer Science & Engineering','Data Science','Explore data analysis, insights and practical data-driven problem solving.'],
+    ['IT / Computer Science & Engineering','Programming in Python','Build programming fundamentals and practical solutions using Python.'],
+    ['IT / Computer Science & Engineering','Programming in Java','Develop programming fundamentals and application logic using Java.'],
+    ['IT / Computer Science & Engineering','Cloud Computing','Understand cloud concepts, services and modern application infrastructure.'],
+    ['IT / Computer Science & Engineering','Cyber Security','Explore cybersecurity fundamentals and secure digital practices.'],
+    ['IT / Computer Science & Engineering','Advance Cyber Security','Go deeper into advanced cybersecurity concepts and defensive practices.'],
+    ['IT / Computer Science & Engineering','UI/UX Design','Design user-friendly digital experiences through UI and UX principles.'],
+    ['IT / Computer Science & Engineering','Data Structure & Algorithm','Build problem-solving skills using core data structures and algorithms.'],
+    ['IT / Computer Science & Engineering','Web Development','Learn the fundamentals of building responsive and interactive websites.'],
+    ['IT / Computer Science & Engineering','Game Development','Explore the foundations of creating interactive digital games.'],
+    ['IT / Computer Science & Engineering','Graphic Design','Develop visual communication skills for digital creative work.'],
+    ['Electronics & Communication / EEE','Embedded Systems','Explore embedded hardware-software systems and microcontroller concepts.'],
+    ['Electronics & Communication / EEE','Internet of Things (IoT)','Learn how connected devices, sensors and systems work together.'],
+    ['Electronics & Communication / EEE','VLSI','Explore digital design and very-large-scale integration fundamentals.'],
+    ['Electronics & Communication / EEE','Robotics Engineering','Discover robotics concepts combining sensing, control and automation.'],
+    ['Electronics & Communication / EEE','Hybrid Electric Vehicles','Explore hybrid vehicle technology, systems and engineering concepts.'],
+    ['Mechanical / Civil Engineering','IC Engine','Understand internal-combustion engine fundamentals and engineering concepts.'],
+    ['Mechanical / Civil Engineering','AutoCAD','Develop practical computer-aided design and drafting skills.'],
+    ['Mechanical / Civil Engineering','Construction Planning','Explore planning, scheduling and coordination concepts in construction.'],
+    ['Mechanical / Civil Engineering','Drone Mechanics','Learn the mechanical principles behind drone structures and systems.'],
+    ['Mechanical / Civil Engineering','Battery Electric Vehicles (BEVs)','Explore battery-electric vehicle systems and engineering fundamentals.'],
+    ['Bio Technology','Nano Technology','Explore nanoscale materials, concepts and applications.'],
+    ['Bio Technology','Genetic Engineering','Learn foundational concepts in genetic engineering and biotechnology.'],
+    ['Bio Technology','Bio-Informatics','Explore the use of computing and data analysis in biological sciences.'],
+    ['Management','Digital Marketing','Explore digital channels, campaigns and practical marketing concepts.'],
+    ['Management','Finance','Build foundational knowledge of financial concepts and decision making.'],
+    ['Management','Operations Management','Learn how processes, resources and operations are planned and improved.'],
+    ['Management','Human Resources','Explore recruitment, people operations and core HR practices.'],
+    ['Management','Business Analytics','Use data and analytical thinking to understand business decisions.'],
+    ['Management','Stock Market','Learn foundational concepts of markets, investing and financial analysis.'],
+    ['Health Information Management / Life Science','Psychology','Explore foundational psychology concepts and human behaviour.'],
+    ['Health Information Management / Life Science','Medical Coding','Learn the fundamentals of coding and organizing healthcare information.']
+  ];
+  const modal=document.getElementById('domainModal'),cards=document.getElementById('domainCards'),search=document.getElementById('domainSearch'),filters=document.getElementById('domainCategoryFilter');
+  if(!modal||!cards||!search||!filters)return;
+  const categories=['All',...new Set(domains.map(d=>d[0]))]; let active='All';
+  const esc=v=>String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const icon=cat=>({
+    'IT / Computer Science & Engineering':'</>',
+    'Electronics & Communication / EEE':'⚡',
+    'Mechanical / Civil Engineering':'⚙',
+    'Bio Technology':'DNA',
+    'Management':'↗',
+    'Health Information Management / Life Science':'✚'
+  }[cat]||'•');
+  function renderFilters(){filters.innerHTML=categories.map(c=>`<button type="button" class="${c===active?'active':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');}
+  function renderCards(){
+    const q=search.value.trim().toLowerCase();
+    const list=domains.filter(d=>(active==='All'||d[0]===active)&&(!q||d[1].toLowerCase().includes(q)||d[0].toLowerCase().includes(q)));
+    cards.innerHTML=list.length?list.map((d,i)=>`<article class="domain-program-card"><div class="domain-icon">${icon(d[0])}</div><h3>${esc(d[1])}</h3><p>${esc(d[2])}</p><div class="program-actions"><small>${esc(d[0])}</small><button class="domain-apply-btn" type="button" data-domain-apply="${esc(d[1])}">Apply →</button></div></article>`).join(''):'<div class="domain-empty">No matching domain found. Try another search.</div>';
+  }
+  function openDomains(){modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('application-modal-open');renderFilters();renderCards();setTimeout(()=>search.focus(),60);}
+  function closeDomains(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('application-modal-open');}
+  document.getElementById('openDomainExplorer')?.addEventListener('click',openDomains);
+  modal.querySelectorAll('[data-close-domain]').forEach(el=>el.addEventListener('click',closeDomains));
+  filters.addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;active=b.dataset.cat;renderFilters();renderCards();});
+  search.addEventListener('input',renderCards);
+  cards.addEventListener('click',e=>{const b=e.target.closest('[data-domain-apply]');if(!b)return; const selected=b.dataset.domainApply; closeDomains(); if(window.openInternshipApplication)window.openInternshipApplication(); const field=document.getElementById('domain'); if(field){ const opt=[...field.options].find(o=>o.text.trim().toLowerCase()===selected.trim().toLowerCase()); if(opt)field.value=opt.value; else { const custom=new Option(selected,selected,true,true); field.add(custom); field.value=selected; } field.dispatchEvent(new Event('change',{bubbles:true})); }});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))closeDomains();});
+})();
 </script>
 </body>
 </html>

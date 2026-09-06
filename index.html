@@ -1696,68 +1696,85 @@ console.info('SkillPath guided form build: Final V11');
 
 </script>
 
-<script id="mobile-auto-scroll">
+<script id="unified-mobile-motion">
 (function(){
-  const mq=window.matchMedia('(max-width:600px)');
-  if(!mq.matches) return;
-  const tracks=[...document.querySelectorAll('.receive-grid,.project-grid,.proof-grid,.how-grid,.domain-category-preview,.domain-card-grid')];
-  const timers=[];
-  tracks.forEach(track=>{
-    if(track.children.length<2) return;
-    let index=0;
-    const tick=()=>{
-      if(!mq.matches || !document.body) return;
-      const items=[...track.children].filter(el=>getComputedStyle(el).display!=='none');
-      if(items.length<2) return;
-      index=(index+1)%items.length;
-      track.scrollTo({left:items[index].offsetLeft-track.offsetLeft,behavior:'smooth'});
+  const mobile=window.matchMedia('(max-width:600px)');
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!mobile.matches || reduce) return;
+
+  const controllers=[];
+  function setup(track, selector, delay){
+    if(!track) return;
+    const cards=[...track.querySelectorAll(selector)];
+    if(cards.length<2) return;
+    let index=0, timer=null, paused=false, restart=null;
+    const setActive=()=>cards.forEach((c,i)=>c.classList.toggle('active',i===index));
+    const go=(next)=>{
+      index=(next+cards.length)%cards.length;
+      cards[index].scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'});
+      setActive();
     };
-    const timer=setInterval(tick,2600); timers.push(timer);
-    track.addEventListener('touchstart',()=>clearInterval(timer),{passive:true});
-  });
-
-  const modalList=document.getElementById('domainModalList');
-  if(modalList){
-    let i=0;
-    const autoDomains=()=>{
-      const cards=[...modalList.querySelectorAll('.domain-explorer-card:not([hidden])')];
-      if(cards.length<2 || !document.getElementById('domainModal')?.classList.contains('open')) return;
-      i=(i+1)%cards.length;
-      modalList.scrollTo({left:cards[i].offsetLeft-modalList.offsetLeft,behavior:'smooth'});
-    };
-    const t=setInterval(autoDomains,2300); timers.push(t);
-    modalList.addEventListener('touchstart',()=>clearInterval(t),{passive:true});
+    const start=()=>{clearInterval(timer); timer=setInterval(()=>{if(!paused) go(index+1)},delay)};
+    const pause=()=>{paused=true; clearInterval(timer); clearTimeout(restart)};
+    const resume=()=>{paused=false; clearTimeout(restart); restart=setTimeout(start,900)};
+    track.addEventListener('pointerdown',pause,{passive:true});
+    track.addEventListener('pointerup',resume,{passive:true});
+    track.addEventListener('pointercancel',resume,{passive:true});
+    track.addEventListener('mouseleave',resume,{passive:true});
+    track.addEventListener('scroll',()=>{
+      if(paused) return;
+      const left=track.scrollLeft;
+      let best=0,dist=Infinity;
+      cards.forEach((c,i)=>{const d=Math.abs(c.offsetLeft-track.offsetLeft-left);if(d<dist){dist=d;best=i}});
+      if(best!==index){index=best;setActive()}
+    },{passive:true});
+    setActive(); start(); controllers.push(()=>{clearInterval(timer);clearTimeout(restart)});
   }
-})();
 
-  // Student-focused entrance motion: cards reveal as the learner scrolls through the page.
-  (function setupStudentMotion(){
-    const targets=[...document.querySelectorAll('.trust-strip article,.ecosystem figure,.project-grid > *, .proof-grid > *, .how-grid > *, .domain-category,.conversion-domains .domain-explorer-trigger,.faq-item')];
-    targets.forEach(el=>el.classList.add('motion-reveal'));
-    if(!('IntersectionObserver' in window)){targets.forEach(el=>el.classList.add('is-visible'));return;}
-    const observer=new IntersectionObserver(entries=>{
-      entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');observer.unobserve(entry.target);}});
-    },{threshold:.12,rootMargin:'0px 0px -30px 0px'});
-    targets.forEach(el=>observer.observe(el));
-  })();
-</script>
+  setup(document.getElementById('studentJourneyScroller'),'.journey-step-card',3000);
+  setup(document.getElementById('personaTrack'),'.persona-card',3400);
+  setup(document.querySelector('.receive-grid'),':scope > article',3000);
+  setup(document.querySelector('.project-grid'),':scope > article',3200);
+  setup(document.querySelector('.proof-grid'),':scope > article',3200);
+  setup(document.querySelector('.how-grid'),':scope > article',3200);
+  setup(document.querySelector('.domain-category-preview'),':scope > .domain-category',3200);
 
-
-<script id="student-conversion-enhancement-js">
-(function(){
-  const reduced=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function autoScroller(id, selector, delay){
-    const wrap=document.getElementById(id); if(!wrap||reduced) return;
-    let timer, paused=false;
-    const cards=[...wrap.querySelectorAll(selector)]; if(cards.length<2) return;
-    let index=0;
-    const start=()=>{clearInterval(timer);timer=setInterval(()=>{if(paused)return;index=(index+1)%cards.length;cards[index].scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'});cards.forEach((c,i)=>c.classList.toggle('active',i===index));},delay)};
-    wrap.addEventListener('pointerdown',()=>paused=true,{passive:true}); wrap.addEventListener('pointerup',()=>{paused=false;start()},{passive:true}); wrap.addEventListener('touchend',()=>{paused=false;start()},{passive:true}); start();
+  const modal=document.getElementById('domainModal');
+  const list=document.getElementById('domainModalList');
+  let domainTimer=null, domainPaused=false, domainIndex=0;
+  function domainCards(){return list?[...list.querySelectorAll('.domain-explorer-card:not([hidden])')]:[]}
+  function stopDomain(){clearInterval(domainTimer);domainTimer=null}
+  function startDomain(){
+    stopDomain();
+    if(!modal?.classList.contains('open')) return;
+    domainTimer=setInterval(()=>{
+      if(domainPaused) return;
+      const cards=domainCards(); if(cards.length<2) return;
+      domainIndex=(domainIndex+1)%cards.length;
+      cards[domainIndex].scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'});
+    },2700);
   }
-  autoScroller('studentJourneyScroller','.journey-step-card',2800);
-  autoScroller('personaTrack','.persona-card',3200);
-  const reveal=[...document.querySelectorAll('.student-journey-section,.student-persona-section,.student-ticker')];
-  if(!reduced && 'IntersectionObserver' in window){const io=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('motion-visible');io.unobserve(e.target)}}),{threshold:.12});reveal.forEach(e=>{e.classList.add('motion-reveal');io.observe(e)});}
+  if(list){
+    const pause=()=>{domainPaused=true;stopDomain()};
+    const resume=()=>{domainPaused=false;setTimeout(startDomain,1000)};
+    list.addEventListener('pointerdown',pause,{passive:true});
+    list.addEventListener('pointerup',resume,{passive:true});
+    list.addEventListener('pointercancel',resume,{passive:true});
+    list.addEventListener('scroll',()=>{
+      const cards=domainCards(), left=list.scrollLeft;
+      let best=0,dist=Infinity;
+      cards.forEach((c,i)=>{const d=Math.abs(c.offsetLeft-list.offsetLeft-left);if(d<dist){dist=d;best=i}});
+      domainIndex=best;
+    },{passive:true});
+    new MutationObserver(()=>{domainIndex=0;if(modal?.classList.contains('open')){list.scrollTo({left:0,behavior:'auto'});startDomain()}}).observe(list,{subtree:true,attributes:true,attributeFilter:['hidden']});
+  }
+  window.addEventListener('resize',()=>{if(!mobile.matches) controllers.forEach(fn=>fn())});
+  const originalOpen=window.openDomain;
+  const originalClose=window.closeDomain;
+  // Start/stop domain motion by observing the modal state instead of replacing app logic.
+  if(modal && 'MutationObserver' in window){
+    new MutationObserver(()=>{if(modal.classList.contains('open')){domainIndex=0;list?.scrollTo({left:0,behavior:'auto'});startDomain()}else stopDomain()}).observe(modal,{attributes:true,attributeFilter:['class']});
+  }
 })();
 </script>
 

@@ -495,6 +495,28 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
   }
 }
 </style>
+
+<style id="mobile-motion-stability-fix">
+@media (max-width:600px){
+  html,body{width:100%;max-width:100%;overflow-x:hidden!important}
+  .receive-grid,.project-grid,.proof-grid,.how-grid,.domain-category-preview,.journey-scroller,.persona-track,.domain-modal-list,.domain-card-grid{
+    box-sizing:border-box!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+    transform:none!important;
+    scroll-behavior:auto;
+    overscroll-behavior-x:contain;
+    touch-action:pan-x pan-y;
+  }
+  .receive-grid>*,.project-grid>*,.proof-grid>*,.how-grid>*{box-sizing:border-box!important}
+  .domain-category-preview>.domain-category{box-sizing:border-box!important}
+  .domain-modal-list .domain-explorer-card{box-sizing:border-box!important}
+  .motion-reveal{transform:translateY(18px)!important}
+  .motion-reveal.motion-visible{transform:none!important}
+  .student-ticker-track{will-change:transform}
+}
+</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -1754,6 +1776,7 @@ console.info('SkillPath guided form build: Final V11');
     let visible=0;
     list?.querySelectorAll('.domain-explorer-card').forEach(card=>{const match=(!q || card.dataset.domainName.toLowerCase().includes(q) || card.innerText.toLowerCase().includes(q)) && (active===undefined || card.dataset.category===active); card.hidden=!match;if(match)visible++;});
     if(count)count.textContent=`${visible} program${visible===1?'':'s'}`; if(empty)empty.hidden=visible!==0;
+    window.dispatchEvent(new Event('internsforge:domain-filtered'));
   }
   document.getElementById('openDomainExplorer')?.addEventListener('click',openDomain);
   document.querySelectorAll('.domain-card').forEach(b=>b.addEventListener('click',()=>{openDomain(); search.value=''; tabs.forEach(t=>t.classList.remove('active')); filterDomains();}));
@@ -1761,8 +1784,6 @@ console.info('SkillPath guided form build: Final V11');
   search?.addEventListener('input',filterDomains);
   tabs.forEach(tab=>tab.addEventListener('click',()=>{tabs.forEach(t=>t.classList.remove('active'));tab.classList.add('active');filterDomains();}));
   list?.addEventListener('click',e=>{const card=e.target.closest('.domain-explorer-card'); if(!card)return; const domain=card.dataset.domainName; closeDomain(); openApplication(domain);});
-  // Domain cards in the preview open the explorer with the selected domain highlighted by search.
-  document.querySelectorAll('.domain-card').forEach(card=>card.addEventListener('click',()=>{openDomain(); if(search){search.value=card.dataset.domainName; filterDomains();}}));
   tabs[0]?.classList.add('active');
 })();
 
@@ -1770,83 +1791,191 @@ console.info('SkillPath guided form build: Final V11');
 
 <script id="unified-mobile-motion">
 (function(){
-  const mobile=window.matchMedia('(max-width:600px)');
-  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if(!mobile.matches || reduce) return;
+  'use strict';
+  const media = window.matchMedia('(max-width:600px)');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const controllers = new Set();
+  let domainController = null;
+  let active = false;
 
-  const controllers=[];
-  function setup(track, selector, delay){
-    if(!track) return;
-    const cards=[...track.querySelectorAll(selector)];
-    if(cards.length<2) return;
-    let index=0, timer=null, paused=false, restart=null;
-    const setActive=()=>cards.forEach((c,i)=>c.classList.toggle('active',i===index));
-    const go=(next)=>{
-      index=(next+cards.length)%cards.length;
-      cards[index].scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'});
+  function nearestIndex(track, cards){
+    if(!cards.length) return 0;
+    const trackRect = track.getBoundingClientRect();
+    let best = 0, distance = Infinity;
+    cards.forEach((card, i) => {
+      const cardRect = card.getBoundingClientRect();
+      const targetLeft = cardRect.left - trackRect.left + track.scrollLeft;
+      const d = Math.abs(targetLeft - track.scrollLeft);
+      if(d < distance){ distance = d; best = i; }
+    });
+    return best;
+  }
+
+  function targetFor(track, card){
+    const trackRect = track.getBoundingClientRect();
+    const cardRect = card.getBoundingClientRect();
+    return Math.max(0, track.scrollLeft + (cardRect.left - trackRect.left) - 2);
+  }
+
+  function setupCarousel(track, selector, delay){
+    if(!track) return null;
+    const cards = [...track.querySelectorAll(selector)];
+    if(cards.length < 2) return null;
+
+    let index = 0;
+    let timer = null;
+    let resumeTimer = null;
+    let paused = false;
+    let visible = true;
+    let destroyed = false;
+    let scrollingByCode = false;
+
+    const setActive = () => cards.forEach((card, i) => card.classList.toggle('active', i === index));
+    const go = next => {
+      if(destroyed || paused || !visible) return;
+      index = (next + cards.length) % cards.length;
+      const left = targetFor(track, cards[index]);
+      scrollingByCode = true;
+      track.scrollTo({left, behavior:'smooth'});
+      setActive();
+      window.setTimeout(() => { scrollingByCode = false; }, 700);
+    };
+    const stop = () => { if(timer) clearInterval(timer); timer = null; };
+    const start = () => {
+      stop();
+      if(destroyed || !active || reduce.matches || cards.length < 2) return;
+      timer = setInterval(() => { if(!paused && visible) go(index + 1); }, delay);
+    };
+    const pause = () => {
+      paused = true;
+      stop();
+      if(resumeTimer) clearTimeout(resumeTimer);
+    };
+    const resume = () => {
+      paused = false;
+      if(resumeTimer) clearTimeout(resumeTimer);
+      resumeTimer = setTimeout(start, 1200);
+    };
+    const onScroll = () => {
+      if(scrollingByCode) return;
+      const next = nearestIndex(track, cards);
+      if(next !== index){ index = next; setActive(); }
+    };
+    const onVisibility = entries => {
+      visible = !!entries[0]?.isIntersecting;
+      if(!visible) stop(); else if(!paused) start();
+    };
+
+    track.addEventListener('pointerdown', pause, {passive:true});
+    track.addEventListener('pointerup', resume, {passive:true});
+    track.addEventListener('pointercancel', resume, {passive:true});
+    track.addEventListener('touchend', resume, {passive:true});
+    track.addEventListener('scroll', onScroll, {passive:true});
+    let observer = null;
+    if('IntersectionObserver' in window){
+      observer = new IntersectionObserver(onVisibility, {threshold:0.12});
+      observer.observe(track);
+    }
+
+    track.scrollLeft = 0;
+    setActive();
+    const api = {
+      reset(){ index=0; track.scrollTo({left:0,behavior:'auto'}); setActive(); if(!paused) start(); },
+      destroy(){
+        destroyed=true; stop(); if(resumeTimer) clearTimeout(resumeTimer); observer?.disconnect();
+        track.removeEventListener('pointerdown', pause); track.removeEventListener('pointerup', resume);
+        track.removeEventListener('pointercancel', resume); track.removeEventListener('touchend', resume);
+        track.removeEventListener('scroll', onScroll);
+      }
+    };
+    controllers.add(api);
+    if(!observer) start();
+    return api;
+  }
+
+  function setupAll(){
+    if(active || !media.matches || reduce.matches) return;
+    active = true;
+    setupCarousel(document.getElementById('studentJourneyScroller'), '.journey-step-card', 3200);
+    setupCarousel(document.getElementById('personaTrack'), '.persona-card', 3600);
+    setupCarousel(document.querySelector('.receive-grid'), ':scope > article', 3400);
+    setupCarousel(document.querySelector('.project-grid'), ':scope > article', 3600);
+    setupCarousel(document.querySelector('.proof-grid'), ':scope > article', 3600);
+    setupCarousel(document.querySelector('.how-grid'), ':scope > article', 3600);
+    setupCarousel(document.querySelector('.domain-category-preview'), ':scope > .domain-category', 3600);
+    setupDomainModal();
+  }
+
+  function teardownAll(){
+    controllers.forEach(c => c.destroy());
+    controllers.clear();
+    domainController?.destroy?.();
+    domainController = null;
+    active = false;
+  }
+
+  function setupDomainModal(){
+    const modal = document.getElementById('domainModal');
+    const list = document.getElementById('domainModalList');
+    if(!modal || !list) return;
+
+    let timer=null, resumeTimer=null, paused=false, visible=true, index=0, destroyed=false;
+    const cards = () => [...list.querySelectorAll('.domain-explorer-card:not([hidden])')];
+    const stop=()=>{if(timer)clearInterval(timer);timer=null};
+    const setActive=()=>cards().forEach((c,i)=>c.classList.toggle('active',i===index));
+    const sync=()=>{
+      const visibleCards=cards();
+      if(!visibleCards.length){index=0;return;}
+      if(index>=visibleCards.length) index=0;
+      let best=0,dist=Infinity;
+      const rect=list.getBoundingClientRect();
+      visibleCards.forEach((c,i)=>{const d=Math.abs((c.getBoundingClientRect().left-rect.left)+list.scrollLeft-list.scrollLeft);if(d<dist){dist=d;best=i;}});
+      index=best; setActive();
+    };
+    const go=()=>{
+      const visibleCards=cards();
+      if(destroyed || paused || !visible || !modal.classList.contains('open') || visibleCards.length<2) return;
+      index=(index+1)%visibleCards.length;
+      const card=visibleCards[index];
+      const rect=list.getBoundingClientRect();
+      const left=Math.max(0,list.scrollLeft+(card.getBoundingClientRect().left-rect.left)-2);
+      list.scrollTo({left,behavior:'smooth'});
       setActive();
     };
-    const start=()=>{clearInterval(timer); timer=setInterval(()=>{if(!paused) go(index+1)},delay)};
-    const pause=()=>{paused=true; clearInterval(timer); clearTimeout(restart)};
-    const resume=()=>{paused=false; clearTimeout(restart); restart=setTimeout(start,900)};
-    track.addEventListener('pointerdown',pause,{passive:true});
-    track.addEventListener('pointerup',resume,{passive:true});
-    track.addEventListener('pointercancel',resume,{passive:true});
-    track.addEventListener('mouseleave',resume,{passive:true});
-    track.addEventListener('scroll',()=>{
-      if(paused) return;
-      const left=track.scrollLeft;
-      let best=0,dist=Infinity;
-      cards.forEach((c,i)=>{const d=Math.abs(c.offsetLeft-track.offsetLeft-left);if(d<dist){dist=d;best=i}});
-      if(best!==index){index=best;setActive()}
-    },{passive:true});
-    setActive(); start(); controllers.push(()=>{clearInterval(timer);clearTimeout(restart)});
-  }
-
-  setup(document.getElementById('studentJourneyScroller'),'.journey-step-card',3000);
-  setup(document.getElementById('personaTrack'),'.persona-card',3400);
-  setup(document.querySelector('.receive-grid'),':scope > article',3000);
-  setup(document.querySelector('.project-grid'),':scope > article',3200);
-  setup(document.querySelector('.proof-grid'),':scope > article',3200);
-  setup(document.querySelector('.how-grid'),':scope > article',3200);
-  setup(document.querySelector('.domain-category-preview'),':scope > .domain-category',3200);
-
-  const modal=document.getElementById('domainModal');
-  const list=document.getElementById('domainModalList');
-  let domainTimer=null, domainPaused=false, domainIndex=0;
-  function domainCards(){return list?[...list.querySelectorAll('.domain-explorer-card:not([hidden])')]:[]}
-  function stopDomain(){clearInterval(domainTimer);domainTimer=null}
-  function startDomain(){
-    stopDomain();
-    if(!modal?.classList.contains('open')) return;
-    domainTimer=setInterval(()=>{
-      if(domainPaused) return;
-      const cards=domainCards(); if(cards.length<2) return;
-      domainIndex=(domainIndex+1)%cards.length;
-      cards[domainIndex].scrollIntoView({behavior:'smooth',block:'nearest',inline:'start'});
-    },2700);
-  }
-  if(list){
-    const pause=()=>{domainPaused=true;stopDomain()};
-    const resume=()=>{domainPaused=false;setTimeout(startDomain,1000)};
+    const start=()=>{
+      stop();
+      if(destroyed || !active || reduce.matches || !modal.classList.contains('open')) return;
+      timer=setInterval(go,3000);
+    };
+    const pause=()=>{paused=true;stop();if(resumeTimer)clearTimeout(resumeTimer)};
+    const resume=()=>{paused=false;if(resumeTimer)clearTimeout(resumeTimer);resumeTimer=setTimeout(start,1200)};
     list.addEventListener('pointerdown',pause,{passive:true});
     list.addEventListener('pointerup',resume,{passive:true});
     list.addEventListener('pointercancel',resume,{passive:true});
-    list.addEventListener('scroll',()=>{
-      const cards=domainCards(), left=list.scrollLeft;
-      let best=0,dist=Infinity;
-      cards.forEach((c,i)=>{const d=Math.abs(c.offsetLeft-list.offsetLeft-left);if(d<dist){dist=d;best=i}});
-      domainIndex=best;
-    },{passive:true});
-    new MutationObserver(()=>{domainIndex=0;if(modal?.classList.contains('open')){list.scrollTo({left:0,behavior:'auto'});startDomain()}}).observe(list,{subtree:true,attributes:true,attributeFilter:['hidden']});
+    list.addEventListener('touchend',resume,{passive:true});
+    list.addEventListener('scroll',sync,{passive:true});
+
+    const modalObserver = new MutationObserver(()=>{
+      if(modal.classList.contains('open')){ index=0; list.scrollTo({left:0,behavior:'auto'}); setActive(); start(); }
+      else stop();
+    });
+    modalObserver.observe(modal,{attributes:true,attributeFilter:['class']});
+
+    const filterListener=()=>{ index=0; list.scrollTo({left:0,behavior:'auto'}); setActive(); if(modal.classList.contains('open')) start(); };
+    window.addEventListener('internsforge:domain-filtered',filterListener);
+
+    domainController={destroy(){
+      destroyed=true; stop(); if(resumeTimer)clearTimeout(resumeTimer); modalObserver.disconnect();
+      window.removeEventListener('internsforge:domain-filtered',filterListener);
+      list.removeEventListener('pointerdown',pause); list.removeEventListener('pointerup',resume);
+      list.removeEventListener('pointercancel',resume); list.removeEventListener('touchend',resume); list.removeEventListener('scroll',sync);
+    }};
   }
-  window.addEventListener('resize',()=>{if(!mobile.matches) controllers.forEach(fn=>fn())});
-  const originalOpen=window.openDomain;
-  const originalClose=window.closeDomain;
-  // Start/stop domain motion by observing the modal state instead of replacing app logic.
-  if(modal && 'MutationObserver' in window){
-    new MutationObserver(()=>{if(modal.classList.contains('open')){domainIndex=0;list?.scrollTo({left:0,behavior:'auto'});startDomain()}else stopDomain()}).observe(modal,{attributes:true,attributeFilter:['class']});
-  }
+
+  function refresh(){ if(media.matches && !reduce.matches) setupAll(); else if(active) teardownAll(); }
+  media.addEventListener?.('change', refresh);
+  reduce.addEventListener?.('change', refresh);
+  refresh();
 })();
 </script>
 

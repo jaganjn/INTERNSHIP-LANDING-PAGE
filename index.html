@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071426">
 <title>InternsForge — Online Internship Programme 2026</title>
-<meta name="description" content="Apply for InternsForge's 2026 online internship programme. Build practical projects, develop career skills and prepare for placements across 20+ domains.">
+<meta name="description" content="Apply for InternsForge's 2026 online internship programme. Build practical projects, develop career skills and prepare for placements across 35 career domains.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
@@ -517,6 +517,13 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
   .student-ticker-track{will-change:transform}
 }
 </style>
+
+<style id="student-experience-upgrade">
+.fact-row article{min-width:0}.fact-row b{font-variant-numeric:tabular-nums}.live-count-pop{animation:liveCountPop .55s ease}.application-progress-four{display:flex;align-items:center;gap:8px;margin:22px 0 26px}.progress-four-step{display:flex;align-items:center;gap:7px;min-width:0;opacity:.42;transition:.3s}.progress-four-step span{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:#f2f5fb;border:1px solid #dbe2ef;color:#718098;font-size:9px;font-weight:900;transition:.3s}.progress-four-step b{font-size:9px;color:#77859b;white-space:nowrap}.progress-four-step.active,.progress-four-step.completed{opacity:1}.progress-four-step.active span,.progress-four-step.completed span{color:#fff;border-color:transparent;background:linear-gradient(135deg,var(--blue),var(--violet));box-shadow:0 7px 18px rgba(69,87,224,.2)}.progress-four-step.active b,.progress-four-step.completed b{color:#455ed7}.application-progress-four>i{height:2px;flex:1;background:#e0e6f0;position:relative;overflow:hidden}.application-progress-four>i.done:before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--blue),var(--violet))}.domain-explorer-card.selected{border-color:rgba(116,157,255,.72)!important;box-shadow:0 0 0 2px rgba(82,115,234,.12),0 12px 28px rgba(0,0,0,.16)}.domain-selection-detail{margin-top:12px;padding:18px;border:1px solid rgba(91,125,233,.32);border-radius:18px;background:linear-gradient(145deg,rgba(23,47,88,.92),rgba(10,25,49,.96));display:grid;grid-template-columns:58px 1fr auto;gap:14px;align-items:center;animation:domainDetailIn .35s ease}.domain-selection-icon{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;background:rgba(93,130,255,.18);color:#9db4ff;font-size:22px}.domain-selection-detail>div:nth-child(2)>span{font-size:8px;font-weight:900;letter-spacing:1.2px;color:#7fa5ff}.domain-selection-detail h3{font-size:18px;margin:4px 0;color:#fff}.domain-selection-detail p{font-size:10px;color:#aab9d0;margin:0;line-height:1.5}.domain-selection-columns{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.domain-selection-columns div{padding:8px;border:1px solid rgba(112,149,255,.14);border-radius:10px;background:rgba(255,255,255,.035)}.domain-selection-columns small,.domain-selection-columns strong{display:block}.domain-selection-columns small{font-size:7px;letter-spacing:.8px;color:#7fa5ff}.domain-selection-columns strong{font-size:9px;color:#d8e2f2;margin-top:3px}.domain-selection-detail>button{min-height:44px;padding:0 14px;border:0;border-radius:11px;background:#fff;color:#17315a;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap;transition:.2s}.domain-selection-detail>button:hover{transform:translateY(-2px)}
+@keyframes liveCountPop{0%{transform:scale(.88);opacity:.55}60%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}@keyframes domainDetailIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media(max-width:600px){.fact-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fact-row article{flex:auto}.application-progress-four{gap:4px;margin:18px 0 24px}.progress-four-step{display:grid;justify-items:center;gap:4px}.progress-four-step span{width:31px;height:31px}.progress-four-step b{font-size:7px}.application-progress-four>i{min-width:12px}.domain-explorer-card.selected{border-color:rgba(116,157,255,.72)!important;box-shadow:0 0 0 2px rgba(82,115,234,.12),0 12px 28px rgba(0,0,0,.16)}.domain-selection-detail{grid-template-columns:42px 1fr;align-items:start;padding:14px}.domain-selection-icon{width:42px;height:42px}.domain-selection-detail>button{grid-column:1/-1;width:100%}.domain-selection-columns{grid-template-columns:1fr}.domain-selection-detail h3{font-size:16px}.student-ticker-label{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.live-count-pop,.domain-explorer-card.selected{border-color:rgba(116,157,255,.72)!important;box-shadow:0 0 0 2px rgba(82,115,234,.12),0 12px 28px rgba(0,0,0,.16)}.domain-selection-detail{animation:none!important}}
+</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -548,6 +555,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
     <div class="hero-proof"><span>✓ No resume needed initially</span><span>✓ Mobile-friendly form</span><span>✓ Application reference provided</span></div>
     <div class="fact-row" aria-label="Programme facts">
       <article><b>35</b><small>Career domains</small></article>
+      <article><b id="liveApplicationCount">—</b><small>Students applied</small></article>
       <article><b>1st–Final</b><small>All years eligible</small></article>
       <article><b>2–3 Months</b><small>Programme duration</small></article>
     </div>
@@ -647,10 +655,11 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
       </div>
     </div>
 
-    <div class="steps wizard-steps" aria-label="Application progress">
-      <button type="button" class="step-dot active" data-step-target="1" aria-current="step">1<small>Start</small></button><i></i>
-      <button type="button" class="step-dot" data-step-target="2">2<small>Profile</small></button><i></i>
-      <button type="button" class="step-dot" data-step-target="3">3<small>Submit</small></button>
+    <div class="application-progress-four" id="applicationProgressFour" aria-label="Application progress">
+      <div class="progress-four-step active"><span>01</span><b>Personal</b></div><i></i>
+      <div class="progress-four-step"><span>02</span><b>Academic</b></div><i></i>
+      <div class="progress-four-step"><span>03</span><b>Domain</b></div><i></i>
+      <div class="progress-four-step"><span>04</span><b>Submit</b></div>
     </div>
 
     <form id="internshipForm" novalidate>
@@ -744,18 +753,19 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
     </div>
     <div class="journey-scroller" id="studentJourneyScroller">
       <article class="journey-step-card active"><div class="journey-step-number">01</div><h3>Apply</h3><p>Choose your domain and submit your basic profile.</p></article><div class="journey-arrow">→</div>
-      <article class="journey-step-card"><div class="journey-step-number">02</div><h3>Get Started</h3><p>Receive the next programme details after review.</p></article><div class="journey-arrow">→</div>
+      <article class="journey-step-card"><div class="journey-step-number">02</div><h3>Get Selected</h3><p>Receive the next programme details after application review.</p></article><div class="journey-arrow">→</div>
       <article class="journey-step-card"><div class="journey-step-number">03</div><h3>Learn</h3><p>Follow guided content and strengthen practical skills.</p></article><div class="journey-arrow">→</div>
-      <article class="journey-step-card"><div class="journey-step-number">04</div><h3>Build</h3><p>Work through practical projects connected to your track.</p></article><div class="journey-arrow">→</div>
-      <article class="journey-step-card"><div class="journey-step-number">05</div><h3>Get Career Ready</h3><p>Use your project experience to prepare for placements.</p></article>
+      <article class="journey-step-card"><div class="journey-step-number">04</div><h3>Build Project</h3><p>Create a practical project connected to your selected track.</p></article><div class="journey-arrow">→</div>
+      <article class="journey-step-card"><div class="journey-step-number">05</div><h3>Certificate</h3><p>Complete the applicable requirements for your completion credential.</p></article><div class="journey-arrow">→</div>
+      <article class="journey-step-card"><div class="journey-step-number">06</div><h3>Career Ready</h3><p>Use your project experience to prepare for placements and interviews.</p></article>
     </div>
   </div>
 </section>
-<div class="student-ticker" aria-label="Student journey highlights">
-  <div class="student-ticker-label"><i></i> STUDENT MOMENTS</div>
+<div class="student-ticker" aria-label="Typical student milestones">
+  <div class="student-ticker-label"><i></i> STUDENT MILESTONES</div>
   <div class="student-ticker-viewport"><div class="student-ticker-track">
-    <span class="ticker-item">✓ <b>Domain selected</b> — career track chosen</span><span class="ticker-item">✓ <b>Profile started</b> — guided application</span><span class="ticker-item">✓ <b>Project focus</b> — practical learning</span><span class="ticker-item">✓ <b>Skill building</b> — learn by doing</span><span class="ticker-item">✓ <b>Career preparation</b> — placement ready</span>
-    <span class="ticker-item">✓ <b>Domain selected</b> — career track chosen</span><span class="ticker-item">✓ <b>Profile started</b> — guided application</span><span class="ticker-item">✓ <b>Project focus</b> — practical learning</span><span class="ticker-item">✓ <b>Skill building</b> — learn by doing</span><span class="ticker-item">✓ <b>Career preparation</b> — placement ready</span>
+    <span class="ticker-item">✓ <b>Application Received</b> — your interest is recorded</span><span class="ticker-item">✓ <b>Internship Started</b> — onboarding and learning begins</span><span class="ticker-item">✓ <b>Project Completed</b> — practical work becomes portfolio evidence</span><span class="ticker-item">✓ <b>Certificate Issued</b> — after applicable completion requirements</span><span class="ticker-item">✓ <b>Career Ready</b> — prepare for placements and interviews</span>
+    <span class="ticker-item">✓ <b>Application Received</b> — your interest is recorded</span><span class="ticker-item">✓ <b>Internship Started</b> — onboarding and learning begins</span><span class="ticker-item">✓ <b>Project Completed</b> — practical work becomes portfolio evidence</span><span class="ticker-item">✓ <b>Certificate Issued</b> — after applicable completion requirements</span><span class="ticker-item">✓ <b>Career Ready</b> — prepare for placements and interviews</span>
   </div></div>
 </div>
 
@@ -793,10 +803,10 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 <section class="student-persona-section" aria-label="Who the programme is for">
   <div class="section-heading"><span>BUILT FOR DIFFERENT STUDENTS</span><h2>Find the path that feels like you.</h2><p>Whether you are starting out or already building skills, the same guided application leads you to the right domain.</p></div>
   <div class="persona-track" id="personaTrack">
-    <article class="persona-card active"><div class="persona-art"><div class="persona-avatar"></div><div class="persona-laptop"></div></div><h3>First-year explorer</h3><p>Start early, discover a domain and build a foundation through practical work.</p><div class="persona-cta">START WITH THE BASICS →</div></article>
-    <article class="persona-card"><div class="persona-art"><div class="persona-avatar"></div><div class="persona-laptop"></div></div><h3>Skill builder</h3><p>Turn classroom knowledge into projects you can explain with confidence.</p><div class="persona-cta">BUILD YOUR PROFILE →</div></article>
-    <article class="persona-card"><div class="persona-art"><div class="persona-avatar"></div><div class="persona-laptop"></div></div><h3>Final-year candidate</h3><p>Use focused projects and career preparation to strengthen placement readiness.</p><div class="persona-cta">PREPARE FOR PLACEMENTS →</div></article>
-    <article class="persona-card"><div class="persona-art"><div class="persona-avatar"></div><div class="persona-laptop"></div></div><h3>Career switcher</h3><p>Choose a new direction and use a structured project path to get moving.</p><div class="persona-cta">EXPLORE A NEW DOMAIN →</div></article>
+    <article class="persona-card active"><div class="persona-art"><div class="persona-avatar"></div><div class="persona-laptop"></div></div><h3>College Student</h3><p>Start early, discover a domain and build a foundation through practical work.</p><div class="persona-cta">START WITH THE BASICS →</div></article>
+    <article class="persona-card"><div class="persona-art"><div class="persona-avatar"></div><div class="persona-laptop"></div></div><h3>Beginner Developer</h3><p>Turn classroom knowledge into projects you can explain with confidence.</p><div class="persona-cta">BUILD YOUR PROFILE →</div></article>
+    <article class="persona-card"><div class="persona-art"><div class="persona-avatar"></div><div class="persona-laptop"></div></div><h3>Future Professional</h3><p>Use focused projects and career preparation to strengthen placement readiness.</p><div class="persona-cta">PREPARE FOR PLACEMENTS →</div></article>
+    <article class="persona-card"><div class="persona-art"><div class="persona-avatar"></div><div class="persona-laptop"></div></div><h3>Career Switcher</h3><p>Choose a new direction and use a structured project path to get moving.</p><div class="persona-cta">EXPLORE A NEW DOMAIN →</div></article>
   </div>
 </section>
 
@@ -858,6 +868,12 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
     <div class="domain-search"><span>⌕</span><input id="domainSearch" type="search" placeholder="Search domains..." autocomplete="off"><small id="domainCount">35 programs</small></div>
     <div class="domain-category-tabs"><button type="button" data-domain-category="0">💻 IT</button><button type="button" data-domain-category="1">📡 Electronics & Communication</button><button type="button" data-domain-category="2">⚙️ Mechanical</button><button type="button" data-domain-category="3">🧬 Bio Technology</button><button type="button" data-domain-category="4">📊 Management</button><button type="button" data-domain-category="5">🏥 Health Information Management</button></div>
     <div class="domain-modal-list" id="domainModalList"><button class="domain-explorer-card" type="button" data-domain-name="Full Stack Web Development" data-category="0"><span class="domain-explorer-number">01</span><span><strong>Full Stack Web Development</strong><small>Build modern end-to-end web applications.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Artificial Intelligence" data-category="0"><span class="domain-explorer-number">02</span><span><strong>Artificial Intelligence</strong><small>Explore intelligent systems and practical AI applications.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Machine Learning" data-category="0"><span class="domain-explorer-number">03</span><span><strong>Machine Learning</strong><small>Learn how data can power predictive models.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Data Science" data-category="0"><span class="domain-explorer-number">04</span><span><strong>Data Science</strong><small>Turn data into insights using practical techniques.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Programming in Python" data-category="0"><span class="domain-explorer-number">05</span><span><strong>Programming in Python</strong><small>Build a strong foundation in Python programming.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Programming in Java" data-category="0"><span class="domain-explorer-number">06</span><span><strong>Programming in Java</strong><small>Develop core Java programming and application skills.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Cloud Computing" data-category="0"><span class="domain-explorer-number">07</span><span><strong>Cloud Computing</strong><small>Understand cloud platforms, services and deployment.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Cyber Security" data-category="0"><span class="domain-explorer-number">08</span><span><strong>Cyber Security</strong><small>Learn the foundations of digital security.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Advance Cyber Security" data-category="0"><span class="domain-explorer-number">09</span><span><strong>Advance Cyber Security</strong><small>Explore advanced concepts in security and defence.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="UI/UX Design" data-category="0"><span class="domain-explorer-number">10</span><span><strong>UI/UX Design</strong><small>Design useful, intuitive and engaging digital experiences.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Data Structure & Algorithm" data-category="0"><span class="domain-explorer-number">11</span><span><strong>Data Structure & Algorithm</strong><small>Strengthen problem-solving and algorithmic thinking.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Web Development" data-category="0"><span class="domain-explorer-number">12</span><span><strong>Web Development</strong><small>Create responsive and interactive websites.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Game Development" data-category="0"><span class="domain-explorer-number">13</span><span><strong>Game Development</strong><small>Explore the fundamentals of building games.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Graphic Design" data-category="0"><span class="domain-explorer-number">14</span><span><strong>Graphic Design</strong><small>Develop visual communication and design skills.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Embedded Systems" data-category="1"><span class="domain-explorer-number">01</span><span><strong>Embedded Systems</strong><small>Explore software and hardware working together.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Internet of Things (IoT)" data-category="1"><span class="domain-explorer-number">02</span><span><strong>Internet of Things (IoT)</strong><small>Connect devices, sensors and real-world systems.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="VLSI" data-category="1"><span class="domain-explorer-number">03</span><span><strong>VLSI</strong><small>Discover digital chip and integrated-circuit design.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Robotics Engineering" data-category="1"><span class="domain-explorer-number">04</span><span><strong>Robotics Engineering</strong><small>Explore robotics, automation and intelligent machines.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Hybrid Electric Vehicles" data-category="1"><span class="domain-explorer-number">05</span><span><strong>Hybrid Electric Vehicles</strong><small>Understand hybrid vehicle technologies and systems.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="IC Engine" data-category="2"><span class="domain-explorer-number">01</span><span><strong>IC Engine</strong><small>Explore internal combustion engine fundamentals.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="AutoCAD" data-category="2"><span class="domain-explorer-number">02</span><span><strong>AutoCAD</strong><small>Learn computer-aided design and technical drafting.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Construction Planning" data-category="2"><span class="domain-explorer-number">03</span><span><strong>Construction Planning</strong><small>Understand planning and coordination in construction.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Drone Mechanics" data-category="2"><span class="domain-explorer-number">04</span><span><strong>Drone Mechanics</strong><small>Explore drone components, mechanics and operation.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Battery Electric Vehicles (BEVs)" data-category="2"><span class="domain-explorer-number">05</span><span><strong>Battery Electric Vehicles (BEVs)</strong><small>Learn fundamentals of battery-powered electric mobility.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Nano Technology" data-category="3"><span class="domain-explorer-number">01</span><span><strong>Nano Technology</strong><small>Explore materials and technologies at the nanoscale.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Genetic Engineering" data-category="3"><span class="domain-explorer-number">02</span><span><strong>Genetic Engineering</strong><small>Understand the fundamentals of genetic modification.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Bio-Informatics" data-category="3"><span class="domain-explorer-number">03</span><span><strong>Bio-Informatics</strong><small>Use computational approaches to biological data.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Digital Marketing" data-category="4"><span class="domain-explorer-number">01</span><span><strong>Digital Marketing</strong><small>Explore digital channels, campaigns and growth.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Finance" data-category="4"><span class="domain-explorer-number">02</span><span><strong>Finance</strong><small>Build practical understanding of financial concepts.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Operations Management" data-category="4"><span class="domain-explorer-number">03</span><span><strong>Operations Management</strong><small>Learn how processes and operations are planned.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Human Resources" data-category="4"><span class="domain-explorer-number">04</span><span><strong>Human Resources</strong><small>Explore people, talent and workplace practices.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Business Analytics" data-category="4"><span class="domain-explorer-number">05</span><span><strong>Business Analytics</strong><small>Use data to support business decisions.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Stock Market" data-category="4"><span class="domain-explorer-number">06</span><span><strong>Stock Market</strong><small>Learn the fundamentals of markets and investing.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Psychology" data-category="5"><span class="domain-explorer-number">01</span><span><strong>Psychology</strong><small>Explore human behaviour, cognition and wellbeing concepts.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Medical Coding" data-category="5"><span class="domain-explorer-number">02</span><span><strong>Medical Coding</strong><small>Learn the fundamentals of healthcare coding workflows.</small></span><b>Choose →</b></button></div>
+    <div class="domain-selection-detail" id="domainSelectionDetail" hidden>
+      <div class="domain-selection-icon" id="selectedDomainIcon">⌁</div>
+      <div><span>SELECTED PROGRAM</span><h3 id="selectedDomainTitle">Choose a domain</h3><p id="selectedDomainDescription">Tap a program to see what you can learn, build and explore next.</p>
+      <div class="domain-selection-columns"><div><small>WHAT YOU'LL LEARN</small><strong id="selectedDomainLearn">Practical foundations</strong></div><div><small>PROJECTS</small><strong id="selectedDomainProjects">Portfolio-ready work</strong></div><div><small>CAREER PATHS</small><strong id="selectedDomainCareer">Relevant entry-level roles</strong></div></div></div>
+      <button type="button" id="applySelectedDomain">Apply for this domain →</button>
+    </div>
     <div class="domain-empty" id="domainEmpty" hidden>No matching program found. Try another search.</div>
   </section>
 </div>
@@ -1789,6 +1805,89 @@ console.info('SkillPath guided form build: Final V11');
 
 </script>
 
+<script id="student-experience-upgrade-js">
+(function(){
+  'use strict';
+  const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Live application counter: uses the real Firebase submittedApplications node when readable.
+  const counter=document.getElementById('liveApplicationCount');
+  try{
+    if(counter && typeof db !== 'undefined' && db?.ref){
+      db.ref('submittedApplications').on('value',snap=>{
+        const value=snap.val();
+        const count=value && typeof value==='object' ? Object.keys(value).length : 0;
+        counter.textContent=count.toLocaleString('en-IN');
+        counter.classList.remove('live-count-pop');
+        void counter.offsetWidth;
+        if(!reduce) counter.classList.add('live-count-pop');
+      },()=>{counter.textContent='—';});
+    }
+  }catch(e){if(counter)counter.textContent='—';}
+
+  // Four-stage visual progress mirrors the existing three form panels without changing submission logic.
+  const form=document.getElementById('internshipForm');
+  const progress=document.getElementById('applicationProgressFour');
+  const stages=progress?[...progress.querySelectorAll('.progress-four-step')]:[];
+  const lines=progress?[...progress.querySelectorAll(':scope > i')]:[];
+  function updateFourProgress(){
+    if(!form||!stages.length)return;
+    const name=form.elements.namedItem('name')?.value.trim();
+    const phone=form.elements.namedItem('phone')?.value.trim();
+    const academic=form.elements.namedItem('email')?.value.trim() && form.elements.namedItem('college')?.value.trim() && form.elements.namedItem('department')?.value.trim() && form.elements.namedItem('year')?.value;
+    const domain=form.elements.namedItem('domain')?.value;
+    const current=document.getElementById('apply')?.dataset.activeStep||'1';
+    const states=[!!(name&&phone),!!academic,!!domain,current==='3'];
+    const active=current==='1'?0:current==='2'?(domain?2:1):3;
+    stages.forEach((el,i)=>{el.classList.toggle('active',i===active);el.classList.toggle('completed',states[i]&&i<active);});
+    lines.forEach((line,i)=>line.classList.toggle('done',states[i]));
+  }
+  if(form){['input','change'].forEach(type=>form.addEventListener(type,updateFourProgress));window.setInterval(updateFourProgress,500);updateFourProgress();}
+
+  // Interactive domain details: first tap selects a domain and reveals learning/project/career context; CTA opens the form.
+  const list=document.getElementById('domainModalList');
+  const detail=document.getElementById('domainSelectionDetail');
+  const title=document.getElementById('selectedDomainTitle');
+  const desc=document.getElementById('selectedDomainDescription');
+  const learn=document.getElementById('selectedDomainLearn');
+  const projects=document.getElementById('selectedDomainProjects');
+  const career=document.getElementById('selectedDomainCareer');
+  const apply=document.getElementById('applySelectedDomain');
+  let selectedDomain='';
+  const categoryInfo={
+    '0':{learn:'Programming, tools, workflows and portfolio building',projects:'Web apps, AI/data work, design or software projects',career:'Developer, AI, data, cloud, security or design roles'},
+    '1':{learn:'Electronics, devices, embedded systems and automation',projects:'IoT prototypes, embedded builds, robotics or circuit work',career:'Embedded, IoT, VLSI, robotics or electronics roles'},
+    '2':{learn:'Engineering fundamentals, design and practical workflows',projects:'CAD, mobility, construction, drone or mechanical projects',career:'Core engineering, design, mobility or construction roles'},
+    '3':{learn:'Biological concepts, computational methods and research workflows',projects:'Bio-data, genetics or nanoscale research-oriented projects',career:'Biotech, bioinformatics or life-science roles'},
+    '4':{learn:'Business concepts, analysis, operations and decision-making',projects:'Dashboards, campaigns, financial or operations analysis',career:'Marketing, finance, HR, analytics or operations roles'},
+    '5':{learn:'Healthcare information and human behaviour fundamentals',projects:'Coding, documentation, data or applied health-information tasks',career:'Medical coding, health information or psychology-related pathways'}
+  };
+  function selectDomain(card){
+    if(!card||!detail)return;
+    selectedDomain=card.dataset.domainName||'';
+    const info=categoryInfo[card.dataset.category]||categoryInfo['0'];
+    title.textContent=selectedDomain;
+    desc.textContent=card.querySelector('small')?.textContent||'Explore this programme and see where it can take you.';
+    learn.textContent=info.learn;projects.textContent=info.projects;career.textContent=info.career;
+    detail.hidden=false;
+    list?.querySelectorAll('.domain-explorer-card').forEach(c=>c.classList.toggle('selected',c===card));
+  }
+  list?.addEventListener('click',e=>{
+    const card=e.target.closest('.domain-explorer-card');
+    if(!card)return;
+    e.preventDefault();
+    selectDomain(card);
+  });
+  apply?.addEventListener('click',()=>{
+    if(!selectedDomain)return;
+    document.querySelector('[data-close-domain]')?.click();
+    const app=document.getElementById('apply');
+    document.body.classList.add('application-modal-open');
+    const field=document.getElementById('domain');
+    if(field){field.value=selectedDomain;field.dispatchEvent(new Event('change',{bubbles:true}));}
+    setTimeout(()=>document.getElementById('name')?.focus(),120);
+  });
+})();
+</script>
 <script id="unified-mobile-motion">
 (function(){
   'use strict';

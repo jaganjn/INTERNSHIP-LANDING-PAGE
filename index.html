@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071426">
 <title>InternsForge — Online Internship Programme 2026</title>
-<meta name="description" content="Apply for InternsForge's 2026 online internship programme. Build practical projects, develop career skills and prepare for placements across 35 domains.">
+<meta name="description" content="Apply for InternsForge's 2026 online internship programme. Build practical projects, develop career skills and prepare for placements across 20+ domains.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
@@ -325,25 +325,35 @@ footer nav .admin-login-link:hover{
   }
 }
 
+
+/* =========================================================
+   CONVERSION REDESIGN — STUDENT FRONTEND ONLY
+   ========================================================= */
+.primary-btn{border:0;cursor:pointer}
+.application-zone{position:relative;display:none}
+.application-close{display:none;position:absolute;right:16px;top:12px;z-index:30;width:38px;height:38px;border:1px solid #dbe2ef;border-radius:50%;background:#fff;color:#33445e;font-size:25px;line-height:1;cursor:pointer;box-shadow:0 8px 22px rgba(20,40,75,.12)}
+.application-modal-open{overflow:hidden!important}
+body.application-modal-open .application-zone{display:flex;position:fixed;inset:0;z-index:1200;max-width:none;width:100%;height:100dvh;margin:0;padding:34px 22px;display:flex;align-items:center;justify-content:center;overflow-y:auto;background:rgba(9,20,43,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+body.application-modal-open .application-zone:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 20%,rgba(79,102,239,.20),transparent 34%),radial-gradient(circle at 80% 80%,rgba(184,61,202,.18),transparent 36%);pointer-events:none}
+body.application-modal-open .application-intro{display:none}
+body.application-modal-open .application-card{display:block;max-width:760px;width:100%;max-height:calc(100dvh - 68px);overflow:auto;z-index:2;margin:0;padding:30px}
+body.application-modal-open .application-close{display:grid;place-items:center}
+body.application-modal-open .secure{display:none}
+body.application-modal-open #message{display:block;position:relative;z-index:3;max-width:760px}
+.open-application{cursor:pointer}
+.floating-cta{border:0;cursor:pointer}
+.conversion-domains{background:linear-gradient(145deg,#0b1731,#111f42 55%,#241d4e);color:#fff;border-radius:34px;margin:60px max(12px,calc((100% - 1240px)/2));padding-left:clamp(22px,5vw,70px);padding-right:clamp(22px,5vw,70px)}
+.domain-explorer-trigger{width:100%;display:flex;align-items:center;gap:18px;text-align:left;padding:20px 22px;border:1px solid rgba(255,255,255,.15);border-radius:20px;background:rgba(255,255,255,.07);color:#fff;cursor:pointer;transition:.25s;box-shadow:0 18px 45px rgba(0,0,0,.16)}
+.domain-explorer-trigger:hover{transform:translateY(-2px);background:rgba(255,255,255,.10);border-color:rgba(125,145,255,.45)}
+.explorer-icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,#5d72ee,#9a54d9);font-size:26px;flex:0 0 auto}.domain-explorer-trigger span:not(.explorer-icon){display:grid;gap:3px;flex:1}.domain-explorer-trigger strong{font:800 16px Manrope}.domain-explorer-trigger small{color:#a9b7d2;font-size:11px}.domain-explorer-trigger>b{font-size:11px;color:#9db0ff;white-space:nowrap}.domain-category-preview{display:grid;gap:20px;margin-top:22px}.domain-category{padding:22px;border:1px solid rgba(255,255,255,.10);border-radius:22px;background:rgba(255,255,255,.045)}.domain-category-head{display:flex;align-items:center;gap:12px;margin-bottom:15px}.domain-category-head>span{font-size:25px}.domain-category-head h3{font-size:18px;color:#fff}.domain-category-head small{color:#91a0bb;font-size:10px}.domain-card-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.domain-card{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:13px;border:1px solid rgba(255,255,255,.09);border-radius:14px;background:rgba(6,14,30,.35);color:#fff;text-align:left;cursor:pointer;transition:.2s}.domain-card:hover{border-color:rgba(117,139,255,.5);background:rgba(76,95,193,.12);transform:translateY(-1px)}.domain-card-icon{font-size:18px}.domain-card span:nth-child(2){display:grid;gap:3px;min-width:0}.domain-card strong{font-size:11px}.domain-card small{font-size:9px;line-height:1.4;color:#92a2bf}.domain-card>b{color:#92a7ff}.domain-modal{position:fixed;inset:0;z-index:1500;display:none}.domain-modal.open{display:block}.domain-modal-backdrop{position:absolute;inset:0;background:rgba(5,12,26,.78);backdrop-filter:blur(10px)}.domain-modal-panel{position:relative;width:min(1080px,calc(100% - 28px));height:min(88dvh,820px);margin:6dvh auto 0;border:1px solid rgba(255,255,255,.15);border-radius:28px;background:linear-gradient(145deg,#101d38,#0c1730);box-shadow:0 35px 100px rgba(0,0,0,.42);color:#fff;display:flex;flex-direction:column;overflow:hidden}.domain-modal-head{display:flex;justify-content:space-between;gap:20px;padding:26px 28px 18px;border-bottom:1px solid rgba(255,255,255,.10)}.domain-modal-head span{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#8ea2ff}.domain-modal-head h2{font-size:28px;margin:5px 0}.domain-modal-head p{margin:0;color:#9baac4;font-size:12px}.modal-x{width:40px;height:40px;border:1px solid rgba(255,255,255,.16);border-radius:50%;background:rgba(255,255,255,.06);color:#fff;font-size:25px;cursor:pointer;flex:0 0 auto}.domain-search{margin:18px 28px 10px;display:flex;align-items:center;gap:10px;padding:0 14px;height:50px;border:1px solid rgba(255,255,255,.13);border-radius:14px;background:rgba(255,255,255,.06)}.domain-search>span{font-size:22px;color:#9fb0ff}.domain-search input{flex:1;border:0;outline:0;background:transparent;color:#fff;font-size:13px}.domain-search input::placeholder{color:#7f8ea9}.domain-search small{color:#8998b4;font-size:10px}.domain-category-tabs{display:flex;gap:8px;overflow:auto;padding:0 28px 12px}.domain-category-tabs button{white-space:nowrap;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:8px 11px;background:rgba(255,255,255,.05);color:#b9c6df;font-size:10px;font-weight:750;cursor:pointer}.domain-category-tabs button.active{background:#596fe9;color:#fff;border-color:#7083f1}.domain-modal-list{overflow:auto;padding:8px 28px 24px;display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.domain-explorer-card{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:11px;text-align:left;border:1px solid rgba(255,255,255,.09);border-radius:15px;padding:12px;background:rgba(255,255,255,.035);color:#fff;cursor:pointer}.domain-explorer-card:hover{background:rgba(84,106,223,.13);border-color:rgba(125,145,255,.45)}.domain-explorer-number{font-size:10px;font-weight:800;color:#7388f2}.domain-explorer-card span:nth-child(2){display:grid;gap:3px;min-width:0}.domain-explorer-card strong{font-size:11px}.domain-explorer-card small{font-size:9px;line-height:1.35;color:#8f9fba}.domain-explorer-card>b{font-size:9px;color:#9db0ff;white-space:nowrap}.domain-empty{text-align:center;padding:35px;color:#9aa9c1;font-size:12px}
+@media(max-width:820px){.conversion-domains{margin:35px 10px;border-radius:25px}.domain-card-grid{grid-template-columns:1fr}.domain-modal-panel{width:calc(100% - 14px);height:94dvh;margin:3dvh auto 0;border-radius:22px}.domain-modal-head{padding:20px}.domain-search{margin:14px 20px 8px}.domain-category-tabs{padding-left:20px;padding-right:20px}.domain-modal-list{grid-template-columns:1fr;padding-left:20px;padding-right:20px}.domain-explorer-trigger{padding:16px}.domain-explorer-trigger>b{display:none}}
+@media(max-width:600px){body.application-modal-open .application-zone{padding:8px;align-items:flex-start}.application-modal-open .application-card{max-height:calc(100dvh - 16px)!important;border-radius:22px!important;padding:12px!important;margin-top:0!important}.application-close{right:8px;top:8px}.application-modal-open .wizard-head{padding-right:42px}.application-modal-open .wizard-hero{margin-top:10px}.domain-modal-head h2{font-size:22px}.domain-modal-head p{font-size:10px}.domain-explorer-card{grid-template-columns:34px 1fr auto}.domain-explorer-card strong{font-size:10.5px}}
 </style>
 <style id="critical-step-visibility">
   /* Critical fallback: only the active application step can be visible. */
   #internshipForm .form-step{display:none!important}
   #internshipForm .form-step.active:not([hidden]){display:grid!important}
   #internshipForm .form-step[hidden]{display:none!important;visibility:hidden!important}
-</style>
-
-<style id="conversion-redesign-overrides">
-/* Conversion-focused frontend redesign: backend/Firebase untouched. */
-.application-zone.is-modal{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;max-width:none;margin:0;padding:24px;background:rgba(8,18,39,.62);backdrop-filter:blur(10px);overflow:auto}
-.application-zone.is-modal .application-intro{display:none!important}
-.application-zone.is-modal .application-card{width:min(760px,100%);max-height:calc(100vh - 48px);overflow:auto;margin:0;box-shadow:0 30px 90px rgba(5,15,35,.35)}
-.application-modal-close{position:absolute;right:16px;top:16px;width:38px;height:38px;border:1px solid #dbe2ef;border-radius:50%;background:#fff;color:#263653;font-size:24px;line-height:1;cursor:pointer;z-index:8}
-body.application-modal-open{overflow:hidden}
-.domain-explorer-card{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:28px 30px;border:1px solid rgba(255,255,255,.15);border-radius:24px;background:linear-gradient(135deg,rgba(255,255,255,.10),rgba(255,255,255,.045));box-shadow:0 20px 55px rgba(0,0,0,.18)}
-.explorer-kicker{font-size:10px;letter-spacing:1.5px;font-weight:800;color:#9eafff}.domain-explorer-card h3{margin:7px 0 5px;font-size:24px;color:#fff}.domain-explorer-card p{margin:0;color:#b8c3d8;font-size:13px;max-width:700px}.domain-explorer-btn{flex:none;min-height:52px;padding:0 20px;border:0;border-radius:13px;color:#fff;background:linear-gradient(100deg,var(--blue),var(--violet));font-weight:800;cursor:pointer;box-shadow:0 12px 30px rgba(70,80,220,.28)}
-.domain-modal{position:fixed;inset:0;z-index:1300;display:none}.domain-modal.open{display:block}.domain-modal-backdrop{position:absolute;inset:0;background:rgba(5,12,28,.72);backdrop-filter:blur(9px)}.domain-modal-panel{position:relative;width:min(1100px,calc(100% - 28px));height:min(850px,calc(100vh - 36px));margin:18px auto;background:#f8faff;border:1px solid #dce4ef;border-radius:26px;box-shadow:0 35px 100px rgba(0,0,0,.3);overflow:hidden;display:flex;flex-direction:column}.domain-modal-close{position:absolute;right:18px;top:18px;width:40px;height:40px;border:1px solid #dbe2ef;border-radius:50%;background:#fff;color:#263653;font-size:25px;cursor:pointer;z-index:2}.domain-modal-head{display:flex;justify-content:space-between;gap:20px;padding:30px 72px 20px 30px;background:#fff;border-bottom:1px solid #e6ebf3}.domain-modal-head>div:first-child>span{font-size:10px;font-weight:800;letter-spacing:1.5px;color:#5368e9}.domain-modal-head h2{margin:5px 0;font-size:29px;color:#16243b}.domain-modal-head p{margin:0;color:#748197;font-size:12px}.domain-count{text-align:center;min-width:70px;font:800 27px Manrope;color:#4f62df}.domain-count small{font:700 9px Inter;color:#8792a5;letter-spacing:1px}.domain-search-wrap{margin:18px 24px 10px;display:flex;align-items:center;border:1px solid #dbe2ed;border-radius:13px;background:#fff;height:50px}.domain-search-wrap span{padding-left:15px;color:#71809a;font-size:21px}.domain-search-wrap input{flex:1;border:0;outline:0;background:transparent;padding:0 14px;font-size:13px;color:#15243c}.domain-category-filter{display:flex;gap:8px;overflow:auto;padding:4px 24px 13px;scrollbar-width:none}.domain-category-filter::-webkit-scrollbar{display:none}.domain-category-filter button{white-space:nowrap;border:1px solid #dbe2ed;background:#fff;border-radius:999px;padding:8px 12px;font-size:10px;font-weight:800;color:#5e6b82;cursor:pointer}.domain-category-filter button.active{color:#fff;border-color:#596be8;background:linear-gradient(100deg,var(--blue),var(--violet))}.domain-cards{overflow:auto;padding:8px 24px 28px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.domain-program-card{border:1px solid #dde4ef;background:#fff;border-radius:16px;padding:17px;display:flex;flex-direction:column;min-height:165px;box-shadow:0 7px 20px rgba(31,49,83,.05);transition:.2s}.domain-program-card:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(31,49,83,.09);border-color:#bdc9ec}.domain-program-card .domain-icon{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:#eef2ff;color:#5368e9;font-size:17px}.domain-program-card h3{margin:11px 0 5px;font-size:15px;color:#20304a}.domain-program-card p{margin:0;color:#758197;font-size:10.5px;line-height:1.55}.domain-program-card .program-actions{margin-top:auto;padding-top:13px;display:flex;align-items:center;justify-content:space-between;gap:8px}.domain-program-card small{font-size:8px;color:#8b96a8}.domain-apply-btn{border:0;background:transparent;color:#4259d6;font-size:10px;font-weight:850;cursor:pointer;padding:5px 0}.domain-empty{grid-column:1/-1;text-align:center;padding:45px;color:#77849a;font-size:13px}
-@media(max-width:760px){.domain-explorer-card{display:grid;padding:22px}.domain-explorer-btn{width:100%}.domain-modal-panel{width:100%;height:100%;margin:0;border-radius:0}.domain-modal-head{padding:24px 64px 18px 18px}.domain-modal-head h2{font-size:23px}.domain-count{display:none}.domain-search-wrap{margin:14px 16px 8px}.domain-category-filter{padding-left:16px;padding-right:16px}.domain-cards{grid-template-columns:1fr;padding:6px 16px 24px}.domain-program-card{min-height:145px}.application-zone.is-modal{padding:0}.application-zone.is-modal .application-card{width:100%;height:100%;max-height:none;border-radius:0;padding:20px 15px}.application-modal-close{right:12px;top:12px}.application-zone.is-modal .application-title{padding-right:38px}}
 </style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
@@ -370,12 +380,12 @@ body.application-modal-open{overflow:hidden}
     <h1>Build real projects. <span>Become career ready.</span></h1>
     <p class="hero-lead">A guided online programme for students from 1st year to final year across any degree or department. Choose a career track, complete practical work and strengthen your profile before placements.</p>
     <div class="hero-actions">
-      <a class="primary-btn" href="#apply">Apply in 60 Seconds <span>→</span></a>
+      <button class="primary-btn open-application" type="button">Apply in 60 Seconds <span>→</span></button>
       <a class="secondary-btn" href="#projects">See Sample Projects</a>
     </div>
     <div class="hero-proof"><span>✓ No resume needed initially</span><span>✓ Mobile-friendly form</span><span>✓ Application reference provided</span></div>
     <div class="fact-row" aria-label="Programme facts">
-      <article><b>20+</b><small>Career domains</small></article>
+      <article><b>35</b><small>Career domains</small></article>
       <article><b>1st–Final</b><small>All years eligible</small></article>
       <article><b>2–3 Months</b><small>Programme duration</small></article>
     </div>
@@ -434,6 +444,7 @@ body.application-modal-open{overflow:hidden}
   </div>
 
   <aside class="application-card wizard-shell" id="apply" data-active-step="1">
+    <button class="application-close" id="closeApplication" type="button" aria-label="Close application">×</button>
     <div class="wizard-backdrop" aria-hidden="true">
       <span class="blob blob-one"></span>
       <span class="blob blob-two"></span>
@@ -588,11 +599,9 @@ body.application-modal-open{overflow:hidden}
 </section>
 
 <section class="section domain-section conversion-domains" id="domains">
-  <div class="section-heading inverted"><span>35 BEGINNER-FRIENDLY PROGRAMS</span><h2>Choose a domain that fits your interest.</h2><p><strong>No prerequisite knowledge required.</strong> Explore the complete program catalogue without crowding the landing page.</p></div>
-  <div class="domain-explorer-card">
-    <div><span class="explorer-kicker">PROGRAM CATALOGUE</span><h3>Explore internship domains</h3><p>Browse by discipline, read a short description, and apply directly for the program that interests you.</p></div>
-    <button type="button" class="domain-explorer-btn" id="openDomainExplorer">Explore All Domains <span>→</span></button>
-  </div>
+  <div class="section-heading inverted"><span>35 INTERNSHIP PROGRAMS</span><h2>Choose the domain that matches your interest.</h2><p>No prerequisite knowledge required. Explore a program, understand what it covers, then apply without leaving the landing page.</p></div>
+  <button class="domain-explorer-trigger" id="openDomainExplorer" type="button"><span class="explorer-icon">⌕</span><span><strong>Explore all 35 domains</strong><small>Search, compare and select a program</small></span><b>Open Explorer →</b></button>
+  <div class="domain-category-preview"><div class="domain-category"><div class="domain-category-head"><span>💻</span><div><h3>IT / Computer Science & Engineering</h3><small>14 programs</small></div></div><div class="domain-card-grid"><button class="domain-card" type="button" data-domain-name="Full Stack Web Development"><span class="domain-card-icon">💻</span><span><strong>Full Stack Web Development</strong><small>Build modern end-to-end web applications.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Artificial Intelligence"><span class="domain-card-icon">💻</span><span><strong>Artificial Intelligence</strong><small>Explore intelligent systems and practical AI applications.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Machine Learning"><span class="domain-card-icon">💻</span><span><strong>Machine Learning</strong><small>Learn how data can power predictive models.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Data Science"><span class="domain-card-icon">💻</span><span><strong>Data Science</strong><small>Turn data into insights using practical techniques.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Programming in Python"><span class="domain-card-icon">💻</span><span><strong>Programming in Python</strong><small>Build a strong foundation in Python programming.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Programming in Java"><span class="domain-card-icon">💻</span><span><strong>Programming in Java</strong><small>Develop core Java programming and application skills.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Cloud Computing"><span class="domain-card-icon">💻</span><span><strong>Cloud Computing</strong><small>Understand cloud platforms, services and deployment.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Cyber Security"><span class="domain-card-icon">💻</span><span><strong>Cyber Security</strong><small>Learn the foundations of digital security.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Advance Cyber Security"><span class="domain-card-icon">💻</span><span><strong>Advance Cyber Security</strong><small>Explore advanced concepts in security and defence.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="UI/UX Design"><span class="domain-card-icon">💻</span><span><strong>UI/UX Design</strong><small>Design useful, intuitive and engaging digital experiences.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Data Structure & Algorithm"><span class="domain-card-icon">💻</span><span><strong>Data Structure & Algorithm</strong><small>Strengthen problem-solving and algorithmic thinking.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Web Development"><span class="domain-card-icon">💻</span><span><strong>Web Development</strong><small>Create responsive and interactive websites.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Game Development"><span class="domain-card-icon">💻</span><span><strong>Game Development</strong><small>Explore the fundamentals of building games.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Graphic Design"><span class="domain-card-icon">💻</span><span><strong>Graphic Design</strong><small>Develop visual communication and design skills.</small></span><b>→</b></button></div></div><div class="domain-category"><div class="domain-category-head"><span>📡</span><div><h3>Electronics & Communication / EEE</h3><small>5 programs</small></div></div><div class="domain-card-grid"><button class="domain-card" type="button" data-domain-name="Embedded Systems"><span class="domain-card-icon">📡</span><span><strong>Embedded Systems</strong><small>Explore software and hardware working together.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Internet of Things (IoT)"><span class="domain-card-icon">📡</span><span><strong>Internet of Things (IoT)</strong><small>Connect devices, sensors and real-world systems.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="VLSI"><span class="domain-card-icon">📡</span><span><strong>VLSI</strong><small>Discover digital chip and integrated-circuit design.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Robotics Engineering"><span class="domain-card-icon">📡</span><span><strong>Robotics Engineering</strong><small>Explore robotics, automation and intelligent machines.</small></span><b>→</b></button><button class="domain-card" type="button" data-domain-name="Hybrid Electric Vehicles"><span class="domain-card-icon">📡</span><span><strong>Hybrid Electric Vehicles</strong><small>Understand hybrid vehicle technologies and systems.</small></span><b>→</b></button></div></div></div>
 </section>
 
 <section class="section process-section" id="how">
@@ -629,7 +638,7 @@ body.application-modal-open{overflow:hidden}
   </div>
 </section>
 
-<section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your next project can start with one minute.</h2><p>No resume is required for the initial application.</p></div><a href="#apply">Start Application <span>→</span></a></section>
+<section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your next project can start with one minute.</h2><p>No prerequisite knowledge required. Choose your domain and start your application.</p></div><button class="open-application" type="button">Start Application <span>→</span></button></section>
 </main>
 
 <footer id="contact">
@@ -639,17 +648,19 @@ body.application-modal-open{overflow:hidden}
   <button id="backToTop" type="button" aria-label="Back to top">↑</button>
 </footer>
 
+<button class="floating-cta" id="floatingCta" type="button"><span>Applications Open</span><strong>Apply in 60 Seconds →</strong></button>
 <div class="domain-modal" id="domainModal" aria-hidden="true">
   <div class="domain-modal-backdrop" data-close-domain></div>
   <section class="domain-modal-panel" role="dialog" aria-modal="true" aria-labelledby="domainModalTitle">
-    <button class="domain-modal-close" type="button" data-close-domain aria-label="Close domain explorer">×</button>
-    <div class="domain-modal-head"><div><span>PROGRAM CATALOGUE</span><h2 id="domainModalTitle">Explore all internship domains</h2><p>No prerequisite knowledge required.</p></div><div class="domain-count">35<br><small>programs</small></div></div>
-    <div class="domain-search-wrap"><span>⌕</span><input id="domainSearch" type="search" placeholder="Search a domain..." autocomplete="off"></div>
-    <div class="domain-category-filter" id="domainCategoryFilter"></div>
-    <div class="domain-cards" id="domainCards"></div>
+    <div class="domain-modal-head"><div><span>PROGRAM EXPLORER</span><h2 id="domainModalTitle">Find your internship domain</h2><p>No prerequisite knowledge required.</p></div><button type="button" class="modal-x" data-close-domain aria-label="Close">×</button></div>
+    <div class="domain-search"><span>⌕</span><input id="domainSearch" type="search" placeholder="Search domains..." autocomplete="off"><small id="domainCount">35 programs</small></div>
+    <div class="domain-category-tabs"><button type="button" data-domain-category="0">💻 IT</button><button type="button" data-domain-category="1">📡 Electronics & Communication</button><button type="button" data-domain-category="2">⚙️ Mechanical</button><button type="button" data-domain-category="3">🧬 Bio Technology</button><button type="button" data-domain-category="4">📊 Management</button><button type="button" data-domain-category="5">🏥 Health Information Management</button></div>
+    <div class="domain-modal-list" id="domainModalList"><button class="domain-explorer-card" type="button" data-domain-name="Full Stack Web Development" data-category="0"><span class="domain-explorer-number">01</span><span><strong>Full Stack Web Development</strong><small>Build modern end-to-end web applications.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Artificial Intelligence" data-category="0"><span class="domain-explorer-number">02</span><span><strong>Artificial Intelligence</strong><small>Explore intelligent systems and practical AI applications.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Machine Learning" data-category="0"><span class="domain-explorer-number">03</span><span><strong>Machine Learning</strong><small>Learn how data can power predictive models.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Data Science" data-category="0"><span class="domain-explorer-number">04</span><span><strong>Data Science</strong><small>Turn data into insights using practical techniques.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Programming in Python" data-category="0"><span class="domain-explorer-number">05</span><span><strong>Programming in Python</strong><small>Build a strong foundation in Python programming.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Programming in Java" data-category="0"><span class="domain-explorer-number">06</span><span><strong>Programming in Java</strong><small>Develop core Java programming and application skills.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Cloud Computing" data-category="0"><span class="domain-explorer-number">07</span><span><strong>Cloud Computing</strong><small>Understand cloud platforms, services and deployment.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Cyber Security" data-category="0"><span class="domain-explorer-number">08</span><span><strong>Cyber Security</strong><small>Learn the foundations of digital security.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Advance Cyber Security" data-category="0"><span class="domain-explorer-number">09</span><span><strong>Advance Cyber Security</strong><small>Explore advanced concepts in security and defence.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="UI/UX Design" data-category="0"><span class="domain-explorer-number">10</span><span><strong>UI/UX Design</strong><small>Design useful, intuitive and engaging digital experiences.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Data Structure & Algorithm" data-category="0"><span class="domain-explorer-number">11</span><span><strong>Data Structure & Algorithm</strong><small>Strengthen problem-solving and algorithmic thinking.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Web Development" data-category="0"><span class="domain-explorer-number">12</span><span><strong>Web Development</strong><small>Create responsive and interactive websites.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Game Development" data-category="0"><span class="domain-explorer-number">13</span><span><strong>Game Development</strong><small>Explore the fundamentals of building games.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Graphic Design" data-category="0"><span class="domain-explorer-number">14</span><span><strong>Graphic Design</strong><small>Develop visual communication and design skills.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Embedded Systems" data-category="1"><span class="domain-explorer-number">01</span><span><strong>Embedded Systems</strong><small>Explore software and hardware working together.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Internet of Things (IoT)" data-category="1"><span class="domain-explorer-number">02</span><span><strong>Internet of Things (IoT)</strong><small>Connect devices, sensors and real-world systems.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="VLSI" data-category="1"><span class="domain-explorer-number">03</span><span><strong>VLSI</strong><small>Discover digital chip and integrated-circuit design.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Robotics Engineering" data-category="1"><span class="domain-explorer-number">04</span><span><strong>Robotics Engineering</strong><small>Explore robotics, automation and intelligent machines.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Hybrid Electric Vehicles" data-category="1"><span class="domain-explorer-number">05</span><span><strong>Hybrid Electric Vehicles</strong><small>Understand hybrid vehicle technologies and systems.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="IC Engine" data-category="2"><span class="domain-explorer-number">01</span><span><strong>IC Engine</strong><small>Explore internal combustion engine fundamentals.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="AutoCAD" data-category="2"><span class="domain-explorer-number">02</span><span><strong>AutoCAD</strong><small>Learn computer-aided design and technical drafting.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Construction Planning" data-category="2"><span class="domain-explorer-number">03</span><span><strong>Construction Planning</strong><small>Understand planning and coordination in construction.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Drone Mechanics" data-category="2"><span class="domain-explorer-number">04</span><span><strong>Drone Mechanics</strong><small>Explore drone components, mechanics and operation.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Battery Electric Vehicles (BEVs)" data-category="2"><span class="domain-explorer-number">05</span><span><strong>Battery Electric Vehicles (BEVs)</strong><small>Learn fundamentals of battery-powered electric mobility.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Nano Technology" data-category="3"><span class="domain-explorer-number">01</span><span><strong>Nano Technology</strong><small>Explore materials and technologies at the nanoscale.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Genetic Engineering" data-category="3"><span class="domain-explorer-number">02</span><span><strong>Genetic Engineering</strong><small>Understand the fundamentals of genetic modification.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Bio-Informatics" data-category="3"><span class="domain-explorer-number">03</span><span><strong>Bio-Informatics</strong><small>Use computational approaches to biological data.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Digital Marketing" data-category="4"><span class="domain-explorer-number">01</span><span><strong>Digital Marketing</strong><small>Explore digital channels, campaigns and growth.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Finance" data-category="4"><span class="domain-explorer-number">02</span><span><strong>Finance</strong><small>Build practical understanding of financial concepts.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Operations Management" data-category="4"><span class="domain-explorer-number">03</span><span><strong>Operations Management</strong><small>Learn how processes and operations are planned.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Human Resources" data-category="4"><span class="domain-explorer-number">04</span><span><strong>Human Resources</strong><small>Explore people, talent and workplace practices.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Business Analytics" data-category="4"><span class="domain-explorer-number">05</span><span><strong>Business Analytics</strong><small>Use data to support business decisions.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Stock Market" data-category="4"><span class="domain-explorer-number">06</span><span><strong>Stock Market</strong><small>Learn the fundamentals of markets and investing.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Psychology" data-category="5"><span class="domain-explorer-number">01</span><span><strong>Psychology</strong><small>Explore human behaviour, cognition and wellbeing concepts.</small></span><b>Choose →</b></button><button class="domain-explorer-card" type="button" data-domain-name="Medical Coding" data-category="5"><span class="domain-explorer-number">02</span><span><strong>Medical Coding</strong><small>Learn the fundamentals of healthcare coding workflows.</small></span><b>Choose →</b></button></div>
+    <div class="domain-empty" id="domainEmpty" hidden>No matching program found. Try another search.</div>
   </section>
 </div>
-<a class="floating-cta" id="floatingCta" href="#apply"><span>Applications Open</span><strong>Apply in 60 Seconds →</strong></a>
+
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script src="firebase.js"></script>
@@ -1523,92 +1534,58 @@ console.info('SkillPath guided form build: Final V11');
 })();
 
 
-// === Conversion redesign: application modal + 35-domain explorer ===
-(function(){
-  const applyZone=document.querySelector('.application-zone');
-  const applyCard=document.getElementById('apply');
-  if(applyZone&&applyCard){
-    const close=document.createElement('button');
-    close.type='button'; close.className='application-modal-close'; close.setAttribute('aria-label','Close application'); close.textContent='×';
-    close.hidden=true; applyCard.appendChild(close);
-    const openApplication=()=>{
-      applyZone.classList.add('is-modal'); document.body.classList.add('application-modal-open'); close.hidden=false;
-      setTimeout(()=>applyCard.querySelector('input,select,button')?.focus({preventScroll:true}),80);
-    };
-    const closeApplication=()=>{
-      applyZone.classList.remove('is-modal'); document.body.classList.remove('application-modal-open'); close.hidden=true;
-      if(location.hash==='#apply') history.replaceState(null,'',location.pathname+location.search);
-    };
-    document.querySelectorAll('a[href="#apply"]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();openApplication();}));
-    close.addEventListener('click',closeApplication);
-    applyZone.addEventListener('click',e=>{if(e.target===applyZone)closeApplication();});
-    document.addEventListener('keydown',e=>{if(e.key==='Escape'&&applyZone.classList.contains('is-modal'))closeApplication();});
-    window.openInternshipApplication=openApplication;
+/* Conversion-focused modal interactions. Student frontend only. */
+(function setupConversionUX(){
+  const body=document.body;
+  const applicationZone=document.querySelector('.application-zone');
+  const applicationCard=document.getElementById('apply');
+  const openButtons=[...document.querySelectorAll('.open-application,#floatingCta')];
+  const closeBtn=document.getElementById('closeApplication');
+  const closeTop=document.getElementById('closeApplicationTop');
+  let restoreScroll=0;
+  function openApplication(domain){
+    restoreScroll=window.scrollY;
+    body.classList.add('application-modal-open');
+    if(domain){ const field=document.getElementById('domain'); if(field){field.value=domain; field.dispatchEvent(new Event('change',{bubbles:true}));} }
+    applicationCard?.setAttribute('aria-label','Internship application');
+    window.setTimeout(()=>document.getElementById('name')?.focus(),120);
   }
-  const domains=[
-    ['IT / Computer Science & Engineering','Full Stack Web Development','Build modern full-stack web applications through practical development workflows.'],
-    ['IT / Computer Science & Engineering','Artificial Intelligence','Explore AI concepts and practical applications in intelligent systems.'],
-    ['IT / Computer Science & Engineering','Machine Learning','Learn the foundations of machine learning and practical model-building concepts.'],
-    ['IT / Computer Science & Engineering','Data Science','Explore data analysis, insights and practical data-driven problem solving.'],
-    ['IT / Computer Science & Engineering','Programming in Python','Build programming fundamentals and practical solutions using Python.'],
-    ['IT / Computer Science & Engineering','Programming in Java','Develop programming fundamentals and application logic using Java.'],
-    ['IT / Computer Science & Engineering','Cloud Computing','Understand cloud concepts, services and modern application infrastructure.'],
-    ['IT / Computer Science & Engineering','Cyber Security','Explore cybersecurity fundamentals and secure digital practices.'],
-    ['IT / Computer Science & Engineering','Advance Cyber Security','Go deeper into advanced cybersecurity concepts and defensive practices.'],
-    ['IT / Computer Science & Engineering','UI/UX Design','Design user-friendly digital experiences through UI and UX principles.'],
-    ['IT / Computer Science & Engineering','Data Structure & Algorithm','Build problem-solving skills using core data structures and algorithms.'],
-    ['IT / Computer Science & Engineering','Web Development','Learn the fundamentals of building responsive and interactive websites.'],
-    ['IT / Computer Science & Engineering','Game Development','Explore the foundations of creating interactive digital games.'],
-    ['IT / Computer Science & Engineering','Graphic Design','Develop visual communication skills for digital creative work.'],
-    ['Electronics & Communication / EEE','Embedded Systems','Explore embedded hardware-software systems and microcontroller concepts.'],
-    ['Electronics & Communication / EEE','Internet of Things (IoT)','Learn how connected devices, sensors and systems work together.'],
-    ['Electronics & Communication / EEE','VLSI','Explore digital design and very-large-scale integration fundamentals.'],
-    ['Electronics & Communication / EEE','Robotics Engineering','Discover robotics concepts combining sensing, control and automation.'],
-    ['Electronics & Communication / EEE','Hybrid Electric Vehicles','Explore hybrid vehicle technology, systems and engineering concepts.'],
-    ['Mechanical / Civil Engineering','IC Engine','Understand internal-combustion engine fundamentals and engineering concepts.'],
-    ['Mechanical / Civil Engineering','AutoCAD','Develop practical computer-aided design and drafting skills.'],
-    ['Mechanical / Civil Engineering','Construction Planning','Explore planning, scheduling and coordination concepts in construction.'],
-    ['Mechanical / Civil Engineering','Drone Mechanics','Learn the mechanical principles behind drone structures and systems.'],
-    ['Mechanical / Civil Engineering','Battery Electric Vehicles (BEVs)','Explore battery-electric vehicle systems and engineering fundamentals.'],
-    ['Bio Technology','Nano Technology','Explore nanoscale materials, concepts and applications.'],
-    ['Bio Technology','Genetic Engineering','Learn foundational concepts in genetic engineering and biotechnology.'],
-    ['Bio Technology','Bio-Informatics','Explore the use of computing and data analysis in biological sciences.'],
-    ['Management','Digital Marketing','Explore digital channels, campaigns and practical marketing concepts.'],
-    ['Management','Finance','Build foundational knowledge of financial concepts and decision making.'],
-    ['Management','Operations Management','Learn how processes, resources and operations are planned and improved.'],
-    ['Management','Human Resources','Explore recruitment, people operations and core HR practices.'],
-    ['Management','Business Analytics','Use data and analytical thinking to understand business decisions.'],
-    ['Management','Stock Market','Learn foundational concepts of markets, investing and financial analysis.'],
-    ['Health Information Management / Life Science','Psychology','Explore foundational psychology concepts and human behaviour.'],
-    ['Health Information Management / Life Science','Medical Coding','Learn the fundamentals of coding and organizing healthcare information.']
-  ];
-  const modal=document.getElementById('domainModal'),cards=document.getElementById('domainCards'),search=document.getElementById('domainSearch'),filters=document.getElementById('domainCategoryFilter');
-  if(!modal||!cards||!search||!filters)return;
-  const categories=['All',...new Set(domains.map(d=>d[0]))]; let active='All';
-  const esc=v=>String(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-  const icon=cat=>({
-    'IT / Computer Science & Engineering':'</>',
-    'Electronics & Communication / EEE':'⚡',
-    'Mechanical / Civil Engineering':'⚙',
-    'Bio Technology':'DNA',
-    'Management':'↗',
-    'Health Information Management / Life Science':'✚'
-  }[cat]||'•');
-  function renderFilters(){filters.innerHTML=categories.map(c=>`<button type="button" class="${c===active?'active':''}" data-cat="${esc(c)}">${esc(c)}</button>`).join('');}
-  function renderCards(){
-    const q=search.value.trim().toLowerCase();
-    const list=domains.filter(d=>(active==='All'||d[0]===active)&&(!q||d[1].toLowerCase().includes(q)||d[0].toLowerCase().includes(q)));
-    cards.innerHTML=list.length?list.map((d,i)=>`<article class="domain-program-card"><div class="domain-icon">${icon(d[0])}</div><h3>${esc(d[1])}</h3><p>${esc(d[2])}</p><div class="program-actions"><small>${esc(d[0])}</small><button class="domain-apply-btn" type="button" data-domain-apply="${esc(d[1])}">Apply →</button></div></article>`).join(''):'<div class="domain-empty">No matching domain found. Try another search.</div>';
+  function closeApplication(){
+    if(!body.classList.contains('application-modal-open')) return;
+    body.classList.remove('application-modal-open');
+    window.scrollTo({top:restoreScroll,behavior:'instant'});
   }
-  function openDomains(){modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('application-modal-open');renderFilters();renderCards();setTimeout(()=>search.focus(),60);}
-  function closeDomains(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('application-modal-open');}
-  document.getElementById('openDomainExplorer')?.addEventListener('click',openDomains);
-  modal.querySelectorAll('[data-close-domain]').forEach(el=>el.addEventListener('click',closeDomains));
-  filters.addEventListener('click',e=>{const b=e.target.closest('[data-cat]');if(!b)return;active=b.dataset.cat;renderFilters();renderCards();});
-  search.addEventListener('input',renderCards);
-  cards.addEventListener('click',e=>{const b=e.target.closest('[data-domain-apply]');if(!b)return; const selected=b.dataset.domainApply; closeDomains(); if(window.openInternshipApplication)window.openInternshipApplication(); const field=document.getElementById('domain'); if(field){ const opt=[...field.options].find(o=>o.text.trim().toLowerCase()===selected.trim().toLowerCase()); if(opt)field.value=opt.value; else { const custom=new Option(selected,selected,true,true); field.add(custom); field.value=selected; } field.dispatchEvent(new Event('change',{bubbles:true})); }});
-  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&modal.classList.contains('open'))closeDomains();});
+  openButtons.forEach(btn=>btn.addEventListener('click',()=>openApplication()));
+  closeBtn?.addEventListener('click',closeApplication); closeTop?.addEventListener('click',closeApplication);
+  applicationZone?.addEventListener('click',e=>{ if(e.target===applicationZone) closeApplication(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(document.getElementById('domainModal')?.classList.contains('open')) closeDomain(); else closeApplication(); }});
+
+  const modal=document.getElementById('domainModal');
+  const list=document.getElementById('domainModalList');
+  const search=document.getElementById('domainSearch');
+  const count=document.getElementById('domainCount');
+  const empty=document.getElementById('domainEmpty');
+  const domainButtons=[...document.querySelectorAll('[data-domain-name]')];
+  const tabs=[...document.querySelectorAll('[data-domain-category]')];
+  function openDomain(){modal?.classList.add('open');modal?.setAttribute('aria-hidden','false');body.classList.add('no-scroll');search?.focus();filterDomains();}
+  function closeDomain(){modal?.classList.remove('open');modal?.setAttribute('aria-hidden','true');body.classList.remove('no-scroll');}
+  function filterDomains(){
+    const q=(search?.value||'').trim().toLowerCase(); const active=[...tabs].find(t=>t.classList.contains('active'))?.dataset.domainCategory;
+    let visible=0;
+    list?.querySelectorAll('.domain-explorer-card').forEach(card=>{const match=(!q || card.dataset.domainName.toLowerCase().includes(q) || card.innerText.toLowerCase().includes(q)) && (active===undefined || card.dataset.category===active); card.hidden=!match;if(match)visible++;});
+    if(count)count.textContent=`${visible} program${visible===1?'':'s'}`; if(empty)empty.hidden=visible!==0;
+  }
+  document.getElementById('openDomainExplorer')?.addEventListener('click',openDomain);
+  document.querySelectorAll('.domain-card').forEach(b=>b.addEventListener('click',()=>{openDomain(); search.value=''; tabs.forEach(t=>t.classList.remove('active')); filterDomains();}));
+  document.querySelectorAll('[data-close-domain]').forEach(b=>b.addEventListener('click',closeDomain));
+  search?.addEventListener('input',filterDomains);
+  tabs.forEach(tab=>tab.addEventListener('click',()=>{tabs.forEach(t=>t.classList.remove('active'));tab.classList.add('active');filterDomains();}));
+  list?.addEventListener('click',e=>{const card=e.target.closest('.domain-explorer-card'); if(!card)return; const domain=card.dataset.domainName; closeDomain(); openApplication(domain);});
+  // Domain cards in the preview open the explorer with the selected domain highlighted by search.
+  document.querySelectorAll('.domain-card').forEach(card=>card.addEventListener('click',()=>{openDomain(); if(search){search.value=card.dataset.domainName; filterDomains();}}));
+  tabs[0]?.classList.add('active');
 })();
+
 </script>
 </body>
 </html>

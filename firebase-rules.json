@@ -10,6 +10,15 @@
         ".validate": "newData.val() === null || newData.hasChildren(['page','status','presence','lastActive'])"
       }
     },
+    "publicStats": {
+      ".read": true,
+      ".write": false,
+      "applicationCount": {
+        ".read": true,
+        ".write": false,
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      }
+    },
     "submittedApplications": {
       ".read": "auth != null",
       ".write": "auth != null",

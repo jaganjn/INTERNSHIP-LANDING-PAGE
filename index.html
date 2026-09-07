@@ -378,7 +378,7 @@ body.application-modal-open #message{display:block;position:relative;z-index:3;m
   }
   .domain-modal-list::-webkit-scrollbar{display:none}
   .domain-modal-list .domain-explorer-card{
-    flex:0 0 86%!important; min-width:86%!important; scroll-snap-align:start;
+    flex:0 0 84%!important; width:84%!important; min-width:84%!important; max-width:84%!important; scroll-snap-align:start;
     min-height:108px;
   }
   .domain-modal-list .domain-explorer-card[hidden]{display:none!important}
@@ -1792,10 +1792,18 @@ console.info('SkillPath guided form build: Final V11');
     let visible=0;
     list?.querySelectorAll('.domain-explorer-card').forEach(card=>{const match=(!q || card.dataset.domainName.toLowerCase().includes(q) || card.innerText.toLowerCase().includes(q)) && (active===undefined || card.dataset.category===active); card.hidden=!match;if(match)visible++;});
     if(count)count.textContent=`${visible} program${visible===1?'':'s'}`; if(empty)empty.hidden=visible!==0;
-    window.dispatchEvent(new Event('internsforge:domain-filtered'));
   }
   document.getElementById('openDomainExplorer')?.addEventListener('click',openDomain);
-  document.querySelectorAll('.domain-card').forEach(b=>b.addEventListener('click',()=>{openDomain(); search.value=''; tabs.forEach(t=>t.classList.remove('active')); filterDomains();}));
+  // Preview cards open the explorer and preselect the matching domain.
+  document.querySelectorAll('.domain-card').forEach(b=>b.addEventListener('click',()=>{
+    openDomain();
+    const target=b.dataset.domainName;
+    if(search) search.value='';
+    tabs.forEach(t=>t.classList.remove('active'));
+    filterDomains();
+    const match=[...list.querySelectorAll('.domain-explorer-card')].find(c=>c.dataset.domainName===target);
+    if(match) match.click();
+  }));
   document.querySelectorAll('[data-close-domain]').forEach(b=>b.addEventListener('click',closeDomain));
   search?.addEventListener('input',filterDomains);
   tabs.forEach(tab=>tab.addEventListener('click',()=>{tabs.forEach(t=>t.classList.remove('active'));tab.classList.add('active');filterDomains();}));
@@ -1811,18 +1819,21 @@ console.info('SkillPath guided form build: Final V11');
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   // Live application counter: uses the real Firebase submittedApplications node when readable.
   const counter=document.getElementById('liveApplicationCount');
-  try{
-    if(counter && typeof db !== 'undefined' && db?.ref){
-      db.ref('submittedApplications').on('value',snap=>{
-        const value=snap.val();
-        const count=value && typeof value==='object' ? Object.keys(value).length : 0;
-        counter.textContent=count.toLocaleString('en-IN');
+  function bindLiveCounter(){
+    if(!counter || typeof db === 'undefined' || !db?.ref) return false;
+    try{
+      // Read only the privacy-safe aggregate. Individual applications remain private.
+      db.ref('publicStats/applicationCount').on('value',snap=>{
+        const count=Number(snap.val());
+        counter.textContent=Number.isFinite(count) ? count.toLocaleString('en-IN') : '0';
         counter.classList.remove('live-count-pop');
         void counter.offsetWidth;
         if(!reduce) counter.classList.add('live-count-pop');
       },()=>{counter.textContent='—';});
-    }
-  }catch(e){if(counter)counter.textContent='—';}
+      return true;
+    }catch(e){ counter.textContent='—'; return false; }
+  }
+  if(!bindLiveCounter()) window.setTimeout(bindLiveCounter,300);
 
   // Four-stage visual progress mirrors the existing three form panels without changing submission logic.
   const form=document.getElementById('internshipForm');
@@ -2060,12 +2071,9 @@ console.info('SkillPath guided form build: Final V11');
     });
     modalObserver.observe(modal,{attributes:true,attributeFilter:['class']});
 
-    const filterListener=()=>{ index=0; list.scrollTo({left:0,behavior:'auto'}); setActive(); if(modal.classList.contains('open')) start(); };
-    window.addEventListener('internsforge:domain-filtered',filterListener);
 
     domainController={destroy(){
       destroyed=true; stop(); if(resumeTimer)clearTimeout(resumeTimer); modalObserver.disconnect();
-      window.removeEventListener('internsforge:domain-filtered',filterListener);
       list.removeEventListener('pointerdown',pause); list.removeEventListener('pointerup',resume);
       list.removeEventListener('pointercancel',resume); list.removeEventListener('touchend',resume); list.removeEventListener('scroll',sync);
     }};

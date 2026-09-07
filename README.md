@@ -26,6 +26,23 @@ A future step stays hidden and locked until the current step is valid. The form 
 - `privacy.html`, `terms.html` — public legal pages.
 - `_headers` — cache-control and basic security headers for Netlify.
 
+
+## Admin password recovery
+
+The admin login page now includes **Forgot your password?**. Password recovery does not require an active admin session.
+
+1. Open `login.html`.
+2. Select **Forgot your password?**.
+3. Enter the Firebase administrator email.
+4. Select **Send Reset Link**.
+5. Open the **newest** Firebase reset email and use the link once.
+6. Set the new password on Firebase's secure reset page.
+7. Return to the login page and sign in with the new password.
+
+The reset request uses Firebase `ActionCodeSettings` with an authorized continue URL. The dashboard reset button uses the same flow. The dashboard no longer signs the administrator out 1.2 seconds after sending the email, so the email can safely be opened on another device.
+
+If Firebase shows an expired/already-used message, request a fresh email and use only the newest link. Each password-reset action code is single-use.
+
 ## Firebase
 
 The included `firebase-rules.json` must be published in Firebase Realtime Database Rules. The frontend code cannot update live database rules by itself.

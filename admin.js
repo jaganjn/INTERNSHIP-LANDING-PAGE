@@ -1006,32 +1006,29 @@ async function resetAdminPassword() {
   }
 
   const confirmed = confirm(
-    `Send a password reset link to ${user.email}?\n\nYou will be signed out after requesting the reset link.`
+    `Send a password reset link to ${user.email}?\n\nThe reset email can be opened on this or another device.`
   );
 
   if (!confirmed) return;
 
   try {
-    await auth.sendPasswordResetEmail(user.email);
+    const origin = window.location.origin;
+    const continueUrl =
+      origin && origin !== "null" && /^https?:$/i.test(window.location.protocol)
+        ? `${origin}/login.html?reset=success`
+        : "https://mnc-internship.vercel.app/login.html?reset=success";
+
+    await auth.sendPasswordResetEmail(user.email, {
+      url: continueUrl,
+      handleCodeInApp: false
+    });
 
     showToast(
       "Password reset email sent",
-      `Check ${user.email} for the reset link.`,
+      `Check ${user.email} for the newest reset email. You can keep this dashboard open until the password is changed.`,
       "success",
-      7000
+      9000
     );
-
-    // Give the toast a moment to render, then sign out so the next login
-    // requires the new password.
-    window.setTimeout(async () => {
-      try {
-        await auth.signOut();
-        location.replace("login.html");
-      } catch (signOutError) {
-        console.error("Sign-out after password reset failed:", signOutError);
-      }
-    }, 1200);
-
   } catch (error) {
     console.error("Firebase password reset failed:", error);
 
@@ -1039,7 +1036,8 @@ async function resetAdminPassword() {
       "auth/invalid-email": "The administrator email address is invalid.",
       "auth/user-not-found": "No administrator account exists for this email.",
       "auth/too-many-requests": "Too many reset attempts. Please try again later.",
-      "auth/network-request-failed": "Network error. Check your connection and try again."
+      "auth/network-request-failed": "Network error. Check your connection and try again.",
+      "auth/operation-not-allowed": "Email/password authentication is not enabled in Firebase Authentication."
     };
 
     showToast(

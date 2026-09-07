@@ -720,6 +720,9 @@ async function performFullRefresh() {
     referralProfiles = referralSnapshot.val() || {};
     referralJoins = joinSnapshot.val() || {};
 
+    // Keep the privacy-safe public aggregate synchronized from the authenticated dashboard.
+    await db.ref("publicStats/applicationCount").set(applications.length);
+
     renderApplications();
     renderReferrals();
     renderVisitors();
@@ -899,6 +902,7 @@ function listeners() {
 
     const newIds = handleNewApplications(nextApplications);
     applications = nextApplications;
+    db.ref("publicStats/applicationCount").set(applications.length).catch(error => console.warn("Public application count sync failed:", error));
     renderApplications(newIds);
   });
 
@@ -1116,7 +1120,8 @@ async function deleteReferralData() {
     await Promise.all([
       db.ref("referrals").remove(),
       db.ref("referralJoins").remove(),
-      db.ref("referralShares").remove()
+      db.ref("referralShares").remove(),
+      db.ref("publicStats/applicationCount").set(0)
     ]);
     renderReferrals();
     showToast("Data cleared", "All referral data was deleted.", "success", 4500);

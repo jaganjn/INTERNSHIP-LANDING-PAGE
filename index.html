@@ -1443,6 +1443,18 @@ async function submitApplication() {
     const applicationRef = db.ref('submittedApplications').push();
     await applicationRef.set(application);
 
+    // Spark-plan live counter: increment a privacy-safe aggregate only after
+    // the application itself has been written successfully. The transaction
+    // keeps simultaneous submissions from overwriting each other.
+    try {
+      await db.ref('publicStats/applicationCount').transaction(current => {
+        const n = Number(current);
+        return Number.isFinite(n) && n >= 0 ? Math.floor(n) + 1 : 1;
+      });
+    } catch (counterError) {
+      console.warn('Public application counter update failed:', counterError);
+    }
+
     updateVisitor({ status: 'submitted', presence: 'completed', formProgress: 100, applicationId: applicationRef.key, currentField: 'Application submitted' }, true);
 
     db.ref(`referrals/${referralCode}`).set({
@@ -1817,15 +1829,16 @@ console.info('SkillPath guided form build: Final V11');
 (function(){
   'use strict';
   const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // Live application counter: uses the real Firebase submittedApplications node when readable.
+  // Live application counter for Firebase Spark: only the privacy-safe
+  // aggregate is public; individual applications remain auth-protected.
   const counter=document.getElementById('liveApplicationCount');
   function bindLiveCounter(){
     if(!counter || typeof db === 'undefined' || !db?.ref) return false;
     try{
-      // Read only the privacy-safe aggregate. Individual applications remain private.
       db.ref('publicStats/applicationCount').on('value',snap=>{
-        const count=Number(snap.val());
-        counter.textContent=Number.isFinite(count) ? count.toLocaleString('en-IN') : '0';
+        const raw=snap.val();
+        const count=Number.isFinite(Number(raw)) ? Math.max(0, Math.floor(Number(raw))) : 0;
+        counter.textContent=count.toLocaleString('en-IN');
         counter.classList.remove('live-count-pop');
         void counter.offsetWidth;
         if(!reduce) counter.classList.add('live-count-pop');

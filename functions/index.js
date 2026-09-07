@@ -52,12 +52,3 @@ exports.notifyAdminsOnNewApplication = onValueCreated('/submittedApplications/{a
 
   return null;
 });
-
-
-// Keep a public, privacy-safe aggregate count for the landing page.
-// The landing page reads only this number; student application records remain private.
-exports.updatePublicApplicationCount = onValueCreated('/submittedApplications/{applicationId}', async () => {
-  const statsRef = getDatabase().ref('publicStats/applicationCount');
-  await statsRef.transaction(current => Number(current || 0) + 1);
-  return null;
-});

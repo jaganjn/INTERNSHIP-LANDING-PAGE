@@ -91,3 +91,5 @@ Background push setup:
 
 ## Live application counter (Spark-plan compatible)
 The public landing page reads only `publicStats/applicationCount`; individual applications remain protected. New successful submissions increment the aggregate with a Realtime Database transaction. The authenticated admin dashboard synchronizes the aggregate to the exact application total, including after deletions/reset. Cloud Functions are not required for this counter.
+
+Password recovery now includes a custom Firebase email action handler at reset-password.html. Configure Firebase Authentication Email Templates -> Password reset -> Customize action URL to the deployed reset-password.html URL.

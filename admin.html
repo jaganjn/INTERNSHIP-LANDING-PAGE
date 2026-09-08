@@ -40,6 +40,9 @@
         <a href="#applications" data-popup-target="applications"><b>▤</b><span><strong>Applications</strong><small>Recent submissions & manager</small></span></a>
         <a href="#analytics" data-popup-target="analytics"><b>◌</b><span><strong>Analytics</strong><small>Submission pulse & audience</small></span></a>
         <a href="#funnel" data-popup-target="funnel"><b>◒</b><span><strong>Funnel & Performance</strong><small>Journey and domain insights</small></span></a>
+        <a href="#domainInsights" data-popup-target="domainInsights"><b>◫</b><span><strong>Domain Insights</strong><small>Domain mix and performance</small></span></a>
+        <a href="#audienceInsights" data-popup-target="audienceInsights"><b>◌</b><span><strong>Audience Insights</strong><small>State, language and year mix</small></span></a>
+        <a href="#collegeInsights" data-popup-target="collegeInsights"><b>▥</b><span><strong>College Insights</strong><small>Top participating colleges</small></span></a>
       </div>
       <div class="nav-cluster">
         <span class="nav-cluster-label">REFERRALS</span>
@@ -60,6 +63,20 @@
     <button class="sound-quick-toggle" id="soundQuickToggle" type="button" aria-pressed="false" title="Enable notification sound">🔇</button>
     <div class="clock"><strong id="liveClock">--:--</strong><small id="liveDate">--</small></div>
     <a class="portal-btn" href="index.html">Open Portal ↗</a>
+    <div class="admin-profile-wrap" id="adminProfileWrap">
+      <button class="admin-profile-button" id="adminProfileButton" type="button" aria-expanded="false" aria-controls="adminProfileMenu">
+        <span class="admin-avatar" id="adminAvatar">A</span>
+        <span class="admin-profile-copy"><strong id="adminProfileName">Admin</strong><small id="adminProfileEmail">Administrator</small></span>
+        <span class="admin-profile-caret">▾</span>
+      </button>
+      <div class="admin-profile-menu" id="adminProfileMenu" hidden>
+        <div class="profile-menu-head"><span class="admin-avatar small" id="adminAvatarMenu">A</span><div><strong id="adminProfileMenuName">Admin</strong><small id="adminProfileMenuEmail">Administrator</small></div></div>
+        <div class="profile-menu-divider"></div>
+        <button type="button" data-profile-action="reset">🔑 <span>Reset Password</span></button>
+        <button type="button" data-profile-action="close">✓ <span>Close Menu</span></button>
+        <button type="button" class="profile-danger" data-profile-action="logout">↪ <span>Sign Out</span></button>
+      </div>
+    </div>
   </div>
 </header>
 <main>
@@ -111,17 +128,17 @@
       <div id="recentApplications" class="application-list"><p class="empty">No applications yet…</p></div>
     </article>
 
-    <article class="panel nav-only-section">
+    <article class="panel nav-only-section" id="domainInsights">
       <header><div><span class="eyebrow">DOMAIN MIX</span><h2>Where applications are coming from</h2></div></header>
       <div id="topDomains" class="rank-list"><p class="empty">No data yet…</p></div>
     </article>
 
-    <article class="panel nav-only-section">
+    <article class="panel nav-only-section" id="audienceInsights">
       <header><div><span class="eyebrow">AUDIENCE PROFILE</span><h2>State · language · year</h2></div></header>
       <div class="tri-insight-grid"><div><small>Top states</small><div id="topStates" class="compact-pills"></div></div><div><small>Languages</small><div id="topLanguages" class="compact-pills"></div></div><div><small>Years</small><div id="topYears" class="compact-pills"></div></div></div>
     </article>
 
-    <article class="panel nav-only-section">
+    <article class="panel nav-only-section" id="collegeInsights">
       <header><div><span class="eyebrow">COLLEGE MIX</span><h2>Top colleges</h2></div></header>
       <div id="topColleges" class="rank-list"><p class="empty">No data yet…</p></div>
     </article>
@@ -166,7 +183,7 @@
     <div class="settings-grid"><button onclick="deleteLiveVisitors()"><b>Clear tracking</b><span>Delete retained live visitor records</span></button><button onclick="deleteApplications()"><b>Delete applications</b><span>Remove submitted application records</span></button><button onclick="deleteReferralData()"><b>Delete referrals</b><span>Remove referral profiles and joins</span></button><button onclick="resetDashboard()"><b>Full reset</b><span>Clear dashboard data after confirmation</span></button></div>
   </section>
 </main>
-<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Admin Dashboard V5.63</span></footer>
+<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Admin Dashboard V5.70</span></footer>
 </section></div>
 
 <div id="applicationManagerModal" class="modal-shell" aria-hidden="true"><div class="modal-backdrop" data-close-manager></div><section class="manager-modal" role="dialog" aria-modal="true" aria-labelledby="managerTitle"><header class="manager-header"><div><span class="eyebrow">APPLICATION MANAGEMENT</span><h2 id="managerTitle">All Applications</h2><p id="managerCountLabel">0 records</p></div><button type="button" class="modal-close" data-close-manager aria-label="Close">×</button></header><div class="manager-toolbar"><input id="applicationSearch" type="search" placeholder="Search name, email, college, phone or ID"><select id="applicationDomainFilter"><option value="">All domains</option></select><select id="applicationStateFilter"><option value="">All states</option></select><select id="applicationYearFilter"><option value="">All years</option></select><select id="applicationLanguageFilter"><option value="">All languages</option></select><select id="applicationStatusFilter"><option value="">All statuses</option><option value="new">New</option><option value="reviewed">Reviewed</option><option value="shortlisted">Shortlisted</option><option value="selected">Selected</option><option value="rejected">Rejected</option></select><button id="clearApplicationFilters" class="panel-action secondary" type="button">Clear filters</button></div><div class="manager-table-wrap"><table class="manager-table"><thead><tr><th>Applicant</th><th>Academic</th><th>Domain</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead><tbody id="applicationManagerBody"><tr><td colspan="6" class="empty">No applications yet.</td></tr></tbody></table></div><footer class="manager-footer"><button id="managerPrev" class="panel-action secondary" type="button">← Previous</button><span id="managerPageInfo">Page 1 of 1</span><button id="managerNext" class="panel-action secondary" type="button">Next →</button></footer></section></div>

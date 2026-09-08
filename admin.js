@@ -1019,10 +1019,13 @@ function setupHeaderNavigation() {
     referralOverview: ["REFERRALS", "Referral performance", "Referral metrics, leaderboard and friends-joined activity."],
     referralLeaderboard: ["REFERRALS", "Referral leaderboard", "Top-performing referral ambassadors and successful joins."],
     referralFriends: ["REFERRALS", "Friends joined", "Applicants who joined through referral activity."],
+    domainInsights: ["APPLICATIONS", "Domain insights", "Application mix across internship domains."],
+    audienceInsights: ["APPLICATIONS", "Audience insights", "State, language and academic-year distribution."],
+    collegeInsights: ["APPLICATIONS", "College insights", "Top participating colleges in submitted applications."],
     settings: ["OPERATIONS", "Settings & health", "Notifications, system health and administrative controls."]
   };
 
-  const closeViewer = () => {
+  const closeViewer = (restoreScroll = true) => {
     if(openSectionNode && openSectionPlaceholder?.parentNode){
       openSectionPlaceholder.parentNode.replaceChild(openSectionNode, openSectionPlaceholder);
     }
@@ -1034,14 +1037,18 @@ function setupHeaderNavigation() {
     viewer?.classList.remove("open");
     viewer?.setAttribute("aria-hidden", "true");
     document.body.classList.remove("section-viewer-open");
-    window.requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
+    if(restoreScroll){
+      window.requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
+    }
   };
 
   const openViewer = (targetId) => {
     const target = el(targetId);
     if(!target || !viewer || !viewerBody) return;
 
-    closeViewer();
+    // When switching workspaces, restore the previous node without moving the page;
+    // then capture the user's actual current scroll position once.
+    if(openSectionNode) closeViewer(false);
     const meta = titleMap[targetId] || ["ADMIN VIEW", targetId, "Focused workspace"];
     if(viewerTitle) viewerTitle.textContent = meta[1];
     if(viewerSubtitle) viewerSubtitle.textContent = meta[2];
@@ -1089,6 +1096,28 @@ function setupHeaderNavigation() {
 
 function setupUI() {
   setupHeaderNavigation();
+
+  // Corporate admin profile menu: keep identity/actions anchored to the far-right corner.
+  (() => {
+    const wrap = el("adminProfileWrap");
+    const button = el("adminProfileButton");
+    const menu = el("adminProfileMenu");
+    if(!wrap || !button || !menu) return;
+    const setOpen = open => {
+      button.setAttribute("aria-expanded", String(open));
+      menu.hidden = !open;
+    };
+    button.addEventListener("click", e => { e.stopPropagation(); setOpen(menu.hidden); });
+    menu.addEventListener("click", e => {
+      const action = e.target.closest("[data-profile-action]")?.dataset.profileAction;
+      if(!action) return;
+      setOpen(false);
+      if(action === "reset") resetAdminPassword();
+      if(action === "logout") logout();
+    });
+    document.addEventListener("click", e => { if(!wrap.contains(e.target)) setOpen(false); });
+  })();
+
   const sidebar = el("sidebar");
   const overlay = el("mobileOverlay");
   const toggle = () => {
@@ -1142,10 +1171,17 @@ auth.onAuthStateChanged(user => {
   const avatar = document.getElementById("adminAvatar");
 
   if (profileEmail) profileEmail.textContent = user.email || "Administrator";
-  if (profileName) profileName.textContent = user.displayName || "Administrator";
-  if (avatar) {
+  if (profileName) profileName.textContent = user.displayName || "Admin";
+  const menuName = document.getElementById("adminProfileMenuName");
+  const menuEmail = document.getElementById("adminProfileMenuEmail");
+  const menuAvatar = document.getElementById("adminAvatarMenu");
+  if(menuName) menuName.textContent = user.displayName || "Admin";
+  if(menuEmail) menuEmail.textContent = user.email || "Administrator";
+  if (avatar || menuAvatar) {
     const source = user.displayName || user.email || "A";
-    avatar.textContent = source.trim().charAt(0).toUpperCase() || "A";
+    const initial = source.trim().charAt(0).toUpperCase() || "A";
+    if(avatar) avatar.textContent = initial;
+    if(menuAvatar) menuAvatar.textContent = initial;
   }
 
   document.body.style.visibility = "visible";

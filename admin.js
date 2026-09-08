@@ -696,6 +696,20 @@ function handleNewApplications(nextApplications) {
   return new Set(newItems.map(app => app.id));
 }
 
+async function refreshLiveVisitors() {
+  try {
+    const snapshot = await db.ref("liveVisitors").once("value");
+    visitors = snapshot.val() || {};
+    renderVisitors();
+    updateStamp("Live visitors refreshed");
+    return true;
+  } catch (error) {
+    console.error("Live visitor refresh failed:", error);
+    showToast("Live visitor refresh failed", "Check Firebase connection and database rules.", "error", 6000);
+    return false;
+  }
+}
+
 async function performFullRefresh() {
   if (refreshInProgress) return;
   refreshInProgress = true;
@@ -881,23 +895,17 @@ function listeners() {
   if (started) return;
   started = true;
 
+  // Use one authoritative value listener for liveVisitors. This keeps the
+  // dashboard in sync even when several visitor records change at once,
+  // and avoids stale local child-state during manual refreshes.
   const visitorRoot = db.ref("liveVisitors");
-  const applyVisitor = snapshot => {
-    const value = snapshot.val();
-    if (value) visitors[snapshot.key] = value;
-    else delete visitors[snapshot.key];
-    renderVisitors();
-  };
-
-  visitorRoot.once("value").then(snapshot => {
+  visitorRoot.on("value", snapshot => {
     visitors = snapshot.val() || {};
     renderVisitors();
-  }).catch(console.warn);
-  visitorRoot.on("child_added", applyVisitor);
-  visitorRoot.on("child_changed", applyVisitor);
-  visitorRoot.on("child_removed", snapshot => {
-    delete visitors[snapshot.key];
-    renderVisitors();
+    updateStamp("Live visitors updated");
+  }, error => {
+    console.error("Live visitor listener failed:", error);
+    showToast("Live visitors unavailable", "Firebase could not read live visitor data.", "error", 6000);
   });
 
   db.ref("submittedApplications").on("value", snapshot => {
@@ -922,6 +930,9 @@ function listeners() {
   });
 
   window.setInterval(() => renderVisitors(), 2_000);
+  // Safety refresh: the realtime listener remains primary, while this
+  // lightweight read repairs any missed event after a reconnect/tab sleep.
+  window.setInterval(() => refreshLiveVisitors(), 10_000);
   window.setInterval(() => cleanupStale().catch(console.warn), 30_000);
 
   E.referralSearch?.addEventListener("input", () => {

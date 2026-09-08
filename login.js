@@ -34,9 +34,9 @@ function closeResetPanel() {
 }
 
 function getResetContinueUrl() {
-  // The reset email is handled by Firebase's secure action page. After the
-  // password is changed, Firebase can return the user to this login page.
-  // Keep the URL on the same authorized production domain that sent the email.
+  // Firebase uses this as the post-reset continue URL. The actual reset
+  // action handler is controlled by the Firebase Authentication email
+  // template; this URL is only the safe destination after reset.
   const origin = window.location.origin;
   if (origin && origin !== "null" && /^https?:$/i.test(window.location.protocol)) {
     return `${origin}/login.html?reset=success`;

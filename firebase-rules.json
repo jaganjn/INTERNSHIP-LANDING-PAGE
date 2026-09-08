@@ -11,11 +11,12 @@
       }
     },
     "publicStats": {
-      ".read": true,
-      ".write": "auth != null || (!data.exists() && newData.val() === 1) || (data.exists() && data.val() is number && newData.val() === data.val() + 1)",
+      ".read": false,
+      ".write": false,
       "applicationCount": {
-        ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() == newData.val()",
-        ".write": "auth != null || (!data.exists() && newData.val() === 1) || (data.exists() && data.val() is number && newData.val() === data.val() + 1)"
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.isNumber() && newData.val() >= 0"
       }
     },
     "submittedApplications": {
@@ -23,7 +24,7 @@
       ".write": "auth != null",
       "$applicationId": {
         ".write": "auth != null || !data.exists()",
-        ".validate": "newData.val() === null || newData.hasChildren(['name','phone','email','college','department','year','state','communicationLanguage','startAvailability','applicationReason','domain','referralCode','submittedAt'])"
+        ".validate": "newData.val() === null || newData.hasChildren(['name','phone','email','college','department','year','domain','referralCode','submittedAt'])"
       }
     },
     "referrals": {
@@ -84,7 +85,7 @@
     },
     "connectionTest": {
       ".read": "auth != null",
-      ".write": true
+      ".write": "auth != null"
     },
     "technologyServiceInquiries": {
       ".read": "auth != null",

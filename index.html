@@ -1541,6 +1541,36 @@ sessionStorage.setItem(VISITOR_KEY, visitorId);
 let visitorRef = null;
 let visitorComplete = false;
 
+function detectBrowserName() {
+  const ua = navigator.userAgent || '';
+  if (/Edg\//i.test(ua)) return 'Edge';
+  if (/OPR\//i.test(ua)) return 'Opera';
+  if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) return 'Chrome';
+  if (/Firefox\//i.test(ua)) return 'Firefox';
+  if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) return 'Safari';
+  return 'Other';
+}
+function detectOsName() {
+  const ua = navigator.userAgent || '';
+  if (/Android/i.test(ua)) return 'Android';
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS';
+  if (/Windows/i.test(ua)) return 'Windows';
+  if (/Mac OS X/i.test(ua)) return 'macOS';
+  if (/Linux/i.test(ua)) return 'Linux';
+  return 'Other';
+}
+function getVisitorEnvironment() {
+  return {
+    browser: detectBrowserName(),
+    os: detectOsName(),
+    deviceType: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ? 'Mobile' : 'Desktop',
+    screen: `${window.screen?.width || 0}x${window.screen?.height || 0}`,
+    language: navigator.language || '',
+    referrer: document.referrer || 'Direct',
+    landingUrl: window.location.href.slice(0, 500)
+  };
+}
+
 function collectLiveFieldData() {
   return {
     name: getField('name')?.value.trim() || '',
@@ -1575,6 +1605,7 @@ function updateVisitor(patch = {}, complete = false) {
     fieldData: collectLiveFieldData(),
     lastActive: firebase.database.ServerValue.TIMESTAMP,
     referredBy: referralSource || null,
+    environment: getVisitorEnvironment(),
     ...patch
   }).catch(error => console.warn('Live visitor update failed:', error));
 }
@@ -1594,7 +1625,8 @@ function initialiseVisitor() {
     fieldData: collectLiveFieldData(),
     startedAt: firebase.database.ServerValue.TIMESTAMP,
     lastActive: firebase.database.ServerValue.TIMESTAMP,
-    referredBy: referralSource || null
+    referredBy: referralSource || null,
+    environment: getVisitorEnvironment()
   }).catch(error => console.warn('Live visitor initialization failed:', error));
   visitorRef.onDisconnect().update({ presence: 'disconnected', status: 'left', leftAt: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
 }

@@ -242,6 +242,10 @@ function visitorCard(visitor, inactive = false) {
         <div><small>Reason</small><strong>${esc(visitor.fieldData?.applicationReason || visitor.applicationReason || "—")}</strong></div>
         <div><small>Domain</small><strong>${esc(visitor.fieldData?.domain || visitor.domain || "—")}</strong></div>
         <div><small>Consent</small><strong>${(visitor.fieldData?.consent ?? false) ? "Accepted" : "Not accepted"}</strong></div>
+        <div><small>Device</small><strong>${esc(visitor.environment?.deviceType || "—")}</strong></div>
+        <div><small>Browser</small><strong>${esc(visitor.environment?.browser || "—")}</strong></div>
+        <div><small>OS</small><strong>${esc(visitor.environment?.os || "—")}</strong></div>
+        <div><small>Referrer</small><strong>${esc(visitor.environment?.referrer || visitor.referredBy || "Direct")}</strong></div>
       </div>
     </article>`;
 }
@@ -357,7 +361,7 @@ function renderApplications(newIds = new Set()) {
           <strong>${esc(app.name || "Unknown")}</strong>
           <small>${esc(app.college || "—")} • ${esc(app.state || "—")} • ${esc(app.domain || "—")}</small>
         </div>
-        <span class="status submitted">Submitted</span>
+        <span class="status ${(app.adminStatus||'new') === 'selected' ? 'submitted' : (app.adminStatus||'new')}">${esc(({new:'New',reviewed:'Reviewed',shortlisted:'Shortlisted',selected:'Selected',rejected:'Rejected'}[(app.adminStatus||'new')] || 'New'))}</span>
       </div>
       <small>${fmt(app.submittedAtMs || app.submittedAt)}</small>
     </article>
@@ -971,7 +975,7 @@ function setupUI() {
   tick();
   window.setInterval(tick, 1000);
 
-  el("refreshDashboardButton")?.addEventListener("click", performFullRefresh);
+  el("refreshDashboardButton")?.addEventListener("click", refreshLiveVisitorsOnly);
   el("exportApplicationsButton")?.addEventListener("click", exportApplicationsCsv);
   setupNotificationSettings();
 
@@ -1094,8 +1098,9 @@ async function del(path, message, successText) {
     // Keep the currently rendered dashboard in sync immediately.
     if (path === "submittedApplications") {
       applications = [];
+      await db.ref("publicStats/applicationCount").set(0).catch(() => {});
       renderApplications();
-      renderApplications();
+      window.__internsforgeUpdateAdvancedMetrics?.();
     }
     if (path === "referrals" || path === "referralJoins") {
       renderReferrals();
@@ -1161,11 +1166,11 @@ async function resetDashboard() {
       db.ref("submittedApplications").remove(),
       db.ref("referrals").remove(),
       db.ref("referralJoins").remove(),
-      db.ref("referralShares").remove()
+      db.ref("referralShares").remove(),
+      db.ref("publicStats/applicationCount").set(0)
     ]);
 
     applications = [];
-    renderApplications();
     renderApplications();
     renderReferrals();
 
@@ -1177,3 +1182,364 @@ async function resetDashboard() {
     return false;
   }
 }
+
+/* =========================================================
+   V5.40 — Admin Intelligence Layer
+   Built on existing Firebase paths; no new paid services required.
+   ========================================================= */
+(function installAdminIntelligence(){
+  const ACTIVITY_KEY = 'internsforgeAdminActivityV1';
+  const ADMIN_STATUS_KEY = 'adminStatus';
+  const ADMIN_NOTES_KEY = 'adminNotes';
+  const ADMIN_UPDATED_AT_KEY = 'adminUpdatedAt';
+  let activityItems = [];
+  let lastVisitorSnapshot = {};
+  let selectedApplicationId = '';
+  let managerPage = 1;
+  const PAGE_SIZE = 12;
+  let managerFiltered = [];
+
+  const getEl = id => document.getElementById(id);
+  const safeArray = value => Array.isArray(value) ? value : [];
+
+  function readActivity(){
+    try { return safeArray(JSON.parse(localStorage.getItem(ACTIVITY_KEY) || '[]')); } catch { return []; }
+  }
+  function saveActivity(){
+    try { localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activityItems.slice(0, 80))); } catch {}
+  }
+  function activityIcon(type){
+    return type === 'application' ? '✓' : type === 'filling' ? '✎' : type === 'visitor' ? '◉' : type === 'status' ? '↺' : '•';
+  }
+  function addActivity(type, title, detail, timestamp = Date.now()){
+    const item = { id: `${timestamp}_${Math.random().toString(36).slice(2,8)}`, type, title, detail, timestamp };
+    const duplicate = activityItems.find(existing => existing.title === item.title && existing.detail === item.detail && Math.abs(existing.timestamp - timestamp) < 1200);
+    if (duplicate) return;
+    activityItems.unshift(item);
+    activityItems = activityItems.slice(0, 80);
+    saveActivity();
+    renderActivityFeed();
+  }
+  function seedActivity(){
+    activityItems = readActivity();
+    if (!activityItems.length){
+      const recentApps = applications.slice(0, 6);
+      recentApps.forEach(app => addActivity('application', 'Application submitted', `${app.name || 'Student'} • ${app.domain || 'Domain not selected'}`, asMs(app.submittedAtMs || app.submittedAt) || Date.now()));
+      Object.entries(visitors).filter(([,v]) => sessionState(v) === 'filling').slice(0, 6).forEach(([,v]) => {
+        addActivity('filling', 'Student is filling the application', `${v.fieldData?.name || v.name || 'Anonymous'} • ${v.currentField || 'Application form'}`, asMs(v.lastActive) || Date.now());
+      });
+    }
+    renderActivityFeed();
+  }
+  function renderActivityFeed(){
+    const target = getEl('activityFeed');
+    if (!target) return;
+    const rows = activityItems.sort((a,b)=>b.timestamp-a.timestamp).slice(0, 60);
+    target.innerHTML = rows.length ? rows.map(item => `
+      <div class="activity-item">
+        <span class="activity-icon ${item.type==='application'?'green':''}">${activityIcon(item.type)}</span>
+        <div><strong>${esc(item.title)}</strong><small>${esc(item.detail || '')}</small></div>
+        <time>${fmt(item.timestamp)}</time>
+      </div>
+    `).join('') : '<p class="empty">Activity will appear here as the portal is used.</p>';
+  }
+
+  function countMap(items){
+    const out = {};
+    items.forEach(value => { const key = String(value || '').trim(); if (key) out[key] = (out[key] || 0) + 1; });
+    return out;
+  }
+  function renderPills(targetId, map, limit=5){
+    const target = getEl(targetId); if (!target) return;
+    const rows = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,limit);
+    target.innerHTML = rows.length ? rows.map(([name,count])=>`<span class="compact-pill"><span>${esc(name)}</span><b>${count}</b></span>`).join('') : '<span class="compact-pill">No data</span>';
+  }
+  function breakdownMarkup(map, targetId){
+    const target = getEl(targetId); if(!target) return;
+    const rows = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    const max = rows[0]?.[1] || 1;
+    target.innerHTML = rows.length ? `<div class="breakdown-list">${rows.map(([name,count])=>`
+      <div class="breakdown-item"><label title="${esc(name)}">${esc(name)}</label><div class="track"><i style="width:${(count/max)*100}%"></i></div><b>${count}</b></div>
+    `).join('')}</div>` : '<p class="empty">No data yet.</p>';
+  }
+
+  function appStatus(app){ return String(app?.[ADMIN_STATUS_KEY] || 'new').toLowerCase(); }
+  function appStatusLabel(status){
+    return {new:'New',reviewed:'Reviewed',shortlisted:'Shortlisted',selected:'Selected',rejected:'Rejected'}[status] || 'New';
+  }
+  function statusBadge(status){ return `<span class="status-badge status-${esc(status)}">${esc(appStatusLabel(status))}</span>`; }
+
+  function updateAdvancedMetrics(){
+    getEl('allTimeApplications')?.replaceChildren(document.createTextNode(String(applications.length)));
+    const successful = Object.values(referralJoins).reduce((sum,joins)=>sum+Object.keys(joins||{}).length,0);
+    getEl('totalReferralJoinsMetric')?.replaceChildren(document.createTextNode(String(successful)));
+
+    const domainMap = countMap(applications.map(app=>app.domain));
+    const topDomain = Object.entries(domainMap).sort((a,b)=>b[1]-a[1])[0];
+    const topMetric = getEl('topDomainMetric');
+    const topMetricSub = getEl('topDomainMetricSub');
+    if (topMetric) topMetric.textContent = topDomain?.[0] || '—';
+    if (topMetricSub) topMetricSub.textContent = topDomain ? `${topDomain[1]} application${topDomain[1] === 1 ? '' : 's'}` : 'No applications yet';
+
+    const states = countMap(applications.map(app=>app.state));
+    const languages = countMap(applications.map(app=>app.communicationLanguage || app.language));
+    const years = countMap(applications.map(app=>app.year));
+    renderPills('topStates', states); renderPills('topLanguages', languages); renderPills('topYears', years);
+    breakdownMarkup(countMap(applications.map(app=>app.startAvailability)), 'startBreakdown');
+    breakdownMarkup(languages, 'languageBreakdown');
+    breakdownMarkup(states, 'stateBreakdown');
+    renderFunnel(); renderDomainPerformance();
+  }
+
+  function getVisitorRows(){
+    return Object.entries(visitors).map(([id,v])=>({id,...v,state:sessionState(v)}));
+  }
+  function renderFunnel(){
+    const target = getEl('applicationFunnel'); if(!target) return;
+    const todayKey = getTodayISTKey();
+    const todayVisitors = getVisitorRows().filter(v=>getISTDateKey(v.startedAt)===todayKey);
+    const sessions = todayVisitors.length;
+    const started = todayVisitors.filter(v=>Number(v.formProgress||0)>0 || v.hasStartedFilling === true).length;
+    const reviewing = todayVisitors.filter(v=>Number(v.formProgress||0)>=80).length;
+    const submitted = applications.filter(a=>getISTDateKey(a.submittedAtMs||a.submittedAt)===todayKey).length;
+    const max = Math.max(1,sessions,started,reviewing,submitted);
+    const steps = [
+      ['Visitors', sessions],
+      ['Started form', started],
+      ['80%+ progress', reviewing],
+      ['Submitted', submitted]
+    ];
+    target.innerHTML = steps.map(([label,count],index)=>{
+      const rate = index===0 ? 100 : sessions ? Math.min(100,Math.round((count/sessions)*100)) : 0;
+      return `<div><div class="funnel-row"><label>${esc(label)}</label><div class="funnel-track"><i style="width:${Math.max(count?5:0,(count/max)*100)}%"></i></div><span class="funnel-count">${count}</span></div><div class="funnel-rate">${rate}% of visitors</div></div>`;
+    }).join('');
+  }
+  function renderDomainPerformance(){
+    const target = getEl('domainPerformance'); if(!target) return;
+    const map = {};
+    getVisitorRows().forEach(v=>{
+      const domain = v.fieldData?.domain || v.domain;
+      if (!domain) return;
+      map[domain] ||= {visitors:0, applications:0};
+      map[domain].visitors += 1;
+    });
+    applications.forEach(app=>{
+      const domain = app.domain || 'Unspecified';
+      map[domain] ||= {visitors:0,applications:0};
+      map[domain].applications += 1;
+    });
+    const rows = Object.entries(map).map(([domain,stat])=>({domain,...stat,rate:stat.visitors ? Math.min(100,(stat.applications/stat.visitors)*100) : 0})).sort((a,b)=>b.applications-a.applications || b.visitors-a.visitors).slice(0,8);
+    const max = Math.max(1,...rows.map(r=>Math.max(r.visitors,r.applications)));
+    target.innerHTML = rows.length ? rows.map(r=>`<div class="performance-row"><div><strong>${esc(r.domain)}</strong><small>${r.visitors} retained visitor${r.visitors===1?'':'s'}</small></div><div class="performance-metric"><b>${r.applications}</b><small>apps</small></div><div class="performance-metric"><b>${r.rate.toFixed(1)}%</b><small>conversion</small></div><div class="performance-bar"><i style="width:${Math.max(r.applications?5:0,((Math.max(r.visitors,r.applications))/max)*100)}%"></i></div></div>`).join('') : '<p class="empty">Domain traffic will appear as visitors interact with the portal.</p>';
+  }
+
+  function getManagerRows(){
+    const query = String(getEl('applicationSearch')?.value || '').trim().toLowerCase();
+    const domain = getEl('applicationDomainFilter')?.value || '';
+    const state = getEl('applicationStateFilter')?.value || '';
+    const status = getEl('applicationStatusFilter')?.value || '';
+    managerFiltered = applications.filter(app=>{
+      const haystack = [app.id,app.name,app.email,app.phone,app.college,app.department,app.domain,app.state,app.communicationLanguage].map(v=>String(v||'').toLowerCase()).join(' ');
+      return (!query || haystack.includes(query)) && (!domain || String(app.domain||'')===domain) && (!state || String(app.state||'')===state) && (!status || appStatus(app)===status);
+    });
+    managerFiltered.sort((a,b)=>asMs(b.submittedAtMs||b.submittedAt)-asMs(a.submittedAtMs||a.submittedAt));
+    return managerFiltered;
+  }
+  function refreshFilterOptions(){
+    const domainSelect = getEl('applicationDomainFilter'); const stateSelect = getEl('applicationStateFilter');
+    const domains = [...new Set(applications.map(a=>String(a.domain||'').trim()).filter(Boolean))].sort();
+    const states = [...new Set(applications.map(a=>String(a.state||'').trim()).filter(Boolean))].sort();
+    if(domainSelect){const current=domainSelect.value;domainSelect.innerHTML='<option value="">All domains</option>'+domains.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');domainSelect.value=current;}
+    if(stateSelect){const current=stateSelect.value;stateSelect.innerHTML='<option value="">All states</option>'+states.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');stateSelect.value=current;}
+  }
+  function renderApplicationManager(){
+    const rows = getManagerRows();
+    const totalPages = Math.max(1,Math.ceil(rows.length/PAGE_SIZE));
+    managerPage = Math.min(Math.max(1,managerPage),totalPages);
+    const start = (managerPage-1)*PAGE_SIZE;
+    const pageRows = rows.slice(start,start+PAGE_SIZE);
+    const target = getEl('applicationManagerBody');
+    if(target) target.innerHTML = pageRows.length ? pageRows.map(app=>`
+      <tr>
+        <td><div class="manager-person"><span class="person-avatar">${esc((app.name||'?').trim().charAt(0).toUpperCase())}</span><div class="person-main"><strong>${esc(app.name||'Unknown')}</strong><small>${esc(app.email||'—')}</small></div></div></td>
+        <td>${esc(app.college||'—')}<small>${esc(app.department||'—')} • ${esc(app.year||'—')}</small></td>
+        <td>${esc(app.domain||'—')}<small>${esc(app.state||'—')}</small></td>
+        <td><select class="status-select" data-inline-status="${esc(app.id)}"><option value="new" ${appStatus(app)==='new'?'selected':''}>New</option><option value="reviewed" ${appStatus(app)==='reviewed'?'selected':''}>Reviewed</option><option value="shortlisted" ${appStatus(app)==='shortlisted'?'selected':''}>Shortlisted</option><option value="selected" ${appStatus(app)==='selected'?'selected':''}>Selected</option><option value="rejected" ${appStatus(app)==='rejected'?'selected':''}>Rejected</option></select></td>
+        <td>${fmt(app.submittedAtMs||app.submittedAt)}</td>
+        <td><button type="button" class="row-action" data-open-application="${esc(app.id)}">View</button></td>
+      </tr>`).join('') : '<tr><td colspan="6" class="empty">No applications match the current filters.</td></tr>';
+    getEl('managerCountLabel').textContent = `${rows.length} record${rows.length===1?'':'s'}`;
+    getEl('managerPageInfo').textContent = `Page ${managerPage} of ${totalPages}`;
+    getEl('managerPrev').disabled = managerPage<=1; getEl('managerNext').disabled = managerPage>=totalPages;
+  }
+
+  function openManager(){
+    refreshFilterOptions(); managerPage=1; renderApplicationManager();
+    const modal=getEl('applicationManagerModal'); modal?.classList.add('open'); modal?.setAttribute('aria-hidden','false');
+  }
+  function closeManager(){const modal=getEl('applicationManagerModal'); modal?.classList.remove('open'); modal?.setAttribute('aria-hidden','true');}
+  function findApp(id){return applications.find(app=>app.id===id);}
+  function openDetail(id){
+    const app=findApp(id); if(!app) return;
+    selectedApplicationId=id;
+    getEl('detailTitle').textContent=app.name||'Applicant';
+    getEl('detailSubTitle').textContent=`${app.email||'No email'} • ${app.domain||'No domain'} • ${fmt(app.submittedAtMs||app.submittedAt)}`;
+    const fields=[['Application ID',app.id],['Phone / WhatsApp',app.phone],['Email',app.email],['College',app.college],['Department',app.department],['Year',app.year],['State / UT',app.state],['Communication Language',app.communicationLanguage||app.language],['Start Availability',app.startAvailability],['Interested Domain',app.domain],['Reason for Applying',app.applicationReason],['Referral Code',app.referralCode],['Referred By',app.referredBy],['Submitted',fmt(app.submittedAtMs||app.submittedAt)],['Status',appStatusLabel(appStatus(app))],['Admin Note',app[ADMIN_NOTES_KEY]||'No note yet']];
+    getEl('applicationDetailBody').innerHTML=fields.map(([label,value])=>`<div class="detail-card ${String(value||'').length>120?'wide':''}"><small>${esc(label)}</small><strong>${esc(value||'—')}</strong></div>`).join('');
+    getEl('detailStatus').value=appStatus(app);
+    getEl('detailNotes').value=app[ADMIN_NOTES_KEY]||'';
+    const modal=getEl('applicationDetailModal'); modal?.classList.add('open'); modal?.setAttribute('aria-hidden','false');
+  }
+  function closeDetail(){const modal=getEl('applicationDetailModal'); modal?.classList.remove('open'); modal?.setAttribute('aria-hidden','true');selectedApplicationId='';}
+  async function saveAppDetails(){
+    const app=findApp(selectedApplicationId); if(!app) return;
+    const user=auth?.currentUser; if(!user){showToast('Authentication required','Please sign in again.','error');return;}
+    const status=getEl('detailStatus').value; const notes=getEl('detailNotes').value.trim();
+    try{
+      await db.ref(`submittedApplications/${selectedApplicationId}`).update({[ADMIN_STATUS_KEY]:status,[ADMIN_NOTES_KEY]:notes,[ADMIN_UPDATED_AT_KEY]:firebase.database.ServerValue.TIMESTAMP});
+      showToast('Application updated',`${app.name||'Applicant'} marked ${appStatusLabel(status)}.`,'success',4500);
+      addActivity('status','Application status updated',`${app.name||'Applicant'} → ${appStatusLabel(status)}`);
+      closeDetail();
+    }catch(error){console.error('Application status update failed:',error);showToast('Update failed',error?.message||'Firebase denied the update.','error',7000);}
+  }
+  async function inlineStatus(id,status){
+    try{
+      await db.ref(`submittedApplications/${id}`).update({[ADMIN_STATUS_KEY]:status,[ADMIN_UPDATED_AT_KEY]:firebase.database.ServerValue.TIMESTAMP});
+      const app=findApp(id); addActivity('status','Application status updated',`${app?.name||'Applicant'} → ${appStatusLabel(status)}`);
+      showToast('Status saved',`${app?.name||'Applicant'} → ${appStatusLabel(status)}.`,'success',3200);
+    }catch(error){console.error(error);showToast('Status update failed','Firebase denied the update.','error',6500);}
+  }
+  function exportManager(){
+    const rows=getManagerRows();
+    const headers=['Application ID','Name','Phone','Email','College','Department','Year','State','Communication Language','Start Availability','Application Reason','Domain','Referral Code','Referred By','Status','Admin Notes','Submitted At'];
+    const data=rows.map(app=>[app.id,app.name,app.phone,app.email,app.college,app.department,app.year,app.state,app.communicationLanguage||app.language,app.startAvailability,app.applicationReason,app.domain,app.referralCode,app.referredBy,appStatusLabel(appStatus(app)),app[ADMIN_NOTES_KEY],app.submittedAtMs||app.submittedAt]);
+    const csv=[headers,...data].map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob=new Blob(['\ufeff',csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`internsforge-filtered-applications-${new Date().toISOString().slice(0,10)}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast('Filtered CSV exported',`${rows.length} applications exported.`,'success');
+  }
+
+  function enhanceLiveVisitorCards(){
+    const target=getEl('visitorList'); if(!target) return;
+    target.querySelectorAll('.visitor-card').forEach(card=>{
+      // Cards are rendered by the base dashboard; the summary strip is handled below.
+    });
+    const rows=getVisitorRows();
+    const active=rows.filter(v=>['active','filling'].includes(v.state)).length;
+    const filling=rows.filter(v=>v.state==='filling').length;
+    const abandoned=rows.filter(v=>v.state==='abandoned').length;
+    const submitted=rows.filter(v=>v.state==='submitted').length;
+    const strip=getEl('liveVisitorSummary');
+    if(strip) strip.innerHTML=`<span><b>${active}</b> active</span><span><b>${filling}</b> filling</span><span><b>${abandoned}</b> abandoned</span><span><b>${submitted}</b> completed</span>`;
+  }
+
+  function renderAdvancedAll(){
+    updateAdvancedMetrics();
+    enhanceLiveVisitorCards();
+    seedActivity();
+  }
+
+  function watchVisitorChanges(){
+    db.ref('liveVisitors').on('value', snap=>{
+      const next=snap.val()||{};
+      Object.entries(next).forEach(([id,v])=>{
+        const prev=lastVisitorSnapshot[id];
+        if(!prev) addActivity('visitor','New visitor joined',`${v.fieldData?.name||v.name||'Anonymous'} • ${v.page||'Application Portal'}`);
+        const prevProgress=Number(prev?.formProgress||0), nextProgress=Number(v?.formProgress||0);
+        if(!prev && nextProgress>0) addActivity('filling','Application started',`${v.fieldData?.name||v.name||'Anonymous'} • ${v.currentField||'Form'}`);
+        else if(prev && prevProgress===0 && nextProgress>0) addActivity('filling','Application started',`${v.fieldData?.name||v.name||'Anonymous'} • ${v.currentField||'Form'}`);
+        if(prev && prev.status!=='submitted' && v.status==='submitted') addActivity('application','Application submitted',`${v.fieldData?.name||v.name||'Student'} • ${v.fieldData?.domain||v.domain||'Domain not selected'}`);
+      });
+      lastVisitorSnapshot=next;
+      window.setTimeout(enhanceLiveVisitorCards,40);
+    });
+    db.ref('submittedApplications').on('value',snap=>{
+      const next=Object.entries(snap.val()||{}).map(([id,app])=>({id,...app}));
+      const oldById=Object.fromEntries(applications.map(a=>[a.id,a]));
+      next.forEach(app=>{
+        if(!oldById[app.id]) addActivity('application','New application received',`${app.name||'Student'} • ${app.college||'College not provided'}`,asMs(app.submittedAtMs||app.submittedAt)||Date.now());
+        else if(appStatus(oldById[app])!==appStatus(app)) addActivity('status','Application status changed',`${app.name||'Student'} → ${appStatusLabel(appStatus(app))}`);
+      });
+      window.setTimeout(()=>{updateAdvancedMetrics();refreshFilterOptions();if(getEl('applicationManagerModal')?.classList.contains('open'))renderApplicationManager();},50);
+    });
+  }
+
+  function bindAdvancedUI(){
+    getEl('openApplicationManager')?.addEventListener('click',openManager);
+    document.querySelectorAll('[data-close-manager]').forEach(node=>node.addEventListener('click',closeManager));
+    document.querySelectorAll('[data-close-detail]').forEach(node=>node.addEventListener('click',closeDetail));
+    getEl('saveApplicationDetails')?.addEventListener('click',saveAppDetails);
+    getEl('managerPrev')?.addEventListener('click',()=>{managerPage--;renderApplicationManager();});
+    getEl('managerNext')?.addEventListener('click',()=>{managerPage++;renderApplicationManager();});
+    getEl('clearApplicationFilters')?.addEventListener('click',()=>{getEl('applicationSearch').value='';getEl('applicationDomainFilter').value='';getEl('applicationStateFilter').value='';getEl('applicationStatusFilter').value='';managerPage=1;renderApplicationManager();});
+    ['applicationSearch','applicationDomainFilter','applicationStateFilter','applicationStatusFilter'].forEach(id=>getEl(id)?.addEventListener('input',()=>{managerPage=1;renderApplicationManager();}));
+    getEl('clearActivityLog')?.addEventListener('click',()=>{activityItems=[];saveActivity();renderActivityFeed();showToast('Activity log cleared','Only this browser’s local admin activity history was cleared.','info',4500);});
+    getEl('copyApplicationSummary')?.addEventListener('click',async()=>{
+      const app=findApp(selectedApplicationId);if(!app)return;
+      const text=[`InternsForge Application — ${app.name||''}`,`Email: ${app.email||'—'}`,`Phone: ${app.phone||'—'}`,`College: ${app.college||'—'}`,`Department: ${app.department||'—'}`,`Year: ${app.year||'—'}`,`State: ${app.state||'—'}`,`Domain: ${app.domain||'—'}`,`Language: ${app.communicationLanguage||app.language||'—'}`,`Start: ${app.startAvailability||'—'}`,`Status: ${appStatusLabel(appStatus(app))}`,`Reference: ${app.id||'—'}`].join('\n');
+      try{await navigator.clipboard.writeText(text);showToast('Summary copied','Applicant summary copied to clipboard.','success',3500);}catch{showToast('Copy unavailable','Your browser blocked clipboard access.','error',4500);}
+    });
+    getEl('exportApplicationsButton')?.addEventListener('contextmenu',e=>{e.preventDefault();exportManager();});
+    window.__internsforgeInlineStatus = inlineStatus;
+    document.addEventListener('click',e=>{
+      const rowButton=e.target.closest('[data-open-application]'); if(rowButton){openDetail(rowButton.dataset.openApplication);return;}
+    });
+    // Use the existing Export button for the current dataset, while Manage All exposes the filtered export via Ctrl+E.
+    document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='e'&&getEl('applicationManagerModal')?.classList.contains('open')){e.preventDefault();exportManager();}});
+    getEl('activeAdminEmail').textContent=`Admin: ${auth?.currentUser?.email||'—'}`;
+  }
+
+  function start(){
+    if(window.__internsforgeAdminV540Started) return;
+    window.__internsforgeAdminV540Started=true;
+    window.__internsforgeUpdateAdvancedMetrics = updateAdvancedMetrics;
+    bindAdvancedUI();
+    seedActivity();
+    window.setTimeout(renderAdvancedAll,300);
+    watchVisitorChanges();
+    window.setInterval(()=>{renderFunnel();renderDomainPerformance();enhanceLiveVisitorCards();},4000);
+  }
+
+  if(auth){ auth.onAuthStateChanged(user=>{ if(user) window.setTimeout(start,0); }); }
+})();
+
+// V5.40: independent Live Visitors refresh. The button does not depend on
+// Applications/Referrals reads, so one unrelated permission failure cannot
+// block realtime visitor monitoring.
+async function refreshLiveVisitorsOnly(){
+  if (refreshInProgress) return;
+  refreshInProgress = true;
+  const button = el('refreshDashboardButton');
+  const label = el('visitorSyncLabel');
+  const stamp = el('lastDataSync');
+  button?.classList.add('is-refreshing');
+  button?.setAttribute('disabled','disabled');
+  if(label) label.textContent='Refreshing…';
+  try {
+    await cleanupStale({removeAbandoned:false});
+    const snapshot = await db.ref('liveVisitors').once('value');
+    visitors = snapshot.val() || {};
+    renderVisitors();
+    updateStamp('Live visitors refreshed');
+    if(label) label.textContent='Synced just now';
+    if(stamp) stamp.textContent=`Last data sync: ${new Intl.DateTimeFormat('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
+    showToast('Live visitors refreshed','Visitor presence was loaded directly from Firebase.','success',2800);
+    return true;
+  } catch(error){
+    console.error('Live visitor-only refresh failed:',error);
+    if(label) label.textContent='Sync failed';
+    showToast('Live visitor refresh failed',error?.message || 'Firebase denied the read. Check authentication and database rules.','error',7000);
+    return false;
+  } finally {
+    refreshInProgress=false;
+    button?.classList.remove('is-refreshing');
+    button?.removeAttribute('disabled');
+  }
+}
+
+(function fixAdminV540StatusEvents(){
+  if(window.__internsforgeV540StatusEvents) return;
+  window.__internsforgeV540StatusEvents=true;
+  document.addEventListener('change', e=>{
+    const statusSelect=e.target.closest('[data-inline-status]');
+    if(statusSelect) window.__internsforgeInlineStatus?.(statusSelect.dataset.inlineStatus,statusSelect.value);
+  });
+})();

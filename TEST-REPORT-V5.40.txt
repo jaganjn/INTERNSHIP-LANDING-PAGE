@@ -1,0 +1,21 @@
+InternsForge Admin Dashboard V5.40 — Static Validation Report
+
+PASS  admin.js syntax check: node --check
+PASS  login.js syntax check: node --check
+PASS  firebase-rules.json parses as valid JSON
+PASS  admin.html referenced IDs are present in the HTML
+PASS  admin dashboard retains Firebase/Auth/Database/Push script dependencies
+PASS  public index.html visitor environment metadata added
+PASS  no new backend/Cloud Function dependency introduced
+PASS  application status/notes fields write under authenticated submittedApplications path
+PASS  filtered CSV is generated client-side without external services
+PASS  Live Visitors refresh button is independent from full dashboard data reads
+
+Manual browser verification still recommended after deployment:
+1. Admin login
+2. Live Visitors realtime update from a separate browser/incognito window
+3. Application submission and new-application alert
+4. Application Manager filters and status updates
+5. CSV export
+6. Referral leaderboard / friends joined
+7. Browser alerts if notification permission is enabled

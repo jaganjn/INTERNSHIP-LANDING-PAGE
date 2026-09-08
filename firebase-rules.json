@@ -23,7 +23,7 @@
       ".write": "auth != null",
       "$applicationId": {
         ".write": "auth != null || !data.exists()",
-        ".validate": "newData.val() === null || newData.hasChildren(['name','phone','email','college','department','year','domain','referralCode','submittedAt'])"
+        ".validate": "newData.val() === null || newData.hasChildren(['name','phone','email','college','department','year','state','communicationLanguage','startAvailability','applicationReason','domain','referralCode','submittedAt'])"
       }
     },
     "referrals": {

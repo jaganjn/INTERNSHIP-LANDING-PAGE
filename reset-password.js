@@ -37,8 +37,6 @@
     const map = {
       'auth/expired-action-code': 'This reset link has expired. Request a new reset email.',
       'auth/invalid-action-code': 'This reset link is invalid or has already been used. Request a new reset email.',
-      'auth/invalid-api-key': 'Firebase rejected this reset link because its API key is invalid or restricted. Check the Google Cloud API key website restrictions.',
-      'auth/operation-not-allowed': 'Password reset is not enabled for Email/Password authentication in Firebase.',
       'auth/user-disabled': 'This admin account is disabled. Contact the Firebase project administrator.',
       'auth/weak-password': 'That password is too weak. Please choose a stronger password.',
       'auth/network-request-failed': 'Network error. Check your internet connection and try again.'

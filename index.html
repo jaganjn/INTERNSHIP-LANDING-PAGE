@@ -687,7 +687,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
         <div class="step-panel-head">
           <span>STEP 2 · ACADEMIC</span>
           <h3>Tell us about your academic profile</h3>
-          <p>Select your year and preferred domain so we can understand your interest more clearly.</p>
+          <p>Select your academic details, location, availability and preferred domain so we can understand your profile more clearly.</p>
         </div>
         <div class="field-grid academic-grid">
           <div class="field-wrap full glow-field">
@@ -710,6 +710,26 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
             <label for="year">Current Year</label>
             <div class="field-control"><select id="year" name="year" required><option value="">Select Year</option><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>Final Year</option><option>Passed Out</option></select><span class="valid-mark">✓</span></div>
             <small class="field-error" id="yearError"></small>
+          </div>
+          <div class="field-wrap full glow-field">
+            <label for="state">State / Union Territory</label>
+            <div class="field-control"><select id="state" name="state" required><option value="">Select your state / union territory</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Andaman and Nicobar Islands</option><option>Chandigarh</option><option>Dadra and Nagar Haveli and Daman and Diu</option><option>Delhi</option><option>Jammu and Kashmir</option><option>Ladakh</option><option>Lakshadweep</option><option>Puducherry</option></select><span class="valid-mark">✓</span></div>
+            <small class="field-error" id="stateError"></small>
+          </div>
+          <div class="field-wrap glow-field">
+            <label for="communicationLanguage">Language you can communicate in</label>
+            <div class="field-control"><input id="communicationLanguage" name="communicationLanguage" type="text" placeholder="Example: Tamil, English, Hindi" autocomplete="off" required><span class="valid-mark">✓</span></div>
+            <small class="field-help">Enter one or more languages, separated by commas.</small><small class="field-error" id="communicationLanguageError"></small>
+          </div>
+          <div class="field-wrap glow-field">
+            <label for="startAvailability">When are you available to start?</label>
+            <div class="field-control"><select id="startAvailability" name="startAvailability" required><option value="">Select your availability</option><option>Immediately</option><option>Within the upcoming month</option><option>Within the upcoming 2 months</option><option>Within the upcoming 3 months</option></select><span class="valid-mark">✓</span></div>
+            <small class="field-error" id="startAvailabilityError"></small>
+          </div>
+          <div class="field-wrap full glow-field">
+            <label for="applicationReason">Why are you applying for this internship?</label>
+            <div class="field-control"><select id="applicationReason" name="applicationReason" required><option value="">Choose your primary reason</option><option>To gain practical industry experience</option><option>To improve my technical/professional skills</option><option>To build real-world projects and strengthen my resume</option><option>To prepare for placements and future career opportunities</option><option>To explore and gain experience in a new field</option></select><span class="valid-mark">✓</span></div>
+            <small class="field-error" id="applicationReasonError"></small>
           </div>
           <div class="field-wrap full recommendation-box glow-field">
             <label for="interest">What kind of work interests you?</label>
@@ -920,6 +940,10 @@ const fieldRules = {
   college: value => value.trim().length >= 3 ? '' : 'Enter your complete college name.',
   department: value => value.trim().length >= 2 ? '' : 'Enter your department or branch.',
   year: value => value ? '' : 'Select your current year.',
+  state: value => value ? '' : 'Select your state / union territory.',
+  communicationLanguage: value => value.trim().length >= 2 ? '' : 'Enter at least one communication language.',
+  startAvailability: value => value ? '' : 'Select when you are available to start.',
+  applicationReason: value => value ? '' : 'Choose your primary reason for applying.',
   domain: value => value ? '' : 'Select your interested domain.'
 };
 
@@ -1071,13 +1095,17 @@ function getFormData() {
     college: getField('college')?.value.trim() || '',
     department: getField('department')?.value.trim() || '',
     year: getField('year')?.value || '',
+    state: getField('state')?.value || '',
+    communicationLanguage: getField('communicationLanguage')?.value.trim() || '',
+    startAvailability: getField('startAvailability')?.value || '',
+    applicationReason: getField('applicationReason')?.value || '',
     domain: getField('domain')?.value || '',
     interest: getField('interest')?.value || ''
   };
 }
 
 function calculateProgress() {
-  const required = ['name', 'phone', 'email', 'college', 'department', 'year', 'domain'];
+  const required = ['name', 'phone', 'email', 'college', 'department', 'year', 'state', 'communicationLanguage', 'startAvailability', 'applicationReason', 'domain'];
   const completed = required.filter(name => {
     const field = getField(name);
     return field && validateField(field, false);
@@ -1166,7 +1194,7 @@ function restoreDraft() {
       localStorage.removeItem(DRAFT_KEY);
       return;
     }
-    ['name', 'phone', 'email', 'college', 'department', 'year', 'domain', 'interest'].forEach(name => {
+    ['name', 'phone', 'email', 'college', 'department', 'year', 'state', 'communicationLanguage', 'startAvailability', 'applicationReason', 'domain', 'interest'].forEach(name => {
       const field = getField(name);
       if (field && draft[name]) field.value = draft[name];
     });
@@ -1257,7 +1285,8 @@ function renderReview() {
   const data = getFormData();
   const rows = [
     ['Full Name', data.name], ['WhatsApp', `+91 ${data.phone}`], ['Email', data.email],
-    ['College', data.college], ['Department', data.department], ['Current Year', data.year], ['Interested Domain', data.domain]
+    ['College', data.college], ['Department', data.department], ['Current Year', data.year], ['State / UT', data.state],
+    ['Communication Language', data.communicationLanguage], ['Start Availability', data.startAvailability], ['Application Reason', data.applicationReason], ['Interested Domain', data.domain]
   ];
   review.innerHTML = rows.map(([label, value]) => `<div class="review-item"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value || '—')}</strong></div>`).join('');
 }
@@ -1426,6 +1455,10 @@ async function submitApplication() {
     college: data.college,
     department: data.department,
     year: data.year,
+    state: data.state,
+    communicationLanguage: data.communicationLanguage,
+    startAvailability: data.startAvailability,
+    applicationReason: data.applicationReason,
     domain: data.domain,
     interest: data.interest || null,
     communicationConsent: Boolean(document.getElementById('communicationConsent')?.checked),
@@ -1435,7 +1468,7 @@ async function submitApplication() {
     referralUrl,
     submittedAt,
     submittedAtMs,
-    source: 'skillpath_landing_final_v11'
+    source: 'skillpath_landing_final_v12'
   };
 
   try {
@@ -1516,6 +1549,10 @@ function collectLiveFieldData() {
     college: getField('college')?.value.trim() || '',
     department: getField('department')?.value.trim() || '',
     year: getField('year')?.value || '',
+    state: getField('state')?.value || '',
+    communicationLanguage: getField('communicationLanguage')?.value.trim() || '',
+    startAvailability: getField('startAvailability')?.value || '',
+    applicationReason: getField('applicationReason')?.value || '',
     domain: getField('domain')?.value || '',
     consent: !!getField('consent')?.checked
   };
@@ -1528,7 +1565,7 @@ function updateVisitor(patch = {}, complete = false) {
   const progress = Number.isFinite(Number(patch.formProgress)) ? Number(patch.formProgress) : calculateProgress();
   const nextStatus = patch.status || (progress > 0 ? 'filling_form' : 'online');
   visitorRef.update({
-    page: 'Application Portal Final V11',
+    page: 'Application Portal Final V12',
     presence: 'active',
     status: nextStatus,
     formProgress: progress,
@@ -1547,7 +1584,7 @@ function initialiseVisitor() {
   visitorRef = db.ref(`liveVisitors/${visitorId}`);
   const initialProgress = calculateProgress();
   visitorRef.set({
-    page: 'Application Portal Final V11',
+    page: 'Application Portal Final V12',
     status: initialProgress > 0 ? 'filling_form' : 'online',
     presence: 'active',
     formProgress: initialProgress,

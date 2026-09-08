@@ -92,4 +92,8 @@ Background push setup:
 ## Live application counter (Spark-plan compatible)
 The public landing page reads only `publicStats/applicationCount`; individual applications remain protected. New successful submissions increment the aggregate with a Realtime Database transaction. The authenticated admin dashboard synchronizes the aggregate to the exact application total, including after deletions/reset. Cloud Functions are not required for this counter.
 
-Password recovery includes a custom Firebase email action handler at reset-password.html. The login flow supplies a secure authorized continue URL to Firebase. If the Firebase Authentication Password reset email template exposes “Customize action URL”, set it to https://mnc-internship.vercel.app/reset-password.html so the email opens the custom handler. If the project uses Firebase’s default action handler instead, keep the Firebase Hosting domains in the Google Cloud API-key HTTP-referrer allowlist.
+Password recovery now includes a custom Firebase email action handler at reset-password.html. Configure Firebase Authentication Email Templates -> Password reset -> Customize action URL to the deployed reset-password.html URL.
+
+
+## Application profile fields
+The application form now collects State / Union Territory, communication language (free text), start availability (4 choices), and primary application reason (5 choices). These values are stored in Firebase and included in the admin CSV export.

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#07101f">
-<title>InternsForge — Admin Dashboard V5.62</title>
+<title>InternsForge — Admin Dashboard V5.63</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="dashboard.css">
@@ -100,34 +100,34 @@
       <div class="queue-hint">Status changes are saved to the application record in Firebase.</div>
     </article>
 
-    <article class="panel live-panel" id="liveVisitors">
+    <article class="panel live-panel nav-only-section" id="liveVisitors">
       <header><div><span class="eyebrow">REALTIME PRESENCE</span><h2>Live visitors</h2><p class="panel-note">Active means activity observed within the last 90 seconds.</p></div><div class="header-actions"><span class="sync-label" id="visitorSyncLabel">Syncing…</span><button id="refreshDashboardButton" class="icon-action refresh-action" type="button" aria-label="Refresh live visitor data"><span>↻</span><small>Refresh</small></button></div></header>
       <div id="liveVisitorSummary" class="mini-stat-strip"></div>
       <div id="visitorList" class="visitor-list"><p class="empty">Waiting for visitors…</p></div>
     </article>
 
-    <article class="panel" id="applications">
+    <article class="panel nav-only-section" id="applications">
       <header><div><span class="eyebrow">APPLICATIONS</span><h2>Recent submissions</h2><p class="panel-note">Newest records first. Open Manage for filters, status and notes.</p></div><div class="header-actions"><button id="openApplicationManager" class="panel-action" type="button">Manage all</button><button id="exportApplicationsButton" class="panel-action" type="button">Export</button></div></header>
       <div id="recentApplications" class="application-list"><p class="empty">No applications yet…</p></div>
     </article>
 
-    <article class="panel">
+    <article class="panel nav-only-section">
       <header><div><span class="eyebrow">DOMAIN MIX</span><h2>Where applications are coming from</h2></div></header>
       <div id="topDomains" class="rank-list"><p class="empty">No data yet…</p></div>
     </article>
 
-    <article class="panel">
+    <article class="panel nav-only-section">
       <header><div><span class="eyebrow">AUDIENCE PROFILE</span><h2>State · language · year</h2></div></header>
       <div class="tri-insight-grid"><div><small>Top states</small><div id="topStates" class="compact-pills"></div></div><div><small>Languages</small><div id="topLanguages" class="compact-pills"></div></div><div><small>Years</small><div id="topYears" class="compact-pills"></div></div></div>
     </article>
 
-    <article class="panel">
+    <article class="panel nav-only-section">
       <header><div><span class="eyebrow">COLLEGE MIX</span><h2>Top colleges</h2></div></header>
       <div id="topColleges" class="rank-list"><p class="empty">No data yet…</p></div>
     </article>
   </section>
 
-  <section class="analytics-band" id="funnel">
+  <section class="analytics-band nav-only-section" id="funnel">
     <article class="panel">
       <header><div><span class="eyebrow">OBSERVED FUNNEL</span><h2>Visitor → application journey</h2><p class="panel-note">This is an observed funnel from retained visitor sessions, not a guaranteed unique-user conversion rate.</p></div></header>
       <div id="applicationFunnel" class="funnel"></div>
@@ -138,7 +138,7 @@
     </article>
   </section>
 
-  <section class="operations-grid" id="activity">
+  <section class="operations-grid nav-only-section" id="activity">
     <article class="panel">
       <header><div><span class="eyebrow">LIVE ACTIVITY</span><h2>Operational timeline</h2></div><button id="clearActivityLog" class="panel-action secondary" type="button">Clear local log</button></header>
       <div id="activityFeed" class="activity-feed"><p class="empty">Activity will appear here as visitors interact with the portal.</p></div>
@@ -149,7 +149,7 @@
     </article>
   </section>
 
-  <section class="referral-area" id="referralOverview">
+  <section class="referral-area nav-only-section" id="referralOverview">
     <section class="section-head"><div><span class="eyebrow">REFERRAL MANAGEMENT</span><h2>Referral performance</h2><p>Track ambassadors, successful joins and referral conversion using the live referral records.</p></div></section>
     <section class="referral-metrics"><article><span>Total codes</span><strong id="totalReferralCodes">0</strong></article><article><span>Successful referrals</span><strong id="successfulReferrals">0</strong></article><article><span>Referral conversion</span><strong id="referralConversionRate">0%</strong></article><article><span>Top ambassador</span><strong id="topAmbassador">—</strong><small id="topAmbassadorCount">No referrals yet</small></article></section>
     <section class="two-col">
@@ -158,7 +158,7 @@
     </section>
   </section>
 
-  <section class="panel settings" id="settings">
+  <section class="panel settings nav-only-section" id="settings">
     <header><div><span class="eyebrow">ADMINISTRATION</span><h2>Alerts, health & data controls</h2><p class="panel-note">Destructive actions are protected by Firebase authentication and confirmation prompts.</p></div></header>
     <div class="notification-settings"><div class="setting-copy"><span class="setting-icon">🔔</span><div><strong>New application alerts</strong><small>Sound + browser notifications for newly detected submissions.</small></div></div><label class="switch-row"><input id="soundEnabled" type="checkbox"><span class="switch"></span><b>Sound</b></label><label class="volume-row">Volume<input id="notificationVolume" type="range" min="0" max="100" value="90"><output id="volumeValue">90%</output></label><button id="testSoundButton" class="panel-action" type="button">Test sound</button><button id="browserNotificationButton" class="panel-action secondary" type="button" aria-pressed="false">Enable browser alerts</button></div>
     <div class="system-health-grid"><article><i id="firebaseHealthDot"></i><span>Firebase</span><strong id="firebaseHealthText">Checking</strong></article><article><i id="visitorHealthDot" class="healthy"></i><span>Live tracking</span><strong id="visitorHealthText">Enabled</strong></article><article><i class="healthy"></i><span>Referral system</span><strong>Enabled</strong></article><article><i id="soundHealthDot"></i><span>Sound alerts</span><strong id="soundHealthText">Disabled</strong></article></div>
@@ -166,7 +166,7 @@
     <div class="settings-grid"><button onclick="deleteLiveVisitors()"><b>Clear tracking</b><span>Delete retained live visitor records</span></button><button onclick="deleteApplications()"><b>Delete applications</b><span>Remove submitted application records</span></button><button onclick="deleteReferralData()"><b>Delete referrals</b><span>Remove referral profiles and joins</span></button><button onclick="resetDashboard()"><b>Full reset</b><span>Clear dashboard data after confirmation</span></button></div>
   </section>
 </main>
-<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Admin Dashboard V5.62</span></footer>
+<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Admin Dashboard V5.63</span></footer>
 </section></div>
 
 <div id="applicationManagerModal" class="modal-shell" aria-hidden="true"><div class="modal-backdrop" data-close-manager></div><section class="manager-modal" role="dialog" aria-modal="true" aria-labelledby="managerTitle"><header class="manager-header"><div><span class="eyebrow">APPLICATION MANAGEMENT</span><h2 id="managerTitle">All Applications</h2><p id="managerCountLabel">0 records</p></div><button type="button" class="modal-close" data-close-manager aria-label="Close">×</button></header><div class="manager-toolbar"><input id="applicationSearch" type="search" placeholder="Search name, email, college, phone or ID"><select id="applicationDomainFilter"><option value="">All domains</option></select><select id="applicationStateFilter"><option value="">All states</option></select><select id="applicationYearFilter"><option value="">All years</option></select><select id="applicationLanguageFilter"><option value="">All languages</option></select><select id="applicationStatusFilter"><option value="">All statuses</option><option value="new">New</option><option value="reviewed">Reviewed</option><option value="shortlisted">Shortlisted</option><option value="selected">Selected</option><option value="rejected">Rejected</option></select><button id="clearApplicationFilters" class="panel-action secondary" type="button">Clear filters</button></div><div class="manager-table-wrap"><table class="manager-table"><thead><tr><th>Applicant</th><th>Academic</th><th>Domain</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead><tbody id="applicationManagerBody"><tr><td colspan="6" class="empty">No applications yet.</td></tr></tbody></table></div><footer class="manager-footer"><button id="managerPrev" class="panel-action secondary" type="button">← Previous</button><span id="managerPageInfo">Page 1 of 1</span><button id="managerNext" class="panel-action secondary" type="button">Next →</button></footer></section></div>

@@ -1026,6 +1026,7 @@ function setupHeaderNavigation() {
     if(openSectionNode && openSectionPlaceholder?.parentNode){
       openSectionPlaceholder.parentNode.replaceChild(openSectionNode, openSectionPlaceholder);
     }
+    if(openSectionNode) openSectionNode.classList.remove("in-viewer");
     openSectionNode = null;
     openSectionPlaceholder = null;
     openSectionId = "";
@@ -1050,6 +1051,7 @@ function setupHeaderNavigation() {
     savedScrollY = window.scrollY || window.pageYOffset || 0;
     openSectionId = targetId;
     openSectionNode = target;
+    target.classList.add("in-viewer");
     openSectionPlaceholder = document.createComment(`InternsForge placeholder: ${targetId}`);
     target.parentNode.insertBefore(openSectionPlaceholder, target);
     viewerBody.appendChild(target);

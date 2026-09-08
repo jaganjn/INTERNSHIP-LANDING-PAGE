@@ -824,3 +824,68 @@ main{width:min(100%,var(--content-max));margin:0 auto!important;padding-top:22px
 @media(max-width:820px){main{padding:16px 14px 30px!important}.topbar{min-height:72px!important;padding:9px 12px!important}.welcome h1{font-size:13px!important}.welcome p{display:none!important}.connection{padding:7px 8px!important}.nav-menu-button{min-height:40px!important}.clock{display:none!important}.portal-btn{display:none!important}.admin-profile-button{min-height:40px}.admin-profile-copy{display:none}.admin-profile-caret{display:none}.section-viewer-shell{padding:8px!important}.section-viewer-modal{width:calc(100vw - 12px)!important;height:calc(100dvh - 16px)!important;max-height:calc(100dvh - 16px)!important;border-radius:18px!important}.section-viewer-header{padding:15px 16px 13px!important}.section-viewer-header h2{font-size:18px!important}.section-viewer-body{padding:12px 13px 18px!important}.section-viewer-body .visitor-list,.section-viewer-body .application-list,.section-viewer-body .rank-list,.section-viewer-body .activity-feed,.section-viewer-body .table-wrap{max-height:58vh!important}}
 @media(max-width:520px){.v6-metrics{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}.v6-metrics .metric{min-height:112px!important;padding:13px!important}.v6-metrics .metric h3{font-size:21px!important}.metric-label{font-size:7px!important}.command-hero{padding:18px!important}.command-copy h2{font-size:22px!important}.admin-profile-wrap{position:static}.admin-profile-menu{position:fixed;top:63px;right:9px;width:min(292px,calc(100vw - 18px))}.section-viewer-body .bar-chart{height:250px!important}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;transition-duration:.001ms!important}}
+
+/* =========================================================
+   V5.71 — Navigation layout refinement
+   Keep clusters balanced, compact and easy to scan.
+   ========================================================= */
+.nav-menu-panel{
+  width:min(1120px,calc(100vw - 36px))!important;
+  padding:22px 24px 24px!important;
+}
+.nav-menu-heading{margin-bottom:18px!important}
+.nav-cluster-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  align-items:start!important;
+  gap:14px!important;
+}
+.nav-cluster{
+  padding:15px!important;
+  min-width:0!important;
+  min-height:0!important;
+  align-self:start!important;
+}
+.nav-link-grid{
+  display:grid!important;
+  gap:7px!important;
+}
+.nav-link-grid.two{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.nav-link-grid.one{grid-template-columns:1fr!important}
+.nav-link-grid a,
+.nav-link-grid button{
+  min-height:56px!important;
+  padding:9px 10px!important;
+  gap:9px!important;
+  align-items:center!important;
+}
+.nav-link-grid b{
+  width:30px!important;
+  height:30px!important;
+  border-radius:8px!important;
+  font-size:12px!important;
+}
+.nav-link-grid strong{
+  font-size:10px!important;
+  line-height:1.2!important;
+}
+.nav-link-grid small{
+  font-size:8px!important;
+  line-height:1.35!important;
+  white-space:normal!important;
+}
+.nav-cluster-overview .nav-link-grid a{min-height:56px!important}
+.nav-cluster-insights .nav-link-grid a,
+.nav-cluster-referrals .nav-link-grid a,
+.nav-cluster-operations .nav-link-grid a,
+.nav-cluster-operations .nav-link-grid button{min-height:58px!important}
+
+@media(max-width:1180px){
+  .nav-menu-panel{width:min(980px,calc(100vw - 28px))!important}
+  .nav-cluster-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:820px){
+  .nav-menu-panel{padding:16px!important}
+  .nav-cluster-grid{grid-template-columns:1fr!important;gap:10px!important}
+  .nav-link-grid.two{grid-template-columns:1fr!important}
+  .nav-link-grid a,.nav-link-grid button{min-height:50px!important}
+}

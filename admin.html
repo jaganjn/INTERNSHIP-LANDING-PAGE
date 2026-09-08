@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#07101f">
-<title>InternsForge — Admin Dashboard V5.63</title>
+<title>InternsForge — Admin Dashboard V5.71</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="dashboard.css">
@@ -26,35 +26,55 @@
       <button class="nav-menu-close" id="navMenuClose" type="button" aria-label="Close navigation">×</button>
     </div>
     <div class="nav-cluster-grid">
-      <div class="nav-cluster">
+      <div class="nav-cluster nav-cluster-overview">
         <span class="nav-cluster-label">OVERVIEW</span>
-        <a href="#dashboard" data-popup-target="dashboard"><b>⌂</b><span><strong>Dashboard</strong><small>Live operational overview</small></span></a>
+        <div class="nav-link-grid one">
+          <a href="#dashboard" data-popup-target="dashboard"><b>⌂</b><span><strong>Dashboard</strong><small>Live operational overview</small></span></a>
+        </div>
       </div>
+
       <div class="nav-cluster">
         <span class="nav-cluster-label">MONITORING</span>
-        <a href="#liveVisitors" data-popup-target="liveVisitors"><b>◉</b><span><strong>Live Visitors</strong><small>Realtime visitor sessions</small></span></a>
-        <a href="#activity" data-popup-target="activity"><b>⌁</b><span><strong>Activity Feed</strong><small>Latest portal activity</small></span></a>
+        <div class="nav-link-grid two">
+          <a href="#liveVisitors" data-popup-target="liveVisitors"><b>◉</b><span><strong>Live Visitors</strong><small>Realtime visitor sessions</small></span></a>
+          <a href="#activity" data-popup-target="activity"><b>⌁</b><span><strong>Activity Feed</strong><small>Latest portal activity</small></span></a>
+        </div>
       </div>
+
       <div class="nav-cluster">
         <span class="nav-cluster-label">APPLICATIONS</span>
-        <a href="#applications" data-popup-target="applications"><b>▤</b><span><strong>Applications</strong><small>Recent submissions & manager</small></span></a>
-        <a href="#analytics" data-popup-target="analytics"><b>◌</b><span><strong>Analytics</strong><small>Submission pulse & audience</small></span></a>
-        <a href="#funnel" data-popup-target="funnel"><b>◒</b><span><strong>Funnel & Performance</strong><small>Journey and domain insights</small></span></a>
-        <a href="#domainInsights" data-popup-target="domainInsights"><b>◫</b><span><strong>Domain Insights</strong><small>Domain mix and performance</small></span></a>
-        <a href="#audienceInsights" data-popup-target="audienceInsights"><b>◌</b><span><strong>Audience Insights</strong><small>State, language and year mix</small></span></a>
-        <a href="#collegeInsights" data-popup-target="collegeInsights"><b>▥</b><span><strong>College Insights</strong><small>Top participating colleges</small></span></a>
+        <div class="nav-link-grid two">
+          <a href="#applications" data-popup-target="applications"><b>▤</b><span><strong>Applications</strong><small>Recent submissions & manager</small></span></a>
+          <a href="#funnel" data-popup-target="funnel"><b>◒</b><span><strong>Funnel &amp; Performance</strong><small>Journey and domain insights</small></span></a>
+        </div>
       </div>
-      <div class="nav-cluster">
+
+      <div class="nav-cluster nav-cluster-insights">
+        <span class="nav-cluster-label">INSIGHTS</span>
+        <div class="nav-link-grid two">
+          <a href="#analytics" data-popup-target="analytics"><b>◌</b><span><strong>Analytics</strong><small>Submission pulse &amp; audience</small></span></a>
+          <a href="#domainInsights" data-popup-target="domainInsights"><b>◫</b><span><strong>Domain Insights</strong><small>Domain mix &amp; performance</small></span></a>
+          <a href="#audienceInsights" data-popup-target="audienceInsights"><b>◌</b><span><strong>Audience Insights</strong><small>State, language &amp; year mix</small></span></a>
+          <a href="#collegeInsights" data-popup-target="collegeInsights"><b>▥</b><span><strong>College Insights</strong><small>Top participating colleges</small></span></a>
+        </div>
+      </div>
+
+      <div class="nav-cluster nav-cluster-referrals">
         <span class="nav-cluster-label">REFERRALS</span>
-        <a href="#referralOverview" data-popup-target="referralOverview"><b>♙</b><span><strong>Referral Overview</strong><small>Ambassadors & conversion</small></span></a>
-        <a href="#referralLeaderboard" data-popup-target="referralLeaderboard"><b>★</b><span><strong>Leaderboard</strong><small>Top referrers</small></span></a>
-        <a href="#referralFriends" data-popup-target="referralFriends"><b>♧</b><span><strong>Friends Joined</strong><small>Referral activity</small></span></a>
+        <div class="nav-link-grid two">
+          <a href="#referralOverview" data-popup-target="referralOverview"><b>♙</b><span><strong>Referral Overview</strong><small>Ambassadors &amp; conversion</small></span></a>
+          <a href="#referralLeaderboard" data-popup-target="referralLeaderboard"><b>★</b><span><strong>Leaderboard</strong><small>Top referrers</small></span></a>
+          <a href="#referralFriends" data-popup-target="referralFriends"><b>♧</b><span><strong>Friends Joined</strong><small>Referral activity</small></span></a>
+        </div>
       </div>
-      <div class="nav-cluster">
+
+      <div class="nav-cluster nav-cluster-operations">
         <span class="nav-cluster-label">OPERATIONS</span>
-        <a href="#settings" data-popup-target="settings"><b>⚙</b><span><strong>Settings & Health</strong><small>Alerts, health & data controls</small></span></a>
-        <button type="button" id="navResetPassword"><b>🔑</b><span><strong>Reset Password</strong><small>Update admin access</small></span></button>
-        <button type="button" id="navLogout"><b>↪</b><span><strong>Sign Out</strong><small>End admin session</small></span></button>
+        <div class="nav-link-grid two">
+          <a href="#settings" data-popup-target="settings"><b>⚙</b><span><strong>Settings &amp; Health</strong><small>Alerts, health &amp; data controls</small></span></a>
+          <button type="button" id="navResetPassword"><b>🔑</b><span><strong>Reset Password</strong><small>Update admin access</small></span></button>
+          <button type="button" id="navLogout"><b>↪</b><span><strong>Sign Out</strong><small>End admin session</small></span></button>
+        </div>
       </div>
     </div>
   </div>

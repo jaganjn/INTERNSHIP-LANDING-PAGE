@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- InternsForge Conversion Redesign V1: CSS and application JavaScript are embedded. Keep existing images and firebase.js in the same folder. -->
+<!-- SkillPath final production build: CSS and application JavaScript are embedded. Keep existing images and firebase.js in the same folder. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -551,6 +551,59 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
   .clear-application-wrap{ margin:8px 0 4px; }
   .clear-application-btn{ font-size:.75rem; }
 }
+
+
+/* =========================================================
+   INTERNFORGE CONVERSION REDESIGN — FRONTEND ONLY
+   Backend/Firebase/Apps Script untouched.
+   ========================================================= */
+:root{
+  --ink:#0d1b31;--muted:#64748b;--line:#dfe6f0;--soft:#f4f7fb;
+  --brand:#365cf4;--brand2:#6d45e8;--success:#16a56f;--dark:#071426;
+  --card:rgba(255,255,255,.94);--r:22px;--max:1240px;
+}
+html{scroll-behavior:smooth}
+body{background:linear-gradient(180deg,#f7faff 0%,#f3f6fb 42%,#fff 100%);color:var(--ink)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(circle at 12% 0%,rgba(67,93,245,.07),transparent 26%),radial-gradient(circle at 92% 18%,rgba(118,72,230,.07),transparent 24%)}
+.site-header{max-width:var(--max);top:12px;margin:12px auto;padding:10px 12px 10px 16px;border-radius:18px;background:rgba(255,255,255,.84);border:1px solid rgba(180,194,219,.42);box-shadow:0 15px 48px rgba(18,33,60,.08)}
+.brand strong{font-size:15px}.brand small{font-size:7px;letter-spacing:1.3px}.desktop-nav{gap:22px}.desktop-nav a{font-size:12px;color:#53627a}.header-cta{background:linear-gradient(100deg,#1e4ed8,#5a45e7);border-radius:12px;padding:11px 15px;box-shadow:0 10px 26px rgba(48,83,229,.2)}
+.hero{max-width:var(--max);padding:76px 20px 36px;grid-template-columns:minmax(0,1.02fr) minmax(420px,.78fr);gap:54px;align-items:center}
+.hero-copy{padding:12px 0}.eyebrow{font-size:10px;background:#edf1ff;color:#4f64db;border:1px solid #dbe2ff}.hero h1{max-width:710px;font-size:clamp(50px,5.4vw,76px);letter-spacing:-3.6px;line-height:.99;margin:21px 0 18px}.hero h1 span{background:linear-gradient(100deg,#2a5ef1,#7346e8 68%,#a845d4);-webkit-background-clip:text;background-clip:text;color:transparent}.hero-lead{max-width:640px;font-size:16px;line-height:1.75;color:#60718b}.hero-actions{margin:28px 0 15px;gap:11px}.primary-btn{min-height:56px;padding:0 22px;border-radius:14px;font-size:14px;box-shadow:0 16px 34px rgba(53,78,226,.22)}.secondary-btn{min-height:56px;padding:0 20px;border-radius:14px;font-size:13px}.hero-proof{gap:9px 16px;font-size:11px;color:#53637b}.hero-proof span{display:inline-flex;align-items:center;gap:4px}.fact-row{gap:0;margin-top:31px;padding-top:21px}.fact-row article{padding-right:18px;margin-right:18px;border-right:1px solid #e3e8f1}.fact-row article:last-child{border-right:0}.fact-row b{font-size:21px}.fact-row small{font-size:10px}
+.hero-art{height:560px;border-radius:30px;background:radial-gradient(circle at 50% 46%,rgba(79,103,245,.29),transparent 35%),linear-gradient(145deg,#06152d,#0a1931 62%,#151034);box-shadow:0 36px 90px rgba(10,27,54,.24);border:1px solid rgba(121,153,255,.14)}.career-core{width:216px;height:216px}.orbit-card{width:185px;border-radius:15px;padding:11px}.orbit-card img{width:40px;height:40px}.visual-top{font-size:9px}.card-one{top:102px}.card-two{top:137px}.card-three{bottom:95px}.card-four{bottom:65px}
+.trust-strip{max-width:var(--max);grid-template-columns:repeat(4,1fr);padding:0 20px;margin:10px auto 20px;gap:14px}.trust-strip article{padding:18px 19px;border-radius:17px;border:1px solid #e2e8f1;background:rgba(255,255,255,.9);box-shadow:0 12px 30px rgba(30,47,82,.05)}
+.ecosystem{max-width:var(--max);margin:16px auto 54px;padding:18px 20px;border-radius:18px;box-shadow:0 12px 34px rgba(30,47,82,.05)}
+.application-zone{max-width:var(--max);padding:58px 20px 80px;grid-template-columns:.72fr 1.28fr;gap:42px;align-items:start}
+.application-intro{position:sticky;top:96px}.application-intro>span,.section-heading>span{font-size:9px;letter-spacing:1.4px}.application-intro h2{font-size:42px;letter-spacing:-2px;line-height:1.05}.application-intro p{font-size:14px;line-height:1.7}.journey-card{margin-top:22px;padding:18px;border-radius:18px;box-shadow:0 12px 32px rgba(30,47,82,.06)}.application-points{gap:8px}.application-points>div{padding:12px 13px;border-radius:13px}.application-points span strong{font-size:11px}.application-points span small{font-size:9px}
+/* Application form as a focused conversion workspace */
+.application-card.wizard-shell{max-width:760px;border-radius:28px;padding:24px;background:linear-gradient(155deg,rgba(255,255,255,.99),rgba(248,250,255,.98));box-shadow:0 28px 80px rgba(27,47,86,.14);border:1px solid #e1e7f0}.wizard-head{padding:6px 10px 0}.wizard-chip-row{justify-content:space-between}.wizard-time-pill{font-size:9px;padding:7px 10px;border:1px solid #e1e5f5;background:#f6f8ff;color:#6572a2;border-radius:999px}.wizard-progress-shell{margin-top:9px}.wizard-progress-bar{height:5px;background:#e8edf7}.wizard-hero{margin-top:15px;padding:17px 18px;border-radius:20px;background:linear-gradient(145deg,#0a1a34,#173064 56%,#402d78);border-color:rgba(255,255,255,.1)}.wizard-copy h2{font-size:25px}.wizard-copy p{font-size:11px}.application-progress-four{margin:18px 5px 8px}.progress-four-step b{font-size:8px}.step-panel{gap:14px;padding:17px;border-radius:18px}.step-panel-head span{font-size:8px;letter-spacing:1px}.step-panel-head h3{font-size:21px;letter-spacing:-.4px}.step-panel-head p{font-size:10px;line-height:1.58}.field-grid{gap:13px}.field-wrap{gap:5px}.field-wrap label{font-size:10.5px}.field-control input,.field-control select{height:52px;border-radius:12px;font-size:12px;background:#fbfcff}.field-help,.field-error{font-size:9px}.step-actions{gap:9px}.step-actions button{min-height:52px;border-radius:12px;font-size:11px}.consent-row{font-size:9px}.secure{font-size:9px}
+.student-journey-section{padding:70px 20px;background:#0a1730;color:#fff}.student-journey-shell{max-width:var(--max);margin:auto}.student-journey-head{display:flex;justify-content:space-between;gap:36px;align-items:end;margin-bottom:26px}.student-journey-head h2{font-size:40px;letter-spacing:-1.5px}.student-journey-head p{max-width:420px;color:#a9b9d5;font-size:13px}.journey-step-card{min-width:220px;border-radius:17px;border:1px solid rgba(145,170,255,.15);background:rgba(255,255,255,.05);padding:18px}.journey-step-card.active{background:linear-gradient(150deg,rgba(70,98,241,.28),rgba(119,69,230,.2));border-color:rgba(116,137,255,.35)}
+.section{padding:84px max(20px,calc((100% - var(--max))/2))}.section-heading{margin-bottom:34px;max-width:760px}.section-heading h2{font-size:clamp(34px,4vw,48px)}.section-heading p{font-size:14px;line-height:1.7}.receive-grid,.project-grid,.proof-grid,.how-grid{gap:15px}.receive-grid article,.project-grid article,.proof-grid article,.how-grid article{border:1px solid #e2e8f1;border-radius:18px;background:rgba(255,255,255,.92);box-shadow:0 10px 28px rgba(25,43,76,.045)}
+.domain-section{background:#f7f9fd}.domain-category{border-radius:20px;border:1px solid #e1e7f0;background:rgba(255,255,255,.88);box-shadow:0 14px 35px rgba(28,43,74,.05)}.domain-explorer-trigger{border-radius:15px;background:#0c1c36;box-shadow:0 14px 30px rgba(17,32,61,.15)}.domain-card{border-radius:14px;background:#fbfcff;border-color:#e2e8f1}.domain-card:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(46,75,137,.08)}
+.faq-list details{border-color:#e1e7f0;background:rgba(255,255,255,.9);border-radius:14px;margin-bottom:9px}.faq-list summary{padding:17px 18px;font-size:12px}.faq-list details p{padding:0 18px 17px;font-size:11px;line-height:1.7}
+.final-cta{max-width:var(--max);margin:34px auto 70px;padding:30px 32px;border-radius:24px;background:linear-gradient(120deg,#0b1b34,#122b59 55%,#32205f);box-shadow:0 24px 65px rgba(12,28,59,.18)}.final-cta h2{font-size:36px;letter-spacing:-1px}.final-cta p{font-size:13px;color:#b8c8e2}.final-cta button{border:0;padding:0 22px;min-height:52px;border-radius:13px;color:#fff;background:linear-gradient(100deg,#2c60f0,#7a48e8);font-weight:800}
+footer{max-width:var(--max);margin:0 auto;padding:22px 20px 32px;border-top:1px solid #e2e8f1}.footer-brand strong{font-size:14px}
+/* Application modal: centered, calm, no page jump */
+body.application-modal-open .application-zone{background:rgba(5,17,36,.76);backdrop-filter:blur(12px);padding:24px;overflow:auto;overscroll-behavior:contain}.application-modal-open .application-card{max-height:min(900px,calc(100dvh - 48px));overflow:auto;overscroll-behavior:contain}.application-modal-open .application-card::-webkit-scrollbar{width:8px}.application-modal-open .application-card::-webkit-scrollbar-thumb{background:#cbd6ea;border-radius:999px}.application-modal-open .application-card::-webkit-scrollbar-track{background:transparent}
+.floating-cta{border-radius:999px!important;box-shadow:0 14px 32px rgba(53,79,229,.25)!important}
+@media(max-width:980px){.desktop-nav{display:none}.mobile-menu{display:block}.hero{grid-template-columns:1fr;gap:32px}.hero-copy{max-width:760px}.hero-art{height:520px;max-width:760px;width:100%}.trust-strip{grid-template-columns:1fr 1fr}.application-zone{grid-template-columns:1fr;gap:22px}.application-intro{position:static}.student-journey-head{align-items:flex-start;flex-direction:column}.application-card.wizard-shell{margin:auto}}
+@media(max-width:600px){
+ body{padding-bottom:74px}.site-header{top:7px;margin:7px 8px;padding:8px 9px}.brand-mark{width:36px;height:36px}.brand strong{font-size:13px}.brand small{display:none}.header-cta{display:none}.mobile-menu summary{width:40px;height:40px}.mobile-menu>div{top:61px}
+ .hero{padding:54px 15px 24px;gap:22px}.hero-copy{text-align:left}.eyebrow{font-size:8px;padding:7px 10px}.hero h1{font-size:42px;letter-spacing:-2.4px;margin:17px 0 14px}.hero-lead{font-size:13px;line-height:1.68}.hero-actions{display:grid;gap:9px}.primary-btn,.secondary-btn{width:100%;min-height:52px}.hero-proof{font-size:9.5px;line-height:1.4}.fact-row{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:22px;padding-top:18px}.fact-row article{border-right:0;padding-right:0;margin-right:0}.fact-row b{font-size:17px}.hero-art{height:420px;border-radius:23px}.career-core{width:160px;height:160px}.career-core b{font-size:30px}.orbit-card{width:145px}.card-one{left:9px;top:70px}.card-two{right:9px;top:102px}.card-three{left:10px;bottom:63px}.card-four{right:9px;bottom:38px}
+ .trust-strip{padding:0 12px;grid-template-columns:1fr 1fr;gap:9px}.trust-strip article{padding:13px;border-radius:14px}.trust-strip strong{font-size:12px}.trust-strip small{font-size:8.5px}
+ .ecosystem{margin:12px 12px 40px;padding:14px;border-radius:16px}.ecosystem-title span{font-size:8px}.ecosystem-title small{font-size:8px}.marquee-group figure{width:112px;height:52px}
+ .application-zone{padding:52px 11px 60px;gap:18px}.application-intro h2{font-size:31px;letter-spacing:-1.2px}.application-intro p{font-size:12px}.application-card.wizard-shell{padding:11px;border-radius:21px;box-shadow:0 18px 56px rgba(27,47,86,.14)}.wizard-hero{padding:14px;border-radius:17px}.wizard-copy h2{font-size:20px}.wizard-copy p{font-size:10px}.step-panel{padding:13px;border-radius:16px}.step-panel-head h3{font-size:18px}.field-control input,.field-control select{height:50px;font-size:12px}.step-actions{grid-template-columns:1fr}.step-actions button{width:100%}.application-progress-four{margin-top:15px}
+ .student-journey-section{padding:58px 15px}.student-journey-head h2{font-size:31px}.student-journey-head p{font-size:11px}.journey-scroller{gap:10px;overflow-x:auto;padding-bottom:8px}.journey-step-card{min-width:82vw;padding:16px}
+ .section{padding:64px 15px}.section-heading{margin-bottom:24px}.section-heading h2{font-size:32px;letter-spacing:-1.1px}.section-heading p{font-size:12px}.final-cta{margin:44px 12px;padding:24px 20px;border-radius:20px}.final-cta h2{font-size:29px}.final-cta p{font-size:11px}.final-cta button{width:100%;min-height:50px}
+ body.application-modal-open .application-zone{padding:7px;align-items:flex-start}.application-modal-open .application-card{max-height:calc(100dvh - 14px);border-radius:20px!important}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+
+<style id="conversion-note-style">
+.conversion-note{max-width:var(--max);margin:18px auto 0;padding:16px 20px;border:1px solid #dfe6f0;border-radius:16px;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:space-between;gap:20px;box-shadow:0 10px 30px rgba(25,43,76,.045)}
+.conversion-note strong,.conversion-note span{display:block}.conversion-note strong{font-size:12px}.conversion-note span{font-size:10px;color:#748298;margin-top:2px}.conversion-note button{border:1px solid #d7def0;background:#f7f9ff;color:#3653cf;padding:9px 12px;border-radius:10px;font-size:10px;font-weight:800;white-space:nowrap}
+@media(max-width:600px){.conversion-note{margin:14px 12px 0;padding:14px;align-items:flex-start;flex-direction:column}.conversion-note button{width:100%}}
+</style>
 </style>
 
 </head>
@@ -564,7 +617,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
   <nav class="desktop-nav" aria-label="Primary navigation">
     <a href="#home" aria-current="page">Home</a><a href="#programme">Programme</a><a href="#projects">Projects</a><a href="#domains">Domains</a><a href="#how">Process</a><a href="#faq">FAQ</a>
   </nav>
-  <a class="header-cta" href="#apply">Apply in 60 Seconds <span>↗</span></a>
+  <a class="header-cta" href="#apply">Start Your Application <span>↗</span></a>
   <details class="mobile-menu">
     <summary aria-label="Open navigation"><span></span><span></span><span></span></summary>
     <div><a href="#home">Home</a><a href="#programme">Programme</a><a href="#projects">Projects</a><a href="#domains">Domains</a><a href="#how">Process</a><a href="#faq">FAQ</a><a href="#apply">Start Application</a></div>
@@ -575,14 +628,13 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 <section class="hero" id="home">
   <div class="hero-copy">
     <div class="eyebrow"><i></i> 2026 ONLINE INTERNSHIP PROGRAMME</div>
-    <h1>Build real projects. <span>Get internship-ready.</span></h1>
-    <div class="hero-value-line"><span>Learn by doing</span><i>•</i><span>Build proof of work</span><i>•</i><span>Get career guidance</span></div>
-    <p class="hero-lead">A guided online internship programme for students across departments. Choose a domain, work on practical projects, strengthen your profile and request an internship counselling call for the next step.</p>
+    <h1>Build skills that <span>move your career forward.</span></h1>
+    <p class="hero-lead">A practical online internship experience for students who want stronger skills, portfolio projects and clearer career direction — without a long, confusing application process.</p>
     <div class="hero-actions">
-      <button class="primary-btn open-application" type="button">Submit Application <span>→</span></button>
-      <a class="secondary-btn" href="#domains">Explore Domains</a>
+      <button class="primary-btn open-application" type="button">Apply in 60 Seconds <span>→</span></button>
+      <a class="secondary-btn" href="#projects">Explore Internship Domains</a>
     </div>
-    <div class="hero-proof"><span>✓ About 60-second initial application</span><span>✓ No resume required initially</span><span>✓ Counselling call request available</span></div>
+    <div class="hero-proof"><span>✓ About 60 seconds to apply</span><span>✓ Resume not required initially</span><span>✓ Application reference provided</span></div>
     <div class="fact-row" aria-label="Programme facts">
       <article><b>35</b><small>Career domains</small></article>
       <article><b id="liveApplicationCount">—</b><small>Students applied</small></article>
@@ -608,22 +660,10 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 </section>
 
 <section class="trust-strip" id="programme" aria-label="Programme summary">
-  <article><span>MODE</span><strong>Online</strong><small>Learn from anywhere</small></article>
-  <article><span>ELIGIBILITY</span><strong>Any Degree</strong><small>All departments welcome</small></article>
-  <article><span>APPLICATION</span><strong>About 60 seconds</strong><small>Three guided steps</small></article>
-  <article><span>NEXT STEP</span><strong>Application review</strong><small>Details shared after review</small></article>
-</section>
-
-<section class="conversion-bridge" aria-label="Application guidance">
-  <div class="conversion-bridge-copy">
-    <span>ONE SIMPLE NEXT STEP</span>
-    <h2>Submit your application. Get clarity on what comes next.</h2>
-    <p>After you submit, you can request an internship counselling call to discuss domains, programme expectations, practical work and the next step.</p>
-  </div>
-  <div class="conversion-bridge-actions">
-    <button class="primary-btn open-application" type="button">Submit Application <span>→</span></button>
-    <div class="conversion-mini-points"><span>✓ Guided application</span><span>✓ Secure submission</span><span>✓ Counselling request</span></div>
-  </div>
+  <article><span>FORMAT</span><strong>Online</strong><small>Learn from anywhere</small></article>
+  <article><span>ELIGIBILITY</span><strong>All Departments</strong><small>1st year to final year</small></article>
+  <article><span>APPLICATION</span><strong>About 60 seconds</strong><small>Simple guided steps</small></article>
+  <article><span>AFTER APPLYING</span><strong>Get reviewed</strong><small>Next-step guidance follows</small></article>
 </section>
 
 <section class="ecosystem" aria-label="Technology ecosystems">
@@ -642,8 +682,8 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 <section class="application-zone">
   <div class="application-intro">
     <span>GUIDED APPLICATION</span>
-    <h2>A guided application, built to feel quick and clear.</h2>
-    <p>Share the essentials first, review everything before submission and optionally request a counselling call so you can understand the internship path before moving forward.</p>
+    <h2>Apply in a few guided steps — then get the next step clearly.</h2>
+    <p>Keep it simple: enter your essentials, choose a domain, review your details and submit. Your draft is saved on this device as you go.</p>
 
     <div class="journey-card" id="journeyCard" aria-live="polite">
       <div class="journey-head"><span>APPLICATION MOMENTUM</span><strong id="journeyPercent">0%</strong></div>
@@ -654,9 +694,9 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
     </div>
 
     <div class="application-points">
-      <div><b>01</b><span><strong>Basic details</strong><small>Name, WhatsApp and email</small></span></div>
-      <div><b>02</b><span><strong>Academic + domain</strong><small>College, year, location and track</small></span></div>
-      <div><b>03</b><span><strong>Review + counselling option</strong><small>Confirm your details before submission</small></span></div>
+      <div><b>01</b><span><strong>Basic information</strong><small>Name and WhatsApp number</small></span></div>
+      <div><b>02</b><span><strong>Academic profile</strong><small>College, year and domain</small></span></div>
+      <div><b>03</b><span><strong>Review and submit</strong><small>Check details before sending</small></span></div>
     </div>
   </div>
 
@@ -710,7 +750,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
         <div class="step-panel-head">
           <span>STEP 1 · CONTACT</span>
           <h3>Who is applying?</h3>
-          <p>These two details unlock the next step and save your place in the application flow.</p>
+          <p>Start with the basics. We keep the first step quick so you can move forward immediately.</p>
         </div>
         <div class="field-wrap glow-field">
           <label for="name">Full Name</label>
@@ -729,7 +769,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
         <div class="step-panel-head">
           <span>STEP 2 · ACADEMIC</span>
           <h3>Tell us about your academic profile</h3>
-          <p>Select your academic details, location, availability and preferred domain so we can understand your profile more clearly.</p>
+          <p>Tell us about your academic profile and internship preferences so we can route your application to the right track.</p>
         </div>
         <div class="field-grid academic-grid">
           <div class="field-wrap full glow-field">
@@ -769,8 +809,8 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
             <small class="field-error" id="startAvailabilityError"></small>
           </div>
           <div class="field-wrap full glow-field">
-            <label for="applicationReason">Why are you applying for this internship? <span class="optional-label">Optional</span></label>
-            <div class="field-control"><select id="applicationReason" name="applicationReason"><option value="">Choose your primary reason</option><option>To gain practical industry experience</option><option>To improve my technical/professional skills</option><option>To build real-world projects and strengthen my resume</option><option>To prepare for placements and future career opportunities</option><option>To explore and gain experience in a new field</option></select><span class="valid-mark">✓</span></div>
+            <label for="applicationReason">Why are you applying for this internship?</label>
+            <div class="field-control"><select id="applicationReason" name="applicationReason" required><option value="">Choose your primary reason</option><option>To gain practical industry experience</option><option>To improve my technical/professional skills</option><option>To build real-world projects and strengthen my resume</option><option>To prepare for placements and future career opportunities</option><option>To explore and gain experience in a new field</option></select><span class="valid-mark">✓</span></div>
             <small class="field-error" id="applicationReasonError"></small>
           </div>
           <div class="field-wrap full recommendation-box glow-field">
@@ -790,26 +830,13 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
       <section class="form-step review-step step-panel" data-step="3" hidden>
         <div class="step-panel-head review-panel-head">
           <span>STEP 3 · REVIEW</span>
-          <h3>Review & submit confidently</h3>
-          <p>Check your details once. Your application will only be submitted when you press the final button below.</p>
+          <h3>Review & submit your application</h3>
+          <p>Check your details once. When everything looks right, submit your application.</p>
         </div>
         <div class="review-heading"><span>✓</span><div><h3>Your application is ready</h3><p>Only your completed information is shown here for final review.</p></div></div>
         <div id="applicationReview" class="application-review"></div>
         <label class="consent-row"><input type="checkbox" id="applicationConsent" required><span>I confirm that the information provided is correct and agree to the <a href="terms.html" target="_blank" rel="noopener">programme terms</a> and <a href="privacy.html" target="_blank" rel="noopener">privacy notice</a>.</span></label>
         <label class="consent-row optional"><input type="checkbox" id="communicationConsent"><span>I agree to receive application and programme updates through WhatsApp, phone or email.</span></label>
-        <div class="counselling-request-card">
-          <div class="counselling-request-copy">
-            <span class="counselling-kicker">OPTIONAL — RECOMMENDED</span>
-            <h4>Request an internship counselling call</h4>
-            <p>Ask our team about the right domain, practical project expectations, programme flow and what to do after applying.</p>
-          </div>
-          <label class="counselling-toggle"><input type="checkbox" id="counsellingRequest" checked><span>Yes, I’d like a counselling call</span></label>
-          <div class="field-wrap compact-counselling-field">
-            <label for="counsellingPreferredTime">Preferred time window</label>
-            <div class="field-control"><select id="counsellingPreferredTime" name="counsellingPreferredTime"><option value="">Choose a preferred window</option><option>Morning (9 AM – 12 PM)</option><option>Afternoon (12 PM – 4 PM)</option><option>Evening (4 PM – 7 PM)</option></select></div>
-          </div>
-          <small class="counselling-note">A request is not a confirmed appointment. The team can follow up using the contact details you submitted.</small>
-        </div>
         <div class="step-actions"><button type="button" class="back-step secondary">← Edit Details</button><button type="submit">Submit Application <span>→</span></button></div>
       </section>
       </div>
@@ -930,7 +957,9 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
   </div>
 </section>
 
-<section class="final-cta"><div><span>READY TO TAKE THE NEXT STEP?</span><h2>Submit your application and request guidance when you need it.</h2><p>Choose your domain, share your profile and optionally request an internship counselling call for the next step.</p></div><button class="open-application" type="button">Submit Application <span>→</span></button></section>
+<section class="conversion-note" aria-label="Application reassurance"><div><strong>Not sure which domain fits you?</strong><span>Use the domain explorer before applying. You can review your choice and submit when ready.</span></div><button class="open-domain-explorer" type="button" onclick="document.getElementById('openDomainExplorer')?.click()">Explore Domains</button></section>
+
+<section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your internship journey can start today.</h2><p>Choose a domain, share your details and take the first step toward practical experience.</p></div><button class="open-application" type="button">Submit Your Application <span>→</span></button></section>
 </main>
 
 <footer id="contact">
@@ -1003,6 +1032,7 @@ const fieldRules = {
   state: value => value.trim().length >= 2 ? '' : 'Enter your state / union territory.',
   communicationLanguage: value => value.trim().length >= 2 ? '' : 'Enter at least one communication language.',
   startAvailability: value => value ? '' : 'Select when you are available to start.',
+  applicationReason: value => value ? '' : 'Choose your primary reason for applying.',
   domain: value => value ? '' : 'Select your interested domain.'
 };
 
@@ -1164,7 +1194,7 @@ function getFormData() {
 }
 
 function calculateProgress() {
-  const required = ['name', 'phone', 'email', 'college', 'department', 'year', 'state', 'communicationLanguage', 'startAvailability', 'domain'];
+  const required = ['name', 'phone', 'email', 'college', 'department', 'year', 'state', 'communicationLanguage', 'startAvailability', 'applicationReason', 'domain'];
   const completed = required.filter(name => {
     const field = getField(name);
     return field && validateField(field, false);
@@ -1253,7 +1283,7 @@ function restoreDraft() {
       localStorage.removeItem(DRAFT_KEY);
       return;
     }
-    ['name', 'phone', 'email', 'college', 'department', 'year', 'state', 'communicationLanguage', 'startAvailability', 'domain', 'interest'].forEach(name => {
+    ['name', 'phone', 'email', 'college', 'department', 'year', 'state', 'communicationLanguage', 'startAvailability', 'applicationReason', 'domain', 'interest'].forEach(name => {
       const field = getField(name);
       if (field && draft[name]) field.value = draft[name];
     });
@@ -1414,20 +1444,9 @@ function showSuccess(data, applicationId, referralCode, referralUrl) {
       <h3>You're officially in the review queue.</h3>
       <p>Keep this reference for future communication. Programme details will be shared through the approved contact information you provided.</p>
       <div class="reference-card"><small>Application Reference</small><strong>${escapeHtml(applicationId)}</strong><button type="button" id="copyReference">Copy reference</button></div>
-      <div class="counselling-success-card">
-        <div><span class="success-card-kicker">NEXT STEP</span><h4>${data.counsellingRequested ? 'Counselling call requested' : 'Want more guidance?'}</h4><p>${data.counsellingRequested ? `Your preference${data.counsellingPreferredTime ? `: ${escapeHtml(data.counsellingPreferredTime)}` : ''}. This is a request, not a confirmed appointment.` : 'You can still request a counselling call later using the contact details you submitted.'}</p></div>
-        <div class="counselling-success-actions"><button type="button" id="requestCounsellingAfterSubmit">${data.counsellingRequested ? 'Review counselling request' : 'Request counselling call'}</button></div>
-      </div>
       <div class="success-details"><div><span>Applicant</span><strong>${escapeHtml(data.name)}</strong></div><div><span>Domain</span><strong>${escapeHtml(data.domain)}</strong></div><div><span>Current Year</span><strong>${escapeHtml(data.year)}</strong></div><div><span>Submitted</span><strong>${escapeHtml(new Date().toLocaleString('en-IN'))}</strong></div></div>
       <div class="referral-panel">
-        <div class="referral-panel-head"><div><span class="referral-kicker">HELP SOMEONE ELSE GET STARTED</span><h4>Invite your classmates</h4><p>Share a practical internship option with friends who are exploring domains, projects and career preparation.</p></div><div class="referral-badge">↗</div></div>
-        <div class="referral-benefit-grid">
-          <div><strong>01</strong><span>Share your personal referral link.</span></div>
-          <div><strong>02</strong><span>Your friend applies through your link.</span></div>
-          <div><strong>03</strong><span>The referral is recorded with their application.</span></div>
-          <div><strong>04</strong><span>Use the link again for classmates who may benefit.</span></div>
-        </div>
-        <div class="referral-value-note"><strong>Why refer?</strong><span>Help a friend discover practical learning, projects, internship experience and career preparation.</span></div>
+        <div class="referral-panel-head"><div><span class="referral-kicker">OPTIONAL REFERRAL</span><h4>Invite your classmates</h4><p>Your application is complete. If you want, share this opportunity with friends and classmates.</p></div><div class="referral-badge">↗</div></div>
         <div class="referral-code-card"><div><small>Your referral code</small><strong>${escapeHtml(referralCode)}</strong></div><button type="button" id="copyReferralCode">Copy code</button></div>
         <div class="share-actions">
           <a class="whatsapp" href="${whatsappUrl}" target="_blank" rel="noopener">WhatsApp</a>
@@ -1446,15 +1465,6 @@ function showSuccess(data, applicationId, referralCode, referralUrl) {
   message.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
 
   document.getElementById('copyReference')?.addEventListener('click', event => copyText(applicationId, event.currentTarget, 'Reference copied!'));
-  document.getElementById('requestCounsellingAfterSubmit')?.addEventListener('click', event => {
-    const button = event.currentTarget;
-    const requested = Boolean(data.counsellingRequested);
-    button.textContent = requested ? 'Request recorded ✓' : 'Counselling request added ✓';
-    button.disabled = true;
-    if (!requested && typeof db !== 'undefined') {
-      db.ref(`submittedApplications/${applicationId}`).update({ counsellingRequested: true }).catch(() => {});
-    }
-  });
   document.getElementById('copyReferralCode')?.addEventListener('click', event => copyText(referralCode, event.currentTarget, 'Code copied!'));
   document.getElementById('copyReferral')?.addEventListener('click', event => copyText(referralUrl, event.currentTarget, 'Link copied!'));
   document.getElementById('nativeShare')?.addEventListener('click', async event => {
@@ -1538,8 +1548,6 @@ async function submitApplication() {
     communicationLanguage: data.communicationLanguage,
     startAvailability: data.startAvailability,
     applicationReason: data.applicationReason,
-    counsellingRequested: Boolean(data.counsellingRequested),
-    counsellingPreferredTime: data.counsellingPreferredTime || null,
     domain: data.domain,
     interest: data.interest || null,
     communicationConsent: Boolean(document.getElementById('communicationConsent')?.checked),

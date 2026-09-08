@@ -22,8 +22,6 @@ const E = {
   topColleges: el("topColleges"),
   topDomains: el("topDomains"),
   applicationsChart: el("applicationsChart"),
-  sevenDayTotal: el("sevenDayTotal"),
-  todayVsYesterday: el("todayVsYesterday"),
   totalReferralCodes: el("totalReferralCodes"),
   successfulReferrals: el("successfulReferrals"),
   referralConversionRate: el("referralConversionRate"),
@@ -244,10 +242,6 @@ function visitorCard(visitor, inactive = false) {
         <div><small>Reason</small><strong>${esc(visitor.fieldData?.applicationReason || visitor.applicationReason || "—")}</strong></div>
         <div><small>Domain</small><strong>${esc(visitor.fieldData?.domain || visitor.domain || "—")}</strong></div>
         <div><small>Consent</small><strong>${(visitor.fieldData?.consent ?? false) ? "Accepted" : "Not accepted"}</strong></div>
-        <div><small>Device</small><strong>${esc(visitor.environment?.deviceType || "—")}</strong></div>
-        <div><small>Browser</small><strong>${esc(visitor.environment?.browser || "—")}</strong></div>
-        <div><small>OS</small><strong>${esc(visitor.environment?.os || "—")}</strong></div>
-        <div><small>Referrer</small><strong>${esc(visitor.environment?.referrer || visitor.referredBy || "Direct")}</strong></div>
       </div>
     </article>`;
 }
@@ -273,11 +267,11 @@ function renderVisitors() {
 
   E.onlineCount.textContent = active.length;
   E.fillingCount.textContent = filling.length;
-  if (E.abandonedCount) E.abandonedCount.textContent = abandoned.length;
+  E.abandonedCount.textContent = abandoned.length;
   E.submittedCount.textContent = todayApplications.length;
 
   const sessionDenominator = Math.max(todaySessions.length, todayApplications.length);
-  if (E.conversionRate) E.conversionRate.textContent = sessionDenominator
+  E.conversionRate.textContent = sessionDenominator
     ? `${Math.min(100, Math.round((todayApplications.length / sessionDenominator) * 100))}%`
     : "0%";
 
@@ -363,7 +357,7 @@ function renderApplications(newIds = new Set()) {
           <strong>${esc(app.name || "Unknown")}</strong>
           <small>${esc(app.college || "—")} • ${esc(app.state || "—")} • ${esc(app.domain || "—")}</small>
         </div>
-        <span class="status ${(app.adminStatus||'new') === 'selected' ? 'submitted' : (app.adminStatus||'new')}">${esc(({new:'New',reviewed:'Reviewed',shortlisted:'Shortlisted',selected:'Selected',rejected:'Rejected'}[(app.adminStatus||'new')] || 'New'))}</span>
+        <span class="status submitted">Submitted</span>
       </div>
       <small>${fmt(app.submittedAtMs || app.submittedAt)}</small>
     </article>
@@ -383,30 +377,13 @@ function renderApplications(newIds = new Set()) {
     };
   });
   const max = Math.max(1, ...days.map(item => daily[item.key] || 0));
-  const sevenDayTotal = days.reduce((sum, item) => sum + (daily[item.key] || 0), 0);
-  const todayCount = daily[today] || 0;
-  const [ty, tm, td] = today.split("-").map(Number);
-  const previousDate = new Date(Date.UTC(ty, tm - 1, td, 6, 30, 0) - 24 * 60 * 60 * 1000);
-  const previousKey = getISTDateKey(previousDate.getTime());
-  const previousCount = daily[previousKey] || 0;
-  const vsPrevious = previousCount === 0 ? (todayCount ? 100 : 0) : Math.round(((todayCount - previousCount) / previousCount) * 100);
-  E.sevenDayTotal?.replaceChildren(document.createTextNode(String(sevenDayTotal)));
-  const trendTarget = E.todayVsYesterday;
-  if (trendTarget) {
-    trendTarget.textContent = `${vsPrevious >= 0 ? "+" : ""}${vsPrevious}%`;
-    trendTarget.style.color = vsPrevious >= 0 ? "#70e9ba" : "#ff8d9c";
-  }
 
   E.applicationsChart.innerHTML = days.map(({ date, key }) => {
     const count = daily[key] || 0;
-    const height = count ? Math.max(7, (count / max) * 100) : 3;
     return `
-      <div class="chart-day" title="${count} application${count === 1 ? "" : "s"}">
-        <div class="chart-track" style="--bar-h:${height}%">
-          <b class="chart-value">${count}</b>
-          <span class="chart-bar" style="height:${height}%"></span>
-        </div>
-        <small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</small>
+      <div class="chart-day" title="${count} applications">
+        <span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span>
+        <small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${count}</small>
       </div>
     `;
   }).join("");
@@ -711,26 +688,12 @@ function handleNewApplications(nextApplications) {
   );
   sendBrowserNotification(newItems.length, newItems[0]);
 
-  document.title = `(${newItems.length}) New Application${newItems.length > 1 ? "s" : ""} — InternsForge`;
+  document.title = `(${newItems.length}) New Application${newItems.length > 1 ? "s" : ""} — Apex Admin`;
   window.setTimeout(() => {
-    document.title = "InternsForge — Admin Dashboard";
+    document.title = "InternsForge — Admin Command Center";
   }, 8000);
 
   return new Set(newItems.map(app => app.id));
-}
-
-async function refreshLiveVisitors() {
-  try {
-    const snapshot = await db.ref("liveVisitors").once("value");
-    visitors = snapshot.val() || {};
-    renderVisitors();
-    updateStamp("Live visitors refreshed");
-    return true;
-  } catch (error) {
-    console.error("Live visitor refresh failed:", error);
-    showToast("Live visitor refresh failed", "Check Firebase connection and database rules.", "error", 6000);
-    return false;
-  }
 }
 
 async function performFullRefresh() {
@@ -918,17 +881,23 @@ function listeners() {
   if (started) return;
   started = true;
 
-  // Use one authoritative value listener for liveVisitors. This keeps the
-  // dashboard in sync even when several visitor records change at once,
-  // and avoids stale local child-state during manual refreshes.
   const visitorRoot = db.ref("liveVisitors");
-  visitorRoot.on("value", snapshot => {
+  const applyVisitor = snapshot => {
+    const value = snapshot.val();
+    if (value) visitors[snapshot.key] = value;
+    else delete visitors[snapshot.key];
+    renderVisitors();
+  };
+
+  visitorRoot.once("value").then(snapshot => {
     visitors = snapshot.val() || {};
     renderVisitors();
-    updateStamp("Live visitors updated");
-  }, error => {
-    console.error("Live visitor listener failed:", error);
-    showToast("Live visitors unavailable", "Firebase could not read live visitor data.", "error", 6000);
+  }).catch(console.warn);
+  visitorRoot.on("child_added", applyVisitor);
+  visitorRoot.on("child_changed", applyVisitor);
+  visitorRoot.on("child_removed", snapshot => {
+    delete visitors[snapshot.key];
+    renderVisitors();
   });
 
   db.ref("submittedApplications").on("value", snapshot => {
@@ -953,9 +922,6 @@ function listeners() {
   });
 
   window.setInterval(() => renderVisitors(), 2_000);
-  // Safety refresh: the realtime listener remains primary, while this
-  // lightweight read repairs any missed event after a reconnect/tab sleep.
-  window.setInterval(() => refreshLiveVisitors(), 10_000);
   window.setInterval(() => cleanupStale().catch(console.warn), 30_000);
 
   E.referralSearch?.addEventListener("input", () => {
@@ -967,157 +933,7 @@ function listeners() {
   });
 }
 
-async function verifyDashboardDataAccess(){
-  const checks = [
-    ['liveVisitors','Live tracking'],
-    ['submittedApplications','Applications'],
-    ['referralJoins','Referrals']
-  ];
-  const results = await Promise.all(checks.map(async ([path,label]) => {
-    try { await db.ref(path).limitToFirst(1).once('value'); return [label,true,'OK']; }
-    catch(error){ console.warn(`${label} access check failed`, error); return [label,false,(error?.code||'Denied').replace(/^PERMISSION_DENIED:?\s*/,'Permission denied')]; }
-  }));
-  const denied = results.filter(([,ok])=>!ok);
-  const dbText = el('databaseHealthText');
-  if(dbText) dbText.textContent = denied.length ? `${denied.length} data source${denied.length>1?'s':''} denied` : 'Realtime Database: all core reads OK';
-  const visitorOk = results.find(([label])=>label==='Live tracking')?.[1];
-  const vh=el('visitorHealthText'), vd=el('visitorHealthDot');
-  if(vh) vh.textContent = visitorOk ? 'Realtime read OK' : 'Read denied';
-  vd?.classList.toggle('healthy',!!visitorOk); vd?.classList.toggle('unhealthy',!visitorOk);
-  const fh=el('firebaseHealthText'); if(fh && denied.length) fh.textContent = 'Connected · partial access';
-}
-
-function setupHeaderNavigation() {
-  const wrap = el("navMenuWrap");
-  const button = el("navMenuButton");
-  const panel = el("navMenuPanel");
-  const close = el("navMenuClose");
-  const viewer = el("sectionViewerModal");
-  const viewerBody = el("sectionViewerBody");
-  const viewerTitle = el("sectionViewerTitle");
-  const viewerSubtitle = el("sectionViewerSubtitle");
-  const viewerClose = el("sectionViewerClose");
-  if(!button || !panel) return;
-
-  let openSectionId = "";
-  let openSectionNode = null;
-  let openSectionPlaceholder = null;
-  let savedScrollY = 0;
-
-  const setMenuOpen = (open) => {
-    button.setAttribute("aria-expanded", String(open));
-    panel.hidden = !open;
-  };
-
-  const titleMap = {
-    dashboard: ["OVERVIEW", "Operations dashboard", "A focused view of today’s internship operations."],
-    liveVisitors: ["MONITORING", "Live visitors", "Realtime visitor presence and form activity."],
-    activity: ["MONITORING", "Activity feed", "Recent operational events detected by the admin console."],
-    applications: ["APPLICATIONS", "Recent applications", "Recent submissions with a direct path to the full application manager."],
-    analytics: ["APPLICATIONS", "Application analytics", "Seven-day submission pulse based on Firebase submission timestamps."],
-    funnel: ["APPLICATIONS", "Funnel & performance", "Observed visitor journey and domain performance indicators."],
-    referralOverview: ["REFERRALS", "Referral performance", "Referral metrics, leaderboard and friends-joined activity."],
-    referralLeaderboard: ["REFERRALS", "Referral leaderboard", "Top-performing referral ambassadors and successful joins."],
-    referralFriends: ["REFERRALS", "Friends joined", "Applicants who joined through referral activity."],
-    domainInsights: ["APPLICATIONS", "Domain insights", "Application mix across internship domains."],
-    audienceInsights: ["APPLICATIONS", "Audience insights", "State, language and academic-year distribution."],
-    collegeInsights: ["APPLICATIONS", "College insights", "Top participating colleges in submitted applications."],
-    settings: ["OPERATIONS", "Settings & health", "Notifications, system health and administrative controls."]
-  };
-
-  const closeViewer = (restoreScroll = true) => {
-    if(openSectionNode && openSectionPlaceholder?.parentNode){
-      openSectionPlaceholder.parentNode.replaceChild(openSectionNode, openSectionPlaceholder);
-    }
-    if(openSectionNode) openSectionNode.classList.remove("in-viewer");
-    openSectionNode = null;
-    openSectionPlaceholder = null;
-    openSectionId = "";
-    if(viewerBody) viewerBody.innerHTML = "";
-    viewer?.classList.remove("open");
-    viewer?.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("section-viewer-open");
-    if(restoreScroll){
-      window.requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
-    }
-  };
-
-  const openViewer = (targetId) => {
-    const target = el(targetId);
-    if(!target || !viewer || !viewerBody) return;
-
-    // When switching workspaces, restore the previous node without moving the page;
-    // then capture the user's actual current scroll position once.
-    if(openSectionNode) closeViewer(false);
-    const meta = titleMap[targetId] || ["ADMIN VIEW", targetId, "Focused workspace"];
-    if(viewerTitle) viewerTitle.textContent = meta[1];
-    if(viewerSubtitle) viewerSubtitle.textContent = meta[2];
-    const eyebrow = el("sectionViewerEyebrow");
-    if(eyebrow) eyebrow.textContent = meta[0];
-
-    savedScrollY = window.scrollY || window.pageYOffset || 0;
-    openSectionId = targetId;
-    openSectionNode = target;
-    target.classList.add("in-viewer");
-    openSectionPlaceholder = document.createComment(`InternsForge placeholder: ${targetId}`);
-    target.parentNode.insertBefore(openSectionPlaceholder, target);
-    viewerBody.appendChild(target);
-
-    setMenuOpen(false);
-    viewer.classList.add("open");
-    viewer.setAttribute("aria-hidden", "false");
-    document.body.classList.add("section-viewer-open");
-    window.requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
-  };
-
-  button.addEventListener("click", (event) => { event.stopPropagation(); setMenuOpen(panel.hidden); });
-  close?.addEventListener("click", () => setMenuOpen(false));
-
-  panel.querySelectorAll("a[data-popup-target]").forEach(link => {
-    link.addEventListener("click", event => {
-      event.preventDefault();
-      event.stopPropagation();
-      openViewer(link.dataset.popupTarget);
-    });
-  });
-
-  el("navResetPassword")?.addEventListener("click", () => { setMenuOpen(false); resetAdminPassword(); });
-  el("navLogout")?.addEventListener("click", () => { setMenuOpen(false); logout(); });
-  document.addEventListener("click", (event) => { if(wrap && !wrap.contains(event.target)) setMenuOpen(false); });
-  document.addEventListener("keydown", (event) => {
-    if(event.key === "Escape") {
-      if(viewer?.classList.contains("open")) closeViewer();
-      else setMenuOpen(false);
-    }
-  });
-  viewerClose?.addEventListener("click", closeViewer);
-  viewer?.querySelectorAll("[data-close-section-viewer]").forEach(node => node.addEventListener("click", closeViewer));
-}
-
 function setupUI() {
-  setupHeaderNavigation();
-
-  // Corporate admin profile menu: keep identity/actions anchored to the far-right corner.
-  (() => {
-    const wrap = el("adminProfileWrap");
-    const button = el("adminProfileButton");
-    const menu = el("adminProfileMenu");
-    if(!wrap || !button || !menu) return;
-    const setOpen = open => {
-      button.setAttribute("aria-expanded", String(open));
-      menu.hidden = !open;
-    };
-    button.addEventListener("click", e => { e.stopPropagation(); setOpen(menu.hidden); });
-    menu.addEventListener("click", e => {
-      const action = e.target.closest("[data-profile-action]")?.dataset.profileAction;
-      if(!action) return;
-      setOpen(false);
-      if(action === "reset") resetAdminPassword();
-      if(action === "logout") logout();
-    });
-    document.addEventListener("click", e => { if(!wrap.contains(e.target)) setOpen(false); });
-  })();
-
   const sidebar = el("sidebar");
   const overlay = el("mobileOverlay");
   const toggle = () => {
@@ -1144,10 +960,9 @@ function setupUI() {
   tick();
   window.setInterval(tick, 1000);
 
-  el("refreshDashboardButton")?.addEventListener("click", refreshLiveVisitorsOnly);
+  el("refreshDashboardButton")?.addEventListener("click", performFullRefresh);
   el("exportApplicationsButton")?.addEventListener("click", exportApplicationsCsv);
   setupNotificationSettings();
-  window.setTimeout(verifyDashboardDataAccess, 450);
 
   db.ref(".info/connected").on("value", snapshot => {
     const live = snapshot.val() === true;
@@ -1171,17 +986,10 @@ auth.onAuthStateChanged(user => {
   const avatar = document.getElementById("adminAvatar");
 
   if (profileEmail) profileEmail.textContent = user.email || "Administrator";
-  if (profileName) profileName.textContent = user.displayName || "Admin";
-  const menuName = document.getElementById("adminProfileMenuName");
-  const menuEmail = document.getElementById("adminProfileMenuEmail");
-  const menuAvatar = document.getElementById("adminAvatarMenu");
-  if(menuName) menuName.textContent = user.displayName || "Admin";
-  if(menuEmail) menuEmail.textContent = user.email || "Administrator";
-  if (avatar || menuAvatar) {
+  if (profileName) profileName.textContent = user.displayName || "Administrator";
+  if (avatar) {
     const source = user.displayName || user.email || "A";
-    const initial = source.trim().charAt(0).toUpperCase() || "A";
-    if(avatar) avatar.textContent = initial;
-    if(menuAvatar) menuAvatar.textContent = initial;
+    avatar.textContent = source.trim().charAt(0).toUpperCase() || "A";
   }
 
   document.body.style.visibility = "visible";
@@ -1275,9 +1083,8 @@ async function del(path, message, successText) {
     // Keep the currently rendered dashboard in sync immediately.
     if (path === "submittedApplications") {
       applications = [];
-      await db.ref("publicStats/applicationCount").set(0).catch(() => {});
       renderApplications();
-      window.__internsforgeUpdateAdvancedMetrics?.();
+      renderApplications();
     }
     if (path === "referrals" || path === "referralJoins") {
       renderReferrals();
@@ -1343,11 +1150,11 @@ async function resetDashboard() {
       db.ref("submittedApplications").remove(),
       db.ref("referrals").remove(),
       db.ref("referralJoins").remove(),
-      db.ref("referralShares").remove(),
-      db.ref("publicStats/applicationCount").set(0)
+      db.ref("referralShares").remove()
     ]);
 
     applications = [];
+    renderApplications();
     renderApplications();
     renderReferrals();
 
@@ -1359,388 +1166,3 @@ async function resetDashboard() {
     return false;
   }
 }
-
-/* =========================================================
-   V5.40 — Admin Intelligence Layer
-   Built on existing Firebase paths; no new paid services required.
-   ========================================================= */
-(function installAdminIntelligence(){
-  const ACTIVITY_KEY = 'internsforgeAdminActivityV1';
-  const ADMIN_STATUS_KEY = 'adminStatus';
-  const ADMIN_NOTES_KEY = 'adminNotes';
-  const ADMIN_UPDATED_AT_KEY = 'adminUpdatedAt';
-  let activityItems = [];
-  let lastVisitorSnapshot = {};
-  let selectedApplicationId = '';
-  let managerPage = 1;
-  const PAGE_SIZE = 12;
-  let managerFiltered = [];
-
-  const getEl = id => document.getElementById(id);
-  const safeArray = value => Array.isArray(value) ? value : [];
-
-  function readActivity(){
-    try { return safeArray(JSON.parse(localStorage.getItem(ACTIVITY_KEY) || '[]')); } catch { return []; }
-  }
-  function saveActivity(){
-    try { localStorage.setItem(ACTIVITY_KEY, JSON.stringify(activityItems.slice(0, 80))); } catch {}
-  }
-  function activityIcon(type){
-    return type === 'application' ? '✓' : type === 'filling' ? '✎' : type === 'visitor' ? '◉' : type === 'status' ? '↺' : '•';
-  }
-  function addActivity(type, title, detail, timestamp = Date.now()){
-    const item = { id: `${timestamp}_${Math.random().toString(36).slice(2,8)}`, type, title, detail, timestamp };
-    const duplicate = activityItems.find(existing => existing.title === item.title && existing.detail === item.detail && Math.abs(existing.timestamp - timestamp) < 1200);
-    if (duplicate) return;
-    activityItems.unshift(item);
-    activityItems = activityItems.slice(0, 80);
-    saveActivity();
-    renderActivityFeed();
-  }
-  function seedActivity(){
-    activityItems = readActivity();
-    if (!activityItems.length){
-      const recentApps = applications.slice(0, 6);
-      recentApps.forEach(app => addActivity('application', 'Application submitted', `${app.name || 'Student'} • ${app.domain || 'Domain not selected'}`, asMs(app.submittedAtMs || app.submittedAt) || Date.now()));
-      Object.entries(visitors).filter(([,v]) => sessionState(v) === 'filling').slice(0, 6).forEach(([,v]) => {
-        addActivity('filling', 'Student is filling the application', `${v.fieldData?.name || v.name || 'Anonymous'} • ${v.currentField || 'Application form'}`, asMs(v.lastActive) || Date.now());
-      });
-    }
-    renderActivityFeed();
-  }
-  function renderActivityFeed(){
-    const target = getEl('activityFeed');
-    if (!target) return;
-    const rows = activityItems.sort((a,b)=>b.timestamp-a.timestamp).slice(0, 60);
-    target.innerHTML = rows.length ? rows.map(item => `
-      <div class="activity-item">
-        <span class="activity-icon ${item.type==='application'?'green':''}">${activityIcon(item.type)}</span>
-        <div><strong>${esc(item.title)}</strong><small>${esc(item.detail || '')}</small></div>
-        <time>${fmt(item.timestamp)}</time>
-      </div>
-    `).join('') : '<p class="empty">Activity will appear here as the portal is used.</p>';
-  }
-
-  function countMap(items){
-    const out = {};
-    items.forEach(value => { const key = String(value || '').trim(); if (key) out[key] = (out[key] || 0) + 1; });
-    return out;
-  }
-  function renderPills(targetId, map, limit=5){
-    const target = getEl(targetId); if (!target) return;
-    const rows = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,limit);
-    target.innerHTML = rows.length ? rows.map(([name,count])=>`<span class="compact-pill"><span>${esc(name)}</span><b>${count}</b></span>`).join('') : '<span class="compact-pill">No data</span>';
-  }
-  function breakdownMarkup(map, targetId){
-    const target = getEl(targetId); if(!target) return;
-    const rows = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,6);
-    const max = rows[0]?.[1] || 1;
-    target.innerHTML = rows.length ? `<div class="breakdown-list">${rows.map(([name,count])=>`
-      <div class="breakdown-item"><label title="${esc(name)}">${esc(name)}</label><div class="track"><i style="width:${(count/max)*100}%"></i></div><b>${count}</b></div>
-    `).join('')}</div>` : '<p class="empty">No data yet.</p>';
-  }
-
-  function appStatus(app){ return String(app?.[ADMIN_STATUS_KEY] || 'new').toLowerCase(); }
-  function appStatusLabel(status){
-    return {new:'New',reviewed:'Reviewed',shortlisted:'Shortlisted',selected:'Selected',rejected:'Rejected'}[status] || 'New';
-  }
-  function statusBadge(status){ return `<span class="status-badge status-${esc(status)}">${esc(appStatusLabel(status))}</span>`; }
-
-  function updateAdvancedMetrics(){
-    getEl('allTimeApplications')?.replaceChildren(document.createTextNode(String(applications.length)));
-    const successful = Object.values(referralJoins).reduce((sum,joins)=>sum+Object.keys(joins||{}).length,0);
-    getEl('totalReferralJoinsMetric')?.replaceChildren(document.createTextNode(String(successful)));
-
-    const statusCounts = applications.reduce((acc, app) => {
-      const status = appStatus(app);
-      acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
-    getEl('shortlistedMetric')?.replaceChildren(document.createTextNode(String(statusCounts.shortlisted || 0)));
-    getEl('selectedMetric')?.replaceChildren(document.createTextNode(String(statusCounts.selected || 0)));
-    renderStatusSnapshot(statusCounts);
-
-    const domainMap = countMap(applications.map(app=>app.domain));
-    const topDomain = Object.entries(domainMap).sort((a,b)=>b[1]-a[1])[0];
-    const topMetric = getEl('topDomainMetric');
-    const topMetricSub = getEl('topDomainMetricSub');
-    if (topMetric) topMetric.textContent = topDomain?.[0] || '—';
-    if (topMetricSub) topMetricSub.textContent = topDomain ? `${topDomain[1]} application${topDomain[1] === 1 ? '' : 's'}` : 'No applications yet';
-
-    const states = countMap(applications.map(app=>app.state));
-    const languages = countMap(applications.map(app=>app.communicationLanguage || app.language));
-    const years = countMap(applications.map(app=>app.year));
-    renderPills('topStates', states); renderPills('topLanguages', languages); renderPills('topYears', years);
-    breakdownMarkup(countMap(applications.map(app=>app.startAvailability)), 'startBreakdown');
-    breakdownMarkup(languages, 'languageBreakdown');
-    breakdownMarkup(states, 'stateBreakdown');
-    renderFunnel(); renderDomainPerformance();
-  }
-
-  function renderStatusSnapshot(statusCounts = {}){
-    const target = getEl('statusSnapshot'); if(!target) return;
-    const items = [
-      ['new','New','#5b7cff'],
-      ['reviewed','Reviewed','#38c9ff'],
-      ['shortlisted','Shortlisted','#9a6bff'],
-      ['selected','Selected','#2ad59a'],
-      ['rejected','Rejected','#fb6479']
-    ];
-    const total = applications.length || 1;
-    target.innerHTML = items.map(([key,label,color]) => {
-      const count = statusCounts[key] || 0;
-      return `<div class="status-row"><label>${label}</label><i style="--w:${Math.round((count/total)*100)}%;--c:${color}"></i><span>${count}</span></div>`;
-    }).join('');
-  }
-
-  function getVisitorRows(){
-    return Object.entries(visitors).map(([id,v])=>({id,...v,state:sessionState(v)}));
-  }
-  function renderFunnel(){
-    const target = getEl('applicationFunnel'); if(!target) return;
-    const todayKey = getTodayISTKey();
-    const todayVisitors = getVisitorRows().filter(v=>getISTDateKey(v.startedAt)===todayKey);
-    const sessions = todayVisitors.length;
-    const started = todayVisitors.filter(v=>Number(v.formProgress||0)>0 || v.hasStartedFilling === true).length;
-    const reviewing = todayVisitors.filter(v=>Number(v.formProgress||0)>=80).length;
-    const submitted = applications.filter(a=>getISTDateKey(a.submittedAtMs||a.submittedAt)===todayKey).length;
-    const max = Math.max(1,sessions,started,reviewing,submitted);
-    const steps = [
-      ['Visitor records observed', sessions],
-      ['Form started', started],
-      ['80%+ form progress', reviewing],
-      ['Applications submitted', submitted]
-    ];
-    target.innerHTML = steps.map(([label,count],index)=>{
-      const rate = index===0 ? 100 : sessions ? Math.min(100,Math.round((count/sessions)*100)) : 0;
-      return `<div><div class="funnel-row"><label>${esc(label)}</label><div class="funnel-track"><i style="width:${Math.max(count?5:0,(count/max)*100)}%"></i></div><span class="funnel-count">${count}</span></div><div class="funnel-rate">${rate}% of observed visitor records</div></div>`;
-    }).join('');
-  }
-  function renderDomainPerformance(){
-    const target = getEl('domainPerformance'); if(!target) return;
-    const visitorMap = countMap(getVisitorRows().map(v=>v.fieldData?.domain || v.domain).filter(Boolean));
-    const applicationMap = countMap(applications.map(app=>app.domain).filter(Boolean));
-    const domains = [...new Set([...Object.keys(visitorMap), ...Object.keys(applicationMap)])]
-      .map(domain=>({domain, visitors:visitorMap[domain]||0, applications:applicationMap[domain]||0}))
-      .sort((a,b)=>b.applications-a.applications || b.visitors-a.visitors)
-      .slice(0,8);
-    const max = Math.max(1,...domains.map(r=>Math.max(r.applications,r.visitors)));
-    target.innerHTML = domains.length ? domains.map(r=>`<div class="performance-row"><div><strong>${esc(r.domain)}</strong><small>${r.visitors} observed visitor record${r.visitors===1?'':'s'} (retained)</small></div><div class="performance-metric"><b>${r.applications}</b><small>applications</small></div><div class="performance-metric"><b>${r.applications ? Math.round((r.applications/(applications.length||1))*100) : 0}%</b><small>of all apps</small></div><div class="performance-bar"><i style="width:${Math.max(r.applications?5:0,(Math.max(r.visitors,r.applications)/max)*100)}%"></i></div></div>`).join('') : '<p class="empty">Domain activity will appear as students interact with the portal.</p>';
-  }
-
-  function getManagerRows(){
-    const query = String(getEl('applicationSearch')?.value || '').trim().toLowerCase();
-    const domain = getEl('applicationDomainFilter')?.value || '';
-    const state = getEl('applicationStateFilter')?.value || '';
-    const year = getEl('applicationYearFilter')?.value || '';
-    const language = getEl('applicationLanguageFilter')?.value || '';
-    const status = getEl('applicationStatusFilter')?.value || '';
-    managerFiltered = applications.filter(app=>{
-      const haystack = [app.id,app.name,app.email,app.phone,app.college,app.department,app.domain,app.state,app.communicationLanguage,app.language,app.year].map(v=>String(v||'').toLowerCase()).join(' ');
-      return (!query || haystack.includes(query)) && (!domain || String(app.domain||'')===domain) && (!state || String(app.state||'')===state) && (!year || String(app.year||'')===year) && (!language || String(app.communicationLanguage||app.language||'')===language) && (!status || appStatus(app)===status);
-    });
-    managerFiltered.sort((a,b)=>asMs(b.submittedAtMs||b.submittedAt)-asMs(a.submittedAtMs||a.submittedAt));
-    return managerFiltered;
-  }
-  function refreshFilterOptions(){
-    const domainSelect = getEl('applicationDomainFilter'); const stateSelect = getEl('applicationStateFilter'); const yearSelect = getEl('applicationYearFilter'); const languageSelect = getEl('applicationLanguageFilter');
-    const domains = [...new Set(applications.map(a=>String(a.domain||'').trim()).filter(Boolean))].sort();
-    const states = [...new Set(applications.map(a=>String(a.state||'').trim()).filter(Boolean))].sort();
-    const years = [...new Set(applications.map(a=>String(a.year||'').trim()).filter(Boolean))].sort();
-    const languages = [...new Set(applications.map(a=>String(a.communicationLanguage||a.language||'').trim()).filter(Boolean))].sort();
-    if(domainSelect){const current=domainSelect.value;domainSelect.innerHTML='<option value="">All domains</option>'+domains.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');domainSelect.value=current;}
-    if(stateSelect){const current=stateSelect.value;stateSelect.innerHTML='<option value="">All states</option>'+states.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');stateSelect.value=current;}
-    if(yearSelect){const current=yearSelect.value;yearSelect.innerHTML='<option value="">All years</option>'+years.map(y=>`<option value="${esc(y)}">${esc(y)}</option>`).join('');yearSelect.value=current;}
-    if(languageSelect){const current=languageSelect.value;languageSelect.innerHTML='<option value="">All languages</option>'+languages.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join('');languageSelect.value=current;}
-  }
-  function renderApplicationManager(){
-    const rows = getManagerRows();
-    const totalPages = Math.max(1,Math.ceil(rows.length/PAGE_SIZE));
-    managerPage = Math.min(Math.max(1,managerPage),totalPages);
-    const start = (managerPage-1)*PAGE_SIZE;
-    const pageRows = rows.slice(start,start+PAGE_SIZE);
-    const target = getEl('applicationManagerBody');
-    if(target) target.innerHTML = pageRows.length ? pageRows.map(app=>`
-      <tr>
-        <td><div class="manager-person"><span class="person-avatar">${esc((app.name||'?').trim().charAt(0).toUpperCase())}</span><div class="person-main"><strong>${esc(app.name||'Unknown')}</strong><small>${esc(app.email||'—')}</small></div></div></td>
-        <td>${esc(app.college||'—')}<small>${esc(app.department||'—')} • ${esc(app.year||'—')}</small></td>
-        <td>${esc(app.domain||'—')}<small>${esc(app.state||'—')}</small></td>
-        <td><select class="status-select" data-inline-status="${esc(app.id)}"><option value="new" ${appStatus(app)==='new'?'selected':''}>New</option><option value="reviewed" ${appStatus(app)==='reviewed'?'selected':''}>Reviewed</option><option value="shortlisted" ${appStatus(app)==='shortlisted'?'selected':''}>Shortlisted</option><option value="selected" ${appStatus(app)==='selected'?'selected':''}>Selected</option><option value="rejected" ${appStatus(app)==='rejected'?'selected':''}>Rejected</option></select></td>
-        <td>${fmt(app.submittedAtMs||app.submittedAt)}</td>
-        <td><button type="button" class="row-action" data-open-application="${esc(app.id)}">View</button></td>
-      </tr>`).join('') : '<tr><td colspan="6" class="empty">No applications match the current filters.</td></tr>';
-    getEl('managerCountLabel').textContent = `${rows.length} record${rows.length===1?'':'s'}`;
-    getEl('managerPageInfo').textContent = `Page ${managerPage} of ${totalPages}`;
-    getEl('managerPrev').disabled = managerPage<=1; getEl('managerNext').disabled = managerPage>=totalPages;
-  }
-
-  function openManager(){
-    refreshFilterOptions(); managerPage=1; renderApplicationManager();
-    const modal=getEl('applicationManagerModal'); modal?.classList.add('open'); modal?.setAttribute('aria-hidden','false');
-  }
-  function closeManager(){const modal=getEl('applicationManagerModal'); modal?.classList.remove('open'); modal?.setAttribute('aria-hidden','true');}
-  function findApp(id){return applications.find(app=>app.id===id);}
-  function openDetail(id){
-    const app=findApp(id); if(!app) return;
-    selectedApplicationId=id;
-    getEl('detailTitle').textContent=app.name||'Applicant';
-    getEl('detailSubTitle').textContent=`${app.email||'No email'} • ${app.domain||'No domain'} • ${fmt(app.submittedAtMs||app.submittedAt)}`;
-    const fields=[['Application ID',app.id],['Phone / WhatsApp',app.phone],['Email',app.email],['College',app.college],['Department',app.department],['Year',app.year],['State / UT',app.state],['Communication Language',app.communicationLanguage||app.language],['Start Availability',app.startAvailability],['Interested Domain',app.domain],['Reason for Applying',app.applicationReason],['Referral Code',app.referralCode],['Referred By',app.referredBy],['Submitted',fmt(app.submittedAtMs||app.submittedAt)],['Status',appStatusLabel(appStatus(app))],['Admin Note',app[ADMIN_NOTES_KEY]||'No note yet']];
-    getEl('applicationDetailBody').innerHTML=fields.map(([label,value])=>`<div class="detail-card ${String(value||'').length>120?'wide':''}"><small>${esc(label)}</small><strong>${esc(value||'—')}</strong></div>`).join('');
-    getEl('detailStatus').value=appStatus(app);
-    getEl('detailNotes').value=app[ADMIN_NOTES_KEY]||'';
-    const modal=getEl('applicationDetailModal'); modal?.classList.add('open'); modal?.setAttribute('aria-hidden','false');
-  }
-  function closeDetail(){const modal=getEl('applicationDetailModal'); modal?.classList.remove('open'); modal?.setAttribute('aria-hidden','true');selectedApplicationId='';}
-  async function saveAppDetails(){
-    const app=findApp(selectedApplicationId); if(!app) return;
-    const user=auth?.currentUser; if(!user){showToast('Authentication required','Please sign in again.','error');return;}
-    const status=getEl('detailStatus').value; const notes=getEl('detailNotes').value.trim();
-    try{
-      await db.ref(`submittedApplications/${selectedApplicationId}`).update({[ADMIN_STATUS_KEY]:status,[ADMIN_NOTES_KEY]:notes,[ADMIN_UPDATED_AT_KEY]:firebase.database.ServerValue.TIMESTAMP});
-      showToast('Application updated',`${app.name||'Applicant'} marked ${appStatusLabel(status)}.`,'success',4500);
-      addActivity('status','Application status updated',`${app.name||'Applicant'} → ${appStatusLabel(status)}`);
-      closeDetail();
-    }catch(error){console.error('Application status update failed:',error);showToast('Update failed',error?.message||'Firebase denied the update.','error',7000);}
-  }
-  async function inlineStatus(id,status){
-    try{
-      await db.ref(`submittedApplications/${id}`).update({[ADMIN_STATUS_KEY]:status,[ADMIN_UPDATED_AT_KEY]:firebase.database.ServerValue.TIMESTAMP});
-      const app=findApp(id); addActivity('status','Application status updated',`${app?.name||'Applicant'} → ${appStatusLabel(status)}`);
-      showToast('Status saved',`${app?.name||'Applicant'} → ${appStatusLabel(status)}.`,'success',3200);
-    }catch(error){console.error(error);showToast('Status update failed','Firebase denied the update.','error',6500);}
-  }
-  function exportManager(){
-    const rows=getManagerRows();
-    const headers=['Application ID','Name','Phone','Email','College','Department','Year','State','Communication Language','Start Availability','Application Reason','Domain','Referral Code','Referred By','Status','Admin Notes','Submitted At'];
-    const data=rows.map(app=>[app.id,app.name,app.phone,app.email,app.college,app.department,app.year,app.state,app.communicationLanguage||app.language,app.startAvailability,app.applicationReason,app.domain,app.referralCode,app.referredBy,appStatusLabel(appStatus(app)),app[ADMIN_NOTES_KEY],app.submittedAtMs||app.submittedAt]);
-    const csv=[headers,...data].map(row=>row.map(v=>`"${String(v??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob=new Blob(['\ufeff',csv],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`internsforge-filtered-applications-${new Date().toISOString().slice(0,10)}.csv`;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);showToast('Filtered CSV exported',`${rows.length} applications exported.`,'success');
-  }
-
-  function enhanceLiveVisitorCards(){
-    const target=getEl('visitorList'); if(!target) return;
-    target.querySelectorAll('.visitor-card').forEach(card=>{
-      // Cards are rendered by the base dashboard; the summary strip is handled below.
-    });
-    const rows=getVisitorRows();
-    const active=rows.filter(v=>['active','filling'].includes(v.state)).length;
-    const filling=rows.filter(v=>v.state==='filling').length;
-    const abandoned=rows.filter(v=>v.state==='abandoned').length;
-    const submitted=rows.filter(v=>v.state==='submitted').length;
-    const strip=getEl('liveVisitorSummary');
-    if(strip) strip.innerHTML=`<span><b>${active}</b> active</span><span><b>${filling}</b> filling</span><span><b>${abandoned}</b> abandoned</span><span><b>${submitted}</b> completed</span>`;
-  }
-
-  function renderAdvancedAll(){
-    updateAdvancedMetrics();
-    enhanceLiveVisitorCards();
-    seedActivity();
-  }
-
-  function watchVisitorChanges(){
-    db.ref('liveVisitors').on('value', snap=>{
-      const next=snap.val()||{};
-      Object.entries(next).forEach(([id,v])=>{
-        const prev=lastVisitorSnapshot[id];
-        if(!prev) addActivity('visitor','New visitor joined',`${v.fieldData?.name||v.name||'Anonymous'} • ${v.page||'Application Portal'}`);
-        const prevProgress=Number(prev?.formProgress||0), nextProgress=Number(v?.formProgress||0);
-        if(!prev && nextProgress>0) addActivity('filling','Application started',`${v.fieldData?.name||v.name||'Anonymous'} • ${v.currentField||'Form'}`);
-        else if(prev && prevProgress===0 && nextProgress>0) addActivity('filling','Application started',`${v.fieldData?.name||v.name||'Anonymous'} • ${v.currentField||'Form'}`);
-        if(prev && prev.status!=='submitted' && v.status==='submitted') addActivity('application','Application submitted',`${v.fieldData?.name||v.name||'Student'} • ${v.fieldData?.domain||v.domain||'Domain not selected'}`);
-      });
-      lastVisitorSnapshot=next;
-      window.setTimeout(enhanceLiveVisitorCards,40);
-    });
-    db.ref('submittedApplications').on('value',snap=>{
-      const next=Object.entries(snap.val()||{}).map(([id,app])=>({id,...app}));
-      const oldById=Object.fromEntries(applications.map(a=>[a.id,a]));
-      next.forEach(app=>{
-        if(!oldById[app.id]) addActivity('application','New application received',`${app.name||'Student'} • ${app.college||'College not provided'}`,asMs(app.submittedAtMs||app.submittedAt)||Date.now());
-        else if(appStatus(oldById[app])!==appStatus(app)) addActivity('status','Application status changed',`${app.name||'Student'} → ${appStatusLabel(appStatus(app))}`);
-      });
-      window.setTimeout(()=>{updateAdvancedMetrics();refreshFilterOptions();if(getEl('applicationManagerModal')?.classList.contains('open'))renderApplicationManager();},50);
-    });
-  }
-
-  function bindAdvancedUI(){
-    getEl('openApplicationManager')?.addEventListener('click',openManager);
-    document.querySelectorAll('[data-close-manager]').forEach(node=>node.addEventListener('click',closeManager));
-    document.querySelectorAll('[data-close-detail]').forEach(node=>node.addEventListener('click',closeDetail));
-    getEl('saveApplicationDetails')?.addEventListener('click',saveAppDetails);
-    getEl('managerPrev')?.addEventListener('click',()=>{managerPage--;renderApplicationManager();});
-    getEl('managerNext')?.addEventListener('click',()=>{managerPage++;renderApplicationManager();});
-    getEl('clearApplicationFilters')?.addEventListener('click',()=>{getEl('applicationSearch').value='';getEl('applicationDomainFilter').value='';getEl('applicationStateFilter').value='';getEl('applicationYearFilter').value='';getEl('applicationLanguageFilter').value='';getEl('applicationStatusFilter').value='';managerPage=1;renderApplicationManager();});
-    ['applicationSearch','applicationDomainFilter','applicationStateFilter','applicationYearFilter','applicationLanguageFilter','applicationStatusFilter'].forEach(id=>getEl(id)?.addEventListener('input',()=>{managerPage=1;renderApplicationManager();}));
-    getEl('clearActivityLog')?.addEventListener('click',()=>{activityItems=[];saveActivity();renderActivityFeed();showToast('Activity log cleared','Only this browser’s local admin activity history was cleared.','info',4500);});
-    getEl('copyApplicationSummary')?.addEventListener('click',async()=>{
-      const app=findApp(selectedApplicationId);if(!app)return;
-      const text=[`InternsForge Application — ${app.name||''}`,`Email: ${app.email||'—'}`,`Phone: ${app.phone||'—'}`,`College: ${app.college||'—'}`,`Department: ${app.department||'—'}`,`Year: ${app.year||'—'}`,`State: ${app.state||'—'}`,`Domain: ${app.domain||'—'}`,`Language: ${app.communicationLanguage||app.language||'—'}`,`Start: ${app.startAvailability||'—'}`,`Status: ${appStatusLabel(appStatus(app))}`,`Reference: ${app.id||'—'}`].join('\n');
-      try{await navigator.clipboard.writeText(text);showToast('Summary copied','Applicant summary copied to clipboard.','success',3500);}catch{showToast('Copy unavailable','Your browser blocked clipboard access.','error',4500);}
-    });
-    getEl('exportApplicationsButton')?.addEventListener('contextmenu',e=>{e.preventDefault();exportManager();});
-    window.__internsforgeInlineStatus = inlineStatus;
-    document.addEventListener('click',e=>{
-      const rowButton=e.target.closest('[data-open-application]'); if(rowButton){openDetail(rowButton.dataset.openApplication);return;}
-    });
-    // Use the existing Export button for the current dataset, while Manage All exposes the filtered export via Ctrl+E.
-    document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='e'&&getEl('applicationManagerModal')?.classList.contains('open')){e.preventDefault();exportManager();}});
-    getEl('activeAdminEmail').textContent=`Admin: ${auth?.currentUser?.email||'—'}`;
-  }
-
-  function start(){
-    if(window.__internsforgeAdminV540Started) return;
-    window.__internsforgeAdminV540Started=true;
-    window.__internsforgeUpdateAdvancedMetrics = updateAdvancedMetrics;
-    bindAdvancedUI();
-    seedActivity();
-    window.setTimeout(renderAdvancedAll,300);
-    watchVisitorChanges();
-    window.setInterval(()=>{renderFunnel();renderDomainPerformance();enhanceLiveVisitorCards();},4000);
-  }
-
-  if(auth){ auth.onAuthStateChanged(user=>{ if(user) window.setTimeout(start,0); }); }
-})();
-
-// V5.40: independent Live Visitors refresh. The button does not depend on
-// Applications/Referrals reads, so one unrelated permission failure cannot
-// block realtime visitor monitoring.
-async function refreshLiveVisitorsOnly(){
-  if (refreshInProgress) return;
-  refreshInProgress = true;
-  const button = el('refreshDashboardButton');
-  const label = el('visitorSyncLabel');
-  const stamp = el('lastDataSync');
-  button?.classList.add('is-refreshing');
-  button?.setAttribute('disabled','disabled');
-  if(label) label.textContent='Refreshing…';
-  try {
-    await cleanupStale({removeAbandoned:false});
-    const snapshot = await db.ref('liveVisitors').once('value');
-    visitors = snapshot.val() || {};
-    renderVisitors();
-    updateStamp('Live visitors refreshed');
-    if(label) label.textContent='Synced just now';
-    if(stamp) stamp.textContent=`Last data sync: ${new Intl.DateTimeFormat('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date())}`;
-    showToast('Live visitors refreshed','Visitor presence was loaded directly from Firebase.','success',2800);
-    return true;
-  } catch(error){
-    console.error('Live visitor-only refresh failed:',error);
-    if(label) label.textContent='Sync failed';
-    showToast('Live visitor refresh failed',error?.message || 'Firebase denied the read. Check authentication and database rules.','error',7000);
-    return false;
-  } finally {
-    refreshInProgress=false;
-    button?.classList.remove('is-refreshing');
-    button?.removeAttribute('disabled');
-  }
-}
-
-(function fixAdminV540StatusEvents(){
-  if(window.__internsforgeV540StatusEvents) return;
-  window.__internsforgeV540StatusEvents=true;
-  document.addEventListener('change', e=>{
-    const statusSelect=e.target.closest('[data-inline-status]');
-    if(statusSelect) window.__internsforgeInlineStatus?.(statusSelect.dataset.inlineStatus,statusSelect.value);
-  });
-})();

@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- SkillPath final production build: CSS and application JavaScript are embedded. Keep existing images and firebase.js in the same folder. -->
+<!-- InternsForge Conversion Redesign V1: CSS and application JavaScript are embedded. Keep existing images and firebase.js in the same folder. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -524,6 +524,35 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 @media(max-width:600px){.fact-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}.fact-row article{flex:auto}.application-progress-four{gap:4px;margin:18px 0 24px}.progress-four-step{display:grid;justify-items:center;gap:4px}.progress-four-step span{width:31px;height:31px}.progress-four-step b{font-size:7px}.application-progress-four>i{min-width:12px}.domain-explorer-card.selected{border-color:rgba(116,157,255,.72)!important;box-shadow:0 0 0 2px rgba(82,115,234,.12),0 12px 28px rgba(0,0,0,.16)}.domain-selection-detail{grid-template-columns:42px 1fr;align-items:start;padding:14px}.domain-selection-icon{width:42px;height:42px}.domain-selection-detail>button{grid-column:1/-1;width:100%}.domain-selection-columns{grid-template-columns:1fr}.domain-selection-detail h3{font-size:16px}.student-ticker-label{font-size:8px}}
 @media(prefers-reduced-motion:reduce){.live-count-pop,.domain-explorer-card.selected{border-color:rgba(116,157,255,.72)!important;box-shadow:0 0 0 2px rgba(82,115,234,.12),0 12px 28px rgba(0,0,0,.16)}.domain-selection-detail{animation:none!important}}
 </style>
+
+<style>
+.clear-application-wrap{
+  display:flex;
+  justify-content:center;
+  margin:10px 0 2px;
+}
+.clear-application-btn{
+  appearance:none;
+  border:0;
+  background:transparent;
+  color:rgba(255,255,255,.62);
+  font:inherit;
+  font-size:.78rem;
+  padding:6px 10px;
+  cursor:pointer;
+  text-decoration:underline;
+  text-underline-offset:3px;
+  transition:opacity .2s ease, color .2s ease;
+}
+.clear-application-btn:hover{
+  color:#fff;
+}
+@media (max-width:600px){
+  .clear-application-wrap{ margin:8px 0 4px; }
+  .clear-application-btn{ font-size:.75rem; }
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -546,13 +575,14 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 <section class="hero" id="home">
   <div class="hero-copy">
     <div class="eyebrow"><i></i> 2026 ONLINE INTERNSHIP PROGRAMME</div>
-    <h1>Build real projects. <span>Become career ready.</span></h1>
-    <p class="hero-lead">A guided online programme for students from 1st year to final year across any degree or department. Choose a career track, complete practical work and strengthen your profile before placements.</p>
+    <h1>Build real projects. <span>Get internship-ready.</span></h1>
+    <div class="hero-value-line"><span>Learn by doing</span><i>•</i><span>Build proof of work</span><i>•</i><span>Get career guidance</span></div>
+    <p class="hero-lead">A guided online internship programme for students across departments. Choose a domain, work on practical projects, strengthen your profile and request an internship counselling call for the next step.</p>
     <div class="hero-actions">
-      <button class="primary-btn open-application" type="button">Apply in 60 Seconds <span>→</span></button>
-      <a class="secondary-btn" href="#projects">See Sample Projects</a>
+      <button class="primary-btn open-application" type="button">Submit Application <span>→</span></button>
+      <a class="secondary-btn" href="#domains">Explore Domains</a>
     </div>
-    <div class="hero-proof"><span>✓ No resume needed initially</span><span>✓ Mobile-friendly form</span><span>✓ Application reference provided</span></div>
+    <div class="hero-proof"><span>✓ About 60-second initial application</span><span>✓ No resume required initially</span><span>✓ Counselling call request available</span></div>
     <div class="fact-row" aria-label="Programme facts">
       <article><b>35</b><small>Career domains</small></article>
       <article><b id="liveApplicationCount">—</b><small>Students applied</small></article>
@@ -584,6 +614,18 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
   <article><span>NEXT STEP</span><strong>Application review</strong><small>Details shared after review</small></article>
 </section>
 
+<section class="conversion-bridge" aria-label="Application guidance">
+  <div class="conversion-bridge-copy">
+    <span>ONE SIMPLE NEXT STEP</span>
+    <h2>Submit your application. Get clarity on what comes next.</h2>
+    <p>After you submit, you can request an internship counselling call to discuss domains, programme expectations, practical work and the next step.</p>
+  </div>
+  <div class="conversion-bridge-actions">
+    <button class="primary-btn open-application" type="button">Submit Application <span>→</span></button>
+    <div class="conversion-mini-points"><span>✓ Guided application</span><span>✓ Secure submission</span><span>✓ Counselling request</span></div>
+  </div>
+</section>
+
 <section class="ecosystem" aria-label="Technology ecosystems">
   <div class="ecosystem-title"><span>TOOLS AND TECHNOLOGY ECOSYSTEMS USED ACROSS SELECTED TRACKS</span><small>Exposure varies by domain</small></div>
   <div class="marquee-viewport"><div class="marquee-track">
@@ -600,8 +642,8 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 <section class="application-zone">
   <div class="application-intro">
     <span>GUIDED APPLICATION</span>
-    <h2>Complete your profile without the usual form fatigue.</h2>
-    <p>The form responds as you progress: completed fields unlock milestones, your career map advances and your draft is saved on this device.</p>
+    <h2>A guided application, built to feel quick and clear.</h2>
+    <p>Share the essentials first, review everything before submission and optionally request a counselling call so you can understand the internship path before moving forward.</p>
 
     <div class="journey-card" id="journeyCard" aria-live="polite">
       <div class="journey-head"><span>APPLICATION MOMENTUM</span><strong id="journeyPercent">0%</strong></div>
@@ -612,9 +654,9 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
     </div>
 
     <div class="application-points">
-      <div><b>01</b><span><strong>Basic information</strong><small>Name and WhatsApp number</small></span></div>
-      <div><b>02</b><span><strong>Academic profile</strong><small>College, year and domain</small></span></div>
-      <div><b>03</b><span><strong>Review and submit</strong><small>Check details before sending</small></span></div>
+      <div><b>01</b><span><strong>Basic details</strong><small>Name, WhatsApp and email</small></span></div>
+      <div><b>02</b><span><strong>Academic + domain</strong><small>College, year, location and track</small></span></div>
+      <div><b>03</b><span><strong>Review + counselling option</strong><small>Confirm your details before submission</small></span></div>
     </div>
   </div>
 
@@ -713,7 +755,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
           </div>
           <div class="field-wrap full glow-field">
             <label for="state">State / Union Territory</label>
-            <div class="field-control"><select id="state" name="state" required><option value="">Select your state / union territory</option><option>Andhra Pradesh</option><option>Arunachal Pradesh</option><option>Assam</option><option>Bihar</option><option>Chhattisgarh</option><option>Goa</option><option>Gujarat</option><option>Haryana</option><option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option><option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option><option>Manipur</option><option>Meghalaya</option><option>Mizoram</option><option>Nagaland</option><option>Odisha</option><option>Punjab</option><option>Rajasthan</option><option>Sikkim</option><option>Tamil Nadu</option><option>Telangana</option><option>Tripura</option><option>Uttar Pradesh</option><option>Uttarakhand</option><option>West Bengal</option><option>Andaman and Nicobar Islands</option><option>Chandigarh</option><option>Dadra and Nagar Haveli and Daman and Diu</option><option>Delhi</option><option>Jammu and Kashmir</option><option>Ladakh</option><option>Lakshadweep</option><option>Puducherry</option></select><span class="valid-mark">✓</span></div>
+            <div class="field-control"><input id="state" name="state" type="text" placeholder="Type your state / union territory" autocomplete="address-level1" required><span class="valid-mark">✓</span></div>
             <small class="field-error" id="stateError"></small>
           </div>
           <div class="field-wrap glow-field">
@@ -727,8 +769,8 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
             <small class="field-error" id="startAvailabilityError"></small>
           </div>
           <div class="field-wrap full glow-field">
-            <label for="applicationReason">Why are you applying for this internship?</label>
-            <div class="field-control"><select id="applicationReason" name="applicationReason" required><option value="">Choose your primary reason</option><option>To gain practical industry experience</option><option>To improve my technical/professional skills</option><option>To build real-world projects and strengthen my resume</option><option>To prepare for placements and future career opportunities</option><option>To explore and gain experience in a new field</option></select><span class="valid-mark">✓</span></div>
+            <label for="applicationReason">Why are you applying for this internship? <span class="optional-label">Optional</span></label>
+            <div class="field-control"><select id="applicationReason" name="applicationReason"><option value="">Choose your primary reason</option><option>To gain practical industry experience</option><option>To improve my technical/professional skills</option><option>To build real-world projects and strengthen my resume</option><option>To prepare for placements and future career opportunities</option><option>To explore and gain experience in a new field</option></select><span class="valid-mark">✓</span></div>
             <small class="field-error" id="applicationReasonError"></small>
           </div>
           <div class="field-wrap full recommendation-box glow-field">
@@ -755,9 +797,27 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
         <div id="applicationReview" class="application-review"></div>
         <label class="consent-row"><input type="checkbox" id="applicationConsent" required><span>I confirm that the information provided is correct and agree to the <a href="terms.html" target="_blank" rel="noopener">programme terms</a> and <a href="privacy.html" target="_blank" rel="noopener">privacy notice</a>.</span></label>
         <label class="consent-row optional"><input type="checkbox" id="communicationConsent"><span>I agree to receive application and programme updates through WhatsApp, phone or email.</span></label>
+        <div class="counselling-request-card">
+          <div class="counselling-request-copy">
+            <span class="counselling-kicker">OPTIONAL — RECOMMENDED</span>
+            <h4>Request an internship counselling call</h4>
+            <p>Ask our team about the right domain, practical project expectations, programme flow and what to do after applying.</p>
+          </div>
+          <label class="counselling-toggle"><input type="checkbox" id="counsellingRequest" checked><span>Yes, I’d like a counselling call</span></label>
+          <div class="field-wrap compact-counselling-field">
+            <label for="counsellingPreferredTime">Preferred time window</label>
+            <div class="field-control"><select id="counsellingPreferredTime" name="counsellingPreferredTime"><option value="">Choose a preferred window</option><option>Morning (9 AM – 12 PM)</option><option>Afternoon (12 PM – 4 PM)</option><option>Evening (4 PM – 7 PM)</option></select></div>
+          </div>
+          <small class="counselling-note">A request is not a confirmed appointment. The team can follow up using the contact details you submitted.</small>
+        </div>
         <div class="step-actions"><button type="button" class="back-step secondary">← Edit Details</button><button type="submit">Submit Application <span>→</span></button></div>
       </section>
       </div>
+          <div class="clear-application-wrap">
+            <button type="button" id="clearApplicationBtn" class="clear-application-btn">
+              Clear Application
+            </button>
+          </div>
     </form>
     <p class="secure">🔒 Your details are used only for application review and programme communication.</p>
     <div id="message" aria-live="polite"></div>
@@ -870,7 +930,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
   </div>
 </section>
 
-<section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your next project can start with one minute.</h2><p>No prerequisite knowledge required. Choose your domain and start your application.</p></div><button class="open-application" type="button">Start Application <span>→</span></button></section>
+<section class="final-cta"><div><span>READY TO TAKE THE NEXT STEP?</span><h2>Submit your application and request guidance when you need it.</h2><p>Choose your domain, share your profile and optionally request an internship counselling call for the next step.</p></div><button class="open-application" type="button">Submit Application <span>→</span></button></section>
 </main>
 
 <footer id="contact">
@@ -940,10 +1000,9 @@ const fieldRules = {
   college: value => value.trim().length >= 3 ? '' : 'Enter your complete college name.',
   department: value => value.trim().length >= 2 ? '' : 'Enter your department or branch.',
   year: value => value ? '' : 'Select your current year.',
-  state: value => value ? '' : 'Select your state / union territory.',
+  state: value => value.trim().length >= 2 ? '' : 'Enter your state / union territory.',
   communicationLanguage: value => value.trim().length >= 2 ? '' : 'Enter at least one communication language.',
   startAvailability: value => value ? '' : 'Select when you are available to start.',
-  applicationReason: value => value ? '' : 'Choose your primary reason for applying.',
   domain: value => value ? '' : 'Select your interested domain.'
 };
 
@@ -1105,7 +1164,7 @@ function getFormData() {
 }
 
 function calculateProgress() {
-  const required = ['name', 'phone', 'email', 'college', 'department', 'year', 'state', 'communicationLanguage', 'startAvailability', 'applicationReason', 'domain'];
+  const required = ['name', 'phone', 'email', 'college', 'department', 'year', 'state', 'communicationLanguage', 'startAvailability', 'domain'];
   const completed = required.filter(name => {
     const field = getField(name);
     return field && validateField(field, false);
@@ -1194,7 +1253,7 @@ function restoreDraft() {
       localStorage.removeItem(DRAFT_KEY);
       return;
     }
-    ['name', 'phone', 'email', 'college', 'department', 'year', 'state', 'communicationLanguage', 'startAvailability', 'applicationReason', 'domain', 'interest'].forEach(name => {
+    ['name', 'phone', 'email', 'college', 'department', 'year', 'state', 'communicationLanguage', 'startAvailability', 'domain', 'interest'].forEach(name => {
       const field = getField(name);
       if (field && draft[name]) field.value = draft[name];
     });
@@ -1355,9 +1414,20 @@ function showSuccess(data, applicationId, referralCode, referralUrl) {
       <h3>You're officially in the review queue.</h3>
       <p>Keep this reference for future communication. Programme details will be shared through the approved contact information you provided.</p>
       <div class="reference-card"><small>Application Reference</small><strong>${escapeHtml(applicationId)}</strong><button type="button" id="copyReference">Copy reference</button></div>
+      <div class="counselling-success-card">
+        <div><span class="success-card-kicker">NEXT STEP</span><h4>${data.counsellingRequested ? 'Counselling call requested' : 'Want more guidance?'}</h4><p>${data.counsellingRequested ? `Your preference${data.counsellingPreferredTime ? `: ${escapeHtml(data.counsellingPreferredTime)}` : ''}. This is a request, not a confirmed appointment.` : 'You can still request a counselling call later using the contact details you submitted.'}</p></div>
+        <div class="counselling-success-actions"><button type="button" id="requestCounsellingAfterSubmit">${data.counsellingRequested ? 'Review counselling request' : 'Request counselling call'}</button></div>
+      </div>
       <div class="success-details"><div><span>Applicant</span><strong>${escapeHtml(data.name)}</strong></div><div><span>Domain</span><strong>${escapeHtml(data.domain)}</strong></div><div><span>Current Year</span><strong>${escapeHtml(data.year)}</strong></div><div><span>Submitted</span><strong>${escapeHtml(new Date().toLocaleString('en-IN'))}</strong></div></div>
       <div class="referral-panel">
-        <div class="referral-panel-head"><div><span class="referral-kicker">OPTIONAL REFERRAL</span><h4>Invite your classmates</h4><p>Your application is complete. If you want, share this opportunity with friends and classmates.</p></div><div class="referral-badge">↗</div></div>
+        <div class="referral-panel-head"><div><span class="referral-kicker">HELP SOMEONE ELSE GET STARTED</span><h4>Invite your classmates</h4><p>Share a practical internship option with friends who are exploring domains, projects and career preparation.</p></div><div class="referral-badge">↗</div></div>
+        <div class="referral-benefit-grid">
+          <div><strong>01</strong><span>Share your personal referral link.</span></div>
+          <div><strong>02</strong><span>Your friend applies through your link.</span></div>
+          <div><strong>03</strong><span>The referral is recorded with their application.</span></div>
+          <div><strong>04</strong><span>Use the link again for classmates who may benefit.</span></div>
+        </div>
+        <div class="referral-value-note"><strong>Why refer?</strong><span>Help a friend discover practical learning, projects, internship experience and career preparation.</span></div>
         <div class="referral-code-card"><div><small>Your referral code</small><strong>${escapeHtml(referralCode)}</strong></div><button type="button" id="copyReferralCode">Copy code</button></div>
         <div class="share-actions">
           <a class="whatsapp" href="${whatsappUrl}" target="_blank" rel="noopener">WhatsApp</a>
@@ -1376,6 +1446,15 @@ function showSuccess(data, applicationId, referralCode, referralUrl) {
   message.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'center' });
 
   document.getElementById('copyReference')?.addEventListener('click', event => copyText(applicationId, event.currentTarget, 'Reference copied!'));
+  document.getElementById('requestCounsellingAfterSubmit')?.addEventListener('click', event => {
+    const button = event.currentTarget;
+    const requested = Boolean(data.counsellingRequested);
+    button.textContent = requested ? 'Request recorded ✓' : 'Counselling request added ✓';
+    button.disabled = true;
+    if (!requested && typeof db !== 'undefined') {
+      db.ref(`submittedApplications/${applicationId}`).update({ counsellingRequested: true }).catch(() => {});
+    }
+  });
   document.getElementById('copyReferralCode')?.addEventListener('click', event => copyText(referralCode, event.currentTarget, 'Code copied!'));
   document.getElementById('copyReferral')?.addEventListener('click', event => copyText(referralUrl, event.currentTarget, 'Link copied!'));
   document.getElementById('nativeShare')?.addEventListener('click', async event => {
@@ -1459,6 +1538,8 @@ async function submitApplication() {
     communicationLanguage: data.communicationLanguage,
     startAvailability: data.startAvailability,
     applicationReason: data.applicationReason,
+    counsellingRequested: Boolean(data.counsellingRequested),
+    counsellingPreferredTime: data.counsellingPreferredTime || null,
     domain: data.domain,
     interest: data.interest || null,
     communicationConsent: Boolean(document.getElementById('communicationConsent')?.checked),
@@ -1541,36 +1622,6 @@ sessionStorage.setItem(VISITOR_KEY, visitorId);
 let visitorRef = null;
 let visitorComplete = false;
 
-function detectBrowserName() {
-  const ua = navigator.userAgent || '';
-  if (/Edg\//i.test(ua)) return 'Edge';
-  if (/OPR\//i.test(ua)) return 'Opera';
-  if (/Chrome\//i.test(ua) && !/Edg\//i.test(ua)) return 'Chrome';
-  if (/Firefox\//i.test(ua)) return 'Firefox';
-  if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) return 'Safari';
-  return 'Other';
-}
-function detectOsName() {
-  const ua = navigator.userAgent || '';
-  if (/Android/i.test(ua)) return 'Android';
-  if (/iPhone|iPad|iPod/i.test(ua)) return 'iOS';
-  if (/Windows/i.test(ua)) return 'Windows';
-  if (/Mac OS X/i.test(ua)) return 'macOS';
-  if (/Linux/i.test(ua)) return 'Linux';
-  return 'Other';
-}
-function getVisitorEnvironment() {
-  return {
-    browser: detectBrowserName(),
-    os: detectOsName(),
-    deviceType: /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '') ? 'Mobile' : 'Desktop',
-    screen: `${window.screen?.width || 0}x${window.screen?.height || 0}`,
-    language: navigator.language || '',
-    referrer: document.referrer || 'Direct',
-    landingUrl: window.location.href.slice(0, 500)
-  };
-}
-
 function collectLiveFieldData() {
   return {
     name: getField('name')?.value.trim() || '',
@@ -1605,7 +1656,6 @@ function updateVisitor(patch = {}, complete = false) {
     fieldData: collectLiveFieldData(),
     lastActive: firebase.database.ServerValue.TIMESTAMP,
     referredBy: referralSource || null,
-    environment: getVisitorEnvironment(),
     ...patch
   }).catch(error => console.warn('Live visitor update failed:', error));
 }
@@ -1625,8 +1675,7 @@ function initialiseVisitor() {
     fieldData: collectLiveFieldData(),
     startedAt: firebase.database.ServerValue.TIMESTAMP,
     lastActive: firebase.database.ServerValue.TIMESTAMP,
-    referredBy: referralSource || null,
-    environment: getVisitorEnvironment()
+    referredBy: referralSource || null
   }).catch(error => console.warn('Live visitor initialization failed:', error));
   visitorRef.onDisconnect().update({ presence: 'disconnected', status: 'left', leftAt: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
 }
@@ -2165,6 +2214,107 @@ console.info('SkillPath guided form build: Final V11');
   media.addEventListener?.('change', refresh);
   reduce.addEventListener?.('change', refresh);
   refresh();
+})();
+</script>
+
+
+<script>
+(function () {
+  function clearApplication() {
+    var form = document.getElementById("internshipForm");
+    if (!form) return;
+
+    var confirmed = window.confirm(
+      "Clear this application?\n\n" +
+      "All information you have entered will be removed from this device. " +
+      "This cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    form.reset();
+
+    // Clear common draft/local-storage keys used by the application.
+    var keysToClear = [];
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var key = localStorage.key(i);
+        if (key && /draft|application|internship|internsforge/i.test(key)) {
+          keysToClear.push(key);
+        }
+      }
+      keysToClear.forEach(function (key) {
+        try { localStorage.removeItem(key); } catch (e) {}
+      });
+    } catch (e) {}
+
+    // Clear session storage equivalents.
+    try {
+      for (var j = sessionStorage.length - 1; j >= 0; j--) {
+        var skey = sessionStorage.key(j);
+        if (skey && /draft|application|internship|internsforge/i.test(skey)) {
+          try { sessionStorage.removeItem(skey); } catch (e) {}
+        }
+      }
+    } catch (e) {}
+
+    // Clear file/input values that reset() may not clear.
+    form.querySelectorAll("input, textarea, select").forEach(function (el) {
+      if (el.type === "checkbox" || el.type === "radio") {
+        el.checked = false;
+      } else if (el.tagName === "SELECT") {
+        el.selectedIndex = 0;
+      } else {
+        el.value = "";
+      }
+    });
+
+    // Return to first application step if the page uses step navigation.
+    try {
+      var steps = form.querySelectorAll("[data-step], .form-step, .application-step");
+      steps.forEach(function (step, index) {
+        step.classList.toggle("active", index === 0);
+        step.classList.toggle("current", index === 0);
+        step.hidden = index !== 0;
+      });
+
+      var progress = form.querySelectorAll("[data-progress-step], .progress-step");
+      progress.forEach(function (item, index) {
+        item.classList.toggle("active", index === 0);
+        item.classList.toggle("current", index === 0);
+      });
+    } catch (e) {}
+
+    // Remove validation/error states.
+    form.querySelectorAll(".error, .invalid, .field-error, .has-error").forEach(function (el) {
+      el.classList.remove("error", "invalid", "field-error", "has-error");
+    });
+
+    // Let any existing application code refresh its UI.
+    document.dispatchEvent(new CustomEvent("internsforge:applicationCleared"));
+
+    // If an existing draft restoration system exposes a reset/start-again function,
+    // invoke it safely.
+    try {
+      if (typeof window.startApplicationFromBeginning === "function") {
+        window.startApplicationFromBeginning();
+      }
+    } catch (e) {}
+
+    // Scroll the form to the top.
+    try {
+      form.scrollIntoView({ behavior: "smooth", block: "start" });
+    } catch (e) {
+      form.scrollIntoView();
+    }
+  }
+
+  document.addEventListener("click", function (event) {
+    var btn = event.target.closest("#clearApplicationBtn");
+    if (!btn) return;
+    event.preventDefault();
+    clearApplication();
+  });
 })();
 </script>
 

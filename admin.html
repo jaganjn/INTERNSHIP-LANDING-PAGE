@@ -1,227 +1,107 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#07101f">
-<title>InternsForge — Admin Dashboard V5.71</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>InternsForge — Admin Command Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="dashboard.css">
 </head>
 <body class="admin-page">
 <div class="app-shell">
+<aside class="sidebar" id="sidebar">
+  <a class="brand skillpath-admin-brand" href="#dashboard"><img src="skillpath-mark.png" alt="InternsForge"><div><strong>InternsForge</strong><small>ADMIN COMMAND CENTER</small></div></a>
+  <nav class="side-nav">
+    <a class="active" href="#dashboard">⌂ <span>Dashboard</span></a>
+    <p>MONITORING</p><a href="#liveVisitors">◉ <span>Live Visitors</span></a><a href="#activity">⌁ <span>Real-time Activity</span></a>
+    <p>APPLICATIONS</p><a href="#applications">▤ <span>Recent Applications</span></a><a href="#analytics">⌁ <span>Analytics</span></a>
+    <p>REFERRALS</p><a href="#referralOverview">♙ <span>Overview</span></a><a href="#referralLeaderboard">★ <span>Leaderboard</span></a><a href="#referralFriends">♧ <span>Friends Joined</span></a>
+    <p>SETTINGS</p><a href="#settings">⚙ <span>Data Controls</span></a>
+  </nav>
+  <div class="side-profile" id="adminProfile">
+    <span class="avatar" id="adminAvatar">A</span>
+    <div class="side-profile-main">
+      <strong id="adminProfileName">Administrator</strong>
+      <small id="adminProfileEmail">Super Admin</small>
+    </div>
+    <div class="side-profile-actions">
+      <button type="button" onclick="resetAdminPassword()" aria-label="Reset password" title="Reset password">🔑</button>
+      <button type="button" onclick="logout()" aria-label="Sign out" title="Sign out">↪</button>
+    </div>
+  </div>
+</aside>
+<div class="mobile-overlay" id="mobileOverlay"></div>
 <section class="workspace">
 <header class="topbar">
   <button class="menu-toggle" id="menuToggle" aria-label="Open navigation">☰</button>
-  <div class="welcome"><h1>Welcome back, Admin! 👋</h1><p>Real-time internship operations, applications and growth intelligence.</p></div>
+  <div class="welcome"><h1>Welcome back, Admin! 👋</h1><p>Live internship operations and application activity.</p></div>
   <div class="topbar-tools">
-<div class="nav-menu-wrap" id="navMenuWrap">
-  <button class="nav-menu-button" id="navMenuButton" type="button" aria-expanded="false" aria-controls="navMenuPanel">
-    <span class="nav-menu-icon">☰</span><span>Navigation</span><span class="nav-menu-caret">▾</span>
-  </button>
-  <div class="nav-menu-panel" id="navMenuPanel" hidden>
-    <div class="nav-menu-heading">
-      <div><span class="eyebrow">ADMIN NAVIGATION</span><strong>Everything in one place</strong><small>Jump between monitoring, applications, analytics, referrals and system controls.</small></div>
-      <button class="nav-menu-close" id="navMenuClose" type="button" aria-label="Close navigation">×</button>
+      <div class="connection" id="portalLiveStatus"><i></i><span id="portalLiveText">Connecting…</span></div>
+      <button class="sound-quick-toggle" id="soundQuickToggle" type="button" aria-pressed="false" title="Enable notification sound">🔇</button>
+      <div class="clock"><strong id="liveClock">--:--</strong><small id="liveDate">--</small></div>
+      <a class="portal-btn" href="index.html">Open Portal ↗</a>
     </div>
-    <div class="nav-cluster-grid">
-      <div class="nav-cluster nav-cluster-overview">
-        <span class="nav-cluster-label">OVERVIEW</span>
-        <div class="nav-link-grid one">
-          <a href="#dashboard" data-popup-target="dashboard"><b>⌂</b><span><strong>Dashboard</strong><small>Live operational overview</small></span></a>
-        </div>
-      </div>
-
-      <div class="nav-cluster">
-        <span class="nav-cluster-label">MONITORING</span>
-        <div class="nav-link-grid two">
-          <a href="#liveVisitors" data-popup-target="liveVisitors"><b>◉</b><span><strong>Live Visitors</strong><small>Realtime visitor sessions</small></span></a>
-          <a href="#activity" data-popup-target="activity"><b>⌁</b><span><strong>Activity Feed</strong><small>Latest portal activity</small></span></a>
-        </div>
-      </div>
-
-      <div class="nav-cluster">
-        <span class="nav-cluster-label">APPLICATIONS</span>
-        <div class="nav-link-grid two">
-          <a href="#applications" data-popup-target="applications"><b>▤</b><span><strong>Applications</strong><small>Recent submissions & manager</small></span></a>
-          <a href="#funnel" data-popup-target="funnel"><b>◒</b><span><strong>Funnel &amp; Performance</strong><small>Journey and domain insights</small></span></a>
-        </div>
-      </div>
-
-      <div class="nav-cluster nav-cluster-insights">
-        <span class="nav-cluster-label">INSIGHTS</span>
-        <div class="nav-link-grid two">
-          <a href="#analytics" data-popup-target="analytics"><b>◌</b><span><strong>Analytics</strong><small>Submission pulse &amp; audience</small></span></a>
-          <a href="#domainInsights" data-popup-target="domainInsights"><b>◫</b><span><strong>Domain Insights</strong><small>Domain mix &amp; performance</small></span></a>
-          <a href="#audienceInsights" data-popup-target="audienceInsights"><b>◌</b><span><strong>Audience Insights</strong><small>State, language &amp; year mix</small></span></a>
-          <a href="#collegeInsights" data-popup-target="collegeInsights"><b>▥</b><span><strong>College Insights</strong><small>Top participating colleges</small></span></a>
-        </div>
-      </div>
-
-      <div class="nav-cluster nav-cluster-referrals">
-        <span class="nav-cluster-label">REFERRALS</span>
-        <div class="nav-link-grid two">
-          <a href="#referralOverview" data-popup-target="referralOverview"><b>♙</b><span><strong>Referral Overview</strong><small>Ambassadors &amp; conversion</small></span></a>
-          <a href="#referralLeaderboard" data-popup-target="referralLeaderboard"><b>★</b><span><strong>Leaderboard</strong><small>Top referrers</small></span></a>
-          <a href="#referralFriends" data-popup-target="referralFriends"><b>♧</b><span><strong>Friends Joined</strong><small>Referral activity</small></span></a>
-        </div>
-      </div>
-
-      <div class="nav-cluster nav-cluster-operations">
-        <span class="nav-cluster-label">OPERATIONS</span>
-        <div class="nav-link-grid two">
-          <a href="#settings" data-popup-target="settings"><b>⚙</b><span><strong>Settings &amp; Health</strong><small>Alerts, health &amp; data controls</small></span></a>
-          <button type="button" id="navResetPassword"><b>🔑</b><span><strong>Reset Password</strong><small>Update admin access</small></span></button>
-          <button type="button" id="navLogout"><b>↪</b><span><strong>Sign Out</strong><small>End admin session</small></span></button>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-    <div class="connection" id="portalLiveStatus"><i></i><span id="portalLiveText">Connecting…</span></div>
-    <button class="sound-quick-toggle" id="soundQuickToggle" type="button" aria-pressed="false" title="Enable notification sound">🔇</button>
-    <div class="clock"><strong id="liveClock">--:--</strong><small id="liveDate">--</small></div>
-    <a class="portal-btn" href="index.html">Open Portal ↗</a>
-    <div class="admin-profile-wrap" id="adminProfileWrap">
-      <button class="admin-profile-button" id="adminProfileButton" type="button" aria-expanded="false" aria-controls="adminProfileMenu">
-        <span class="admin-avatar" id="adminAvatar">A</span>
-        <span class="admin-profile-copy"><strong id="adminProfileName">Admin</strong><small id="adminProfileEmail">Administrator</small></span>
-        <span class="admin-profile-caret">▾</span>
-      </button>
-      <div class="admin-profile-menu" id="adminProfileMenu" hidden>
-        <div class="profile-menu-head"><span class="admin-avatar small" id="adminAvatarMenu">A</span><div><strong id="adminProfileMenuName">Admin</strong><small id="adminProfileMenuEmail">Administrator</small></div></div>
-        <div class="profile-menu-divider"></div>
-        <button type="button" data-profile-action="reset">🔑 <span>Reset Password</span></button>
-        <button type="button" data-profile-action="close">✓ <span>Close Menu</span></button>
-        <button type="button" class="profile-danger" data-profile-action="logout">↪ <span>Sign Out</span></button>
-      </div>
-    </div>
-  </div>
 </header>
 <main>
-  <section class="command-hero" id="dashboard">
-    <div class="command-copy">
-      <div class="eyebrow-row"><span class="eyebrow">INTERNSFORGE OPERATIONS</span><span class="secure-badge"><i></i> SECURE ADMIN SESSION</span></div>
-      <h2>Know what is happening. Act on it faster.</h2>
-      <p>Realtime visitor monitoring, application review, referral performance and operational health — organized around the decisions an administrator actually needs to make.</p>
-      <div class="command-meta"><span>Source: Firebase Realtime Database</span><span>Timezone: Asia/Kolkata</span><span id="dataCoverageNote">Coverage: live visitors + submitted applications</span></div>
-    </div>
-    <div class="command-actions">
-      <div class="system-pulse"><span class="pulse-ring"><i></i></span><div><strong id="heroHealthText">Live & Synced</strong><small id="lastUpdatedText">Waiting for data…</small></div></div>
-      <div class="command-buttons"><button class="ghost-action" type="button" onclick="refreshLiveVisitorsOnly()">↻ Refresh visitors</button><a class="primary-action" href="index.html">Open portal ↗</a></div>
-    </div>
-  </section>
+<section class="hero" id="dashboard"><div><span class="eyebrow">REAL-TIME CONTROL CENTER</span><h2>Internship Operations Dashboard</h2><p>Active sessions expire automatically, abandoned forms are detected, and every card recalculates from Firebase source data.</p></div><div class="hero-status"><span>System Health</span><strong><i></i> Live & Synced</strong><small id="lastUpdatedText">Waiting for data…</small></div></section>
+<section class="metric-grid">
+  <article class="metric"><span class="metric-icon blue">◉</span><div><p>Live Visitors</p><h3 id="onlineCount">0</h3><small>Active in last 45 sec</small></div></article>
+  <article class="metric"><span class="metric-icon amber">✎</span><div><p>Currently Filling</p><h3 id="fillingCount">0</h3><small>Form in progress</small></div></article>
+  <article class="metric"><span class="metric-icon green">✓</span><div><p>Submitted Today</p><h3 id="submittedCount">0</h3><small>Successful applications</small></div></article>
+  <article class="metric"><span class="metric-icon violet">↗</span><div><p>Conversion Rate</p><h3 id="conversionRate">0%</h3><small>Submitted ÷ sessions</small></div></article>
+  <article class="metric"><span class="metric-icon rose">×</span><div><p>Abandoned</p><h3 id="abandonedCount">0</h3><small>Expired incomplete forms</small></div></article>
+</section>
+<section class="dashboard-grid">
+  <article class="panel panel-wide" id="activity"><header><div><span class="eyebrow">APPLICATION FLOW</span><h2>7-Day Applications Overview</h2></div><span class="live-chip">● Live</span></header><div id="applicationsChart" class="bar-chart"></div></article>
+  <article class="panel" id="analytics"><header><div><span class="eyebrow">COLLEGE INSIGHTS</span><h2>Top Colleges</h2></div></header><div id="topColleges" class="rank-list"><p class="empty">No data yet…</p></div></article>
+  <article class="panel live-panel" id="liveVisitors"><header><div><span class="eyebrow">PRESENCE</span><h2>Active Visitors</h2></div><button id="refreshDashboardButton" class="icon-action refresh-action" type="button" aria-label="Refresh dashboard and clear abandoned sessions"><span>↻</span><small>Refresh</small></button></header><div id="visitorList" class="visitor-list"><p class="empty">Waiting for visitors…</p></div></article>
+  <article class="panel" id="applications"><header><div><span class="eyebrow">LATEST DATA</span><h2>Recent Applications</h2></div>
+      <button id="exportApplicationsButton" class="panel-action" type="button">Export CSV</button>
+    </header><div id="recentApplications" class="application-list"><p class="empty">No applications yet…</p></div></article>
+  <article class="panel"><header><div><span class="eyebrow">DOMAIN INSIGHTS</span><h2>Applications by Domain</h2></div></header><div id="topDomains" class="rank-list"><p class="empty">No data yet…</p></div></article>
+</section>
+<section class="section-head" id="referralOverview"><div><span class="eyebrow">REFERRAL MANAGEMENT</span><h2>Referral Performance</h2><p>Live referral profiles, joins and reward eligibility.</p></div></section>
+<section class="referral-metrics"><article><span>Total Codes</span><strong id="totalReferralCodes">0</strong></article><article><span>Successful Referrals</span><strong id="successfulReferrals">0</strong></article><article><span>Referral Conversion</span><strong id="referralConversionRate">0%</strong></article><article><span>Top Ambassador</span><strong id="topAmbassador">—</strong><small id="topAmbassadorCount">No referrals yet</small></article></section>
+<section class="two-col">
+<article class="panel" id="referralLeaderboard"><header><div><span class="eyebrow">TOP PERFORMERS</span><h2>Referral Leaderboard</h2></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>Student</th><th>Code</th><th>Joined</th><th>Status</th></tr></thead><tbody id="referralLeaderboardBody"><tr><td colspan="5" class="empty">No referral data yet…</td></tr></tbody></table></div></article>
+<article class="panel" id="referralFriends"><header><div><span class="eyebrow">REFERRAL ACTIVITY</span><h2>Friends Joined</h2></div><input id="referralSearch" type="search" placeholder="Search"></header><div class="table-wrap"><table><thead><tr><th>Applicant</th><th>Referred By</th><th>College</th><th>Domain</th><th>Joined</th></tr></thead><tbody id="referralFriendsBody"><tr><td colspan="5" class="empty">No referred applications yet…</td></tr></tbody></table></div></article>
+</section>
+<section class="panel settings" id="settings">
+<header><div><span class="eyebrow">ADMINISTRATION</span><h2>Settings & Data Controls</h2></div></header>
 
-  <section class="metric-grid v6-metrics" aria-label="Key metrics">
-    <article class="metric metric-live"><div class="metric-head"><span class="metric-icon blue">◉</span><span class="metric-label">LIVE NOW</span></div><h3 id="onlineCount">0</h3><p>Active visitor sessions</p></article>
-    <article class="metric"><div class="metric-head"><span class="metric-icon amber">✎</span><span class="metric-label">FORM ACTIVITY</span></div><h3 id="fillingCount">0</h3><p>Currently filling</p></article>
-    <article class="metric"><div class="metric-head"><span class="metric-icon green">✓</span><span class="metric-label">TODAY</span></div><h3 id="submittedCount">0</h3><p>Applications submitted</p></article>
-    <article class="metric"><div class="metric-head"><span class="metric-icon cyan">↗</span><span class="metric-label">LIFETIME</span></div><h3 id="allTimeApplications">0</h3><p>Total submitted applications</p></article>
-    <article class="metric"><div class="metric-head"><span class="metric-icon violet">★</span><span class="metric-label">SHORTLISTED</span></div><h3 id="shortlistedMetric">0</h3><p>Applications shortlisted</p></article>
-    <article class="metric"><div class="metric-head"><span class="metric-icon green">◆</span><span class="metric-label">SELECTED</span></div><h3 id="selectedMetric">0</h3><p>Applications selected</p></article>
-    <article class="metric"><div class="metric-head"><span class="metric-icon orange">♧</span><span class="metric-label">REFERRALS</span></div><h3 id="totalReferralJoinsMetric">0</h3><p>Successful referral joins</p></article>
-    <article class="metric"><div class="metric-head"><span class="metric-icon pink">◎</span><span class="metric-label">TOP DOMAIN</span></div><h3 id="topDomainMetric">—</h3><p id="topDomainMetricSub">No applications yet</p></article>
-  </section>
-
-  <section class="dashboard-grid v6-overview-grid">
-    <article class="panel panel-wide chart-panel" id="analytics">
-      <header><div><span class="eyebrow">SUBMISSIONS · LAST 7 DAYS</span><h2>Application pulse</h2><p class="panel-note">Counts are based on submittedAt timestamps from Firebase.</p></div><span class="live-chip">● Live</span></header>
-      <div class="chart-summary"><strong id="sevenDayTotal">0</strong><span>applications in 7 days</span><span class="summary-divider"></span><strong id="todayVsYesterday">0%</strong><span>vs previous day</span></div>
-      <div id="applicationsChart" class="bar-chart"></div>
-    </article>
-
-    <article class="panel status-panel">
-      <header><div><span class="eyebrow">WORK QUEUE</span><h2>Application status</h2></div><button class="panel-action" type="button" onclick="document.getElementById('openApplicationManager').click()">Manage</button></header>
-      <div id="statusSnapshot" class="status-snapshot"></div>
-      <div class="queue-hint">Status changes are saved to the application record in Firebase.</div>
-    </article>
-
-    <article class="panel live-panel nav-only-section" id="liveVisitors">
-      <header><div><span class="eyebrow">REALTIME PRESENCE</span><h2>Live visitors</h2><p class="panel-note">Active means activity observed within the last 90 seconds.</p></div><div class="header-actions"><span class="sync-label" id="visitorSyncLabel">Syncing…</span><button id="refreshDashboardButton" class="icon-action refresh-action" type="button" aria-label="Refresh live visitor data"><span>↻</span><small>Refresh</small></button></div></header>
-      <div id="liveVisitorSummary" class="mini-stat-strip"></div>
-      <div id="visitorList" class="visitor-list"><p class="empty">Waiting for visitors…</p></div>
-    </article>
-
-    <article class="panel nav-only-section" id="applications">
-      <header><div><span class="eyebrow">APPLICATIONS</span><h2>Recent submissions</h2><p class="panel-note">Newest records first. Open Manage for filters, status and notes.</p></div><div class="header-actions"><button id="openApplicationManager" class="panel-action" type="button">Manage all</button><button id="exportApplicationsButton" class="panel-action" type="button">Export</button></div></header>
-      <div id="recentApplications" class="application-list"><p class="empty">No applications yet…</p></div>
-    </article>
-
-    <article class="panel nav-only-section" id="domainInsights">
-      <header><div><span class="eyebrow">DOMAIN MIX</span><h2>Where applications are coming from</h2></div></header>
-      <div id="topDomains" class="rank-list"><p class="empty">No data yet…</p></div>
-    </article>
-
-    <article class="panel nav-only-section" id="audienceInsights">
-      <header><div><span class="eyebrow">AUDIENCE PROFILE</span><h2>State · language · year</h2></div></header>
-      <div class="tri-insight-grid"><div><small>Top states</small><div id="topStates" class="compact-pills"></div></div><div><small>Languages</small><div id="topLanguages" class="compact-pills"></div></div><div><small>Years</small><div id="topYears" class="compact-pills"></div></div></div>
-    </article>
-
-    <article class="panel nav-only-section" id="collegeInsights">
-      <header><div><span class="eyebrow">COLLEGE MIX</span><h2>Top colleges</h2></div></header>
-      <div id="topColleges" class="rank-list"><p class="empty">No data yet…</p></div>
-    </article>
-  </section>
-
-  <section class="analytics-band nav-only-section" id="funnel">
-    <article class="panel">
-      <header><div><span class="eyebrow">OBSERVED FUNNEL</span><h2>Visitor → application journey</h2><p class="panel-note">This is an observed funnel from retained visitor sessions, not a guaranteed unique-user conversion rate.</p></div></header>
-      <div id="applicationFunnel" class="funnel"></div>
-    </article>
-    <article class="panel">
-      <header><div><span class="eyebrow">DOMAIN PERFORMANCE</span><h2>Application mix + observed traffic</h2><p class="panel-note">Applications use lifetime submitted records; visitor counts use retained live-session records.</p></div></header>
-      <div id="domainPerformance" class="performance-list"></div>
-    </article>
-  </section>
-
-  <section class="operations-grid nav-only-section" id="activity">
-    <article class="panel">
-      <header><div><span class="eyebrow">LIVE ACTIVITY</span><h2>Operational timeline</h2></div><button id="clearActivityLog" class="panel-action secondary" type="button">Clear local log</button></header>
-      <div id="activityFeed" class="activity-feed"><p class="empty">Activity will appear here as visitors interact with the portal.</p></div>
-    </article>
-    <article class="panel">
-      <header><div><span class="eyebrow">APPLICATION PREFERENCES</span><h2>Applicant profile signals</h2></div></header>
-      <div class="breakdown-grid"><div><small>Start availability</small><div id="startBreakdown"></div></div><div><small>Communication language</small><div id="languageBreakdown"></div></div><div><small>State / UT</small><div id="stateBreakdown"></div></div></div>
-    </article>
-  </section>
-
-  <section class="referral-area nav-only-section" id="referralOverview">
-    <section class="section-head"><div><span class="eyebrow">REFERRAL MANAGEMENT</span><h2>Referral performance</h2><p>Track ambassadors, successful joins and referral conversion using the live referral records.</p></div></section>
-    <section class="referral-metrics"><article><span>Total codes</span><strong id="totalReferralCodes">0</strong></article><article><span>Successful referrals</span><strong id="successfulReferrals">0</strong></article><article><span>Referral conversion</span><strong id="referralConversionRate">0%</strong></article><article><span>Top ambassador</span><strong id="topAmbassador">—</strong><small id="topAmbassadorCount">No referrals yet</small></article></section>
-    <section class="two-col">
-      <article class="panel" id="referralLeaderboard"><header><div><span class="eyebrow">TOP PERFORMERS</span><h2>Referral leaderboard</h2></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>Student</th><th>Code</th><th>Joined</th><th>Status</th></tr></thead><tbody id="referralLeaderboardBody"><tr><td colspan="5" class="empty">No referral data yet…</td></tr></tbody></table></div></article>
-      <article class="panel" id="referralFriends"><header><div><span class="eyebrow">REFERRAL ACTIVITY</span><h2>Friends joined</h2></div><input id="referralSearch" type="search" placeholder="Search applicant, code or college"></header><div class="table-wrap"><table><thead><tr><th>Applicant</th><th>Referred by</th><th>College</th><th>Domain</th><th>Joined</th></tr></thead><tbody id="referralFriendsBody"><tr><td colspan="5" class="empty">No referred applications yet…</td></tr></tbody></table></div></article>
-    </section>
-  </section>
-
-  <section class="panel settings nav-only-section" id="settings">
-    <header><div><span class="eyebrow">ADMINISTRATION</span><h2>Alerts, health & data controls</h2><p class="panel-note">Destructive actions are protected by Firebase authentication and confirmation prompts.</p></div></header>
-    <div class="notification-settings"><div class="setting-copy"><span class="setting-icon">🔔</span><div><strong>New application alerts</strong><small>Sound + browser notifications for newly detected submissions.</small></div></div><label class="switch-row"><input id="soundEnabled" type="checkbox"><span class="switch"></span><b>Sound</b></label><label class="volume-row">Volume<input id="notificationVolume" type="range" min="0" max="100" value="90"><output id="volumeValue">90%</output></label><button id="testSoundButton" class="panel-action" type="button">Test sound</button><button id="browserNotificationButton" class="panel-action secondary" type="button" aria-pressed="false">Enable browser alerts</button></div>
-    <div class="system-health-grid"><article><i id="firebaseHealthDot"></i><span>Firebase</span><strong id="firebaseHealthText">Checking</strong></article><article><i id="visitorHealthDot" class="healthy"></i><span>Live tracking</span><strong id="visitorHealthText">Enabled</strong></article><article><i class="healthy"></i><span>Referral system</span><strong>Enabled</strong></article><article><i id="soundHealthDot"></i><span>Sound alerts</span><strong id="soundHealthText">Disabled</strong></article></div>
-    <div class="admin-health-row"><span id="lastDataSync">Last data sync: —</span><span id="activeAdminEmail">Admin: —</span><span id="databaseHealthText">Realtime Database: checking</span></div>
-    <div class="settings-grid"><button onclick="deleteLiveVisitors()"><b>Clear tracking</b><span>Delete retained live visitor records</span></button><button onclick="deleteApplications()"><b>Delete applications</b><span>Remove submitted application records</span></button><button onclick="deleteReferralData()"><b>Delete referrals</b><span>Remove referral profiles and joins</span></button><button onclick="resetDashboard()"><b>Full reset</b><span>Clear dashboard data after confirmation</span></button></div>
-  </section>
-</main>
-<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Admin Dashboard V5.70</span></footer>
-</section></div>
-
-<div id="applicationManagerModal" class="modal-shell" aria-hidden="true"><div class="modal-backdrop" data-close-manager></div><section class="manager-modal" role="dialog" aria-modal="true" aria-labelledby="managerTitle"><header class="manager-header"><div><span class="eyebrow">APPLICATION MANAGEMENT</span><h2 id="managerTitle">All Applications</h2><p id="managerCountLabel">0 records</p></div><button type="button" class="modal-close" data-close-manager aria-label="Close">×</button></header><div class="manager-toolbar"><input id="applicationSearch" type="search" placeholder="Search name, email, college, phone or ID"><select id="applicationDomainFilter"><option value="">All domains</option></select><select id="applicationStateFilter"><option value="">All states</option></select><select id="applicationYearFilter"><option value="">All years</option></select><select id="applicationLanguageFilter"><option value="">All languages</option></select><select id="applicationStatusFilter"><option value="">All statuses</option><option value="new">New</option><option value="reviewed">Reviewed</option><option value="shortlisted">Shortlisted</option><option value="selected">Selected</option><option value="rejected">Rejected</option></select><button id="clearApplicationFilters" class="panel-action secondary" type="button">Clear filters</button></div><div class="manager-table-wrap"><table class="manager-table"><thead><tr><th>Applicant</th><th>Academic</th><th>Domain</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead><tbody id="applicationManagerBody"><tr><td colspan="6" class="empty">No applications yet.</td></tr></tbody></table></div><footer class="manager-footer"><button id="managerPrev" class="panel-action secondary" type="button">← Previous</button><span id="managerPageInfo">Page 1 of 1</span><button id="managerNext" class="panel-action secondary" type="button">Next →</button></footer></section></div>
-
-<div id="applicationDetailModal" class="modal-shell" aria-hidden="true"><div class="modal-backdrop" data-close-detail></div><section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><header class="manager-header"><div><span class="eyebrow">APPLICATION PROFILE</span><h2 id="detailTitle">Applicant</h2><p id="detailSubTitle">Application details</p></div><button type="button" class="modal-close" data-close-detail aria-label="Close">×</button></header><div id="applicationDetailBody" class="detail-grid"></div><div class="detail-actions"><select id="detailStatus"><option value="new">New</option><option value="reviewed">Reviewed</option><option value="shortlisted">Shortlisted</option><option value="selected">Selected</option><option value="rejected">Rejected</option></select><textarea id="detailNotes" rows="4" placeholder="Add an admin note for this applicant…"></textarea><div class="detail-button-row"><button id="saveApplicationDetails" class="primary-action" type="button">Save Changes</button><button id="copyApplicationSummary" class="panel-action secondary" type="button">Copy Summary</button></div></div></section></div>
-
-<div id="sectionViewerModal" class="modal-shell section-viewer-shell" aria-hidden="true">
-  <div class="modal-backdrop" data-close-section-viewer></div>
-  <section class="section-viewer-modal" role="dialog" aria-modal="true" aria-labelledby="sectionViewerTitle">
-    <header class="section-viewer-header">
-      <div><span class="eyebrow" id="sectionViewerEyebrow">ADMIN VIEW</span><h2 id="sectionViewerTitle">Dashboard</h2><p id="sectionViewerSubtitle">Focused workspace</p></div>
-      <button type="button" class="modal-close" id="sectionViewerClose" aria-label="Close view">×</button>
-    </header>
-    <div class="section-viewer-body" id="sectionViewerBody"></div>
-  </section>
+<div class="notification-settings">
+  <div class="setting-copy">
+    <span class="setting-icon">🔔</span>
+    <div><strong>New Application Alerts</strong><small>Play a loud two-stage alert and show a toast only for genuinely new submissions.</small></div>
+  </div>
+  <label class="switch-row">
+    <input id="soundEnabled" type="checkbox">
+    <span class="switch"></span>
+    <b>Sound</b>
+  </label>
+  <label class="volume-row">Volume
+    <input id="notificationVolume" type="range" min="0" max="100" value="90">
+    <output id="volumeValue">90%</output>
+  </label>
+  <button id="testSoundButton" class="panel-action" type="button">Test Sound</button>
+  <button id="browserNotificationButton" class="panel-action secondary" type="button" aria-pressed="false">Enable Browser Alerts</button>
 </div>
 
+<div class="system-health-grid">
+  <article><i id="firebaseHealthDot"></i><span>Firebase</span><strong id="firebaseHealthText">Checking</strong></article>
+  <article><i class="healthy"></i><span>Live Tracking</span><strong>Enabled</strong></article>
+  <article><i class="healthy"></i><span>Referral System</span><strong>Enabled</strong></article>
+  <article><i class="healthy"></i><span>Sound Alerts</span><strong id="soundHealthText">Disabled</strong></article>
+</div>
+
+<div class="settings-grid"><button onclick="deleteLiveVisitors()"><b>Clear Tracking</b><span>Delete live session records</span></button><button onclick="deleteApplications()"><b>Delete Applications</b><span>Remove submitted records</span></button><button onclick="deleteReferralData()"><b>Delete Referrals</b><span>Remove referral records</span></button><button onclick="resetDashboard()"><b>Full Reset</b><span>Clear all dashboard data</span></button></div></section>
+</main>
+<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Version 4.0</span></footer>
+<nav class="bottom-nav"><a href="#dashboard">⌂<span>Dashboard</span></a><a href="#applications">▤<span>Applications</span></a><a href="#liveVisitors">◉<span>Live</span></a><a href="#activity">⌁<span>Activity</span></a><button id="moreNav">☰<span>More</span></button></nav>
+</section></div>
 <div id="adminToastRegion" class="admin-toast-region" aria-live="polite" aria-atomic="true"></div>
-<div id="refreshOverlay" class="refresh-overlay" aria-hidden="true"><div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Loading live visitors and dashboard data…</small></div></div>
+<div id="refreshOverlay" class="refresh-overlay" aria-hidden="true">
+  <div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Cleaning abandoned sessions and loading fresh data…</small></div>
+</div>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js"></script>
 </body></html>

@@ -985,7 +985,27 @@ async function verifyDashboardDataAccess(){
   const fh=el('firebaseHealthText'); if(fh && denied.length) fh.textContent = 'Connected · partial access';
 }
 
+function setupHeaderNavigation() {
+  const wrap = el("navMenuWrap");
+  const button = el("navMenuButton");
+  const panel = el("navMenuPanel");
+  const close = el("navMenuClose");
+  if(!button || !panel) return;
+  const setOpen = (open) => {
+    button.setAttribute("aria-expanded", String(open));
+    panel.hidden = !open;
+  };
+  button.addEventListener("click", (event) => { event.stopPropagation(); setOpen(panel.hidden); });
+  close?.addEventListener("click", () => setOpen(false));
+  panel.querySelectorAll("a").forEach(link => link.addEventListener("click", () => setOpen(false)));
+  el("navResetPassword")?.addEventListener("click", () => { setOpen(false); resetAdminPassword(); });
+  el("navLogout")?.addEventListener("click", () => { setOpen(false); logout(); });
+  document.addEventListener("click", (event) => { if(wrap && !wrap.contains(event.target)) setOpen(false); });
+  document.addEventListener("keydown", (event) => { if(event.key === "Escape") setOpen(false); });
+}
+
 function setupUI() {
+  setupHeaderNavigation();
   const sidebar = el("sidebar");
   const overlay = el("mobileOverlay");
   const toggle = () => {

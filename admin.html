@@ -11,22 +11,46 @@
 </head>
 <body class="admin-page">
 <div class="app-shell">
-<aside class="sidebar" id="sidebar">
-  <a class="brand skillpath-admin-brand" href="#dashboard"><img src="skillpath-mark.png" alt="InternsForge"><div><strong>InternsForge</strong><small>ADMIN DASHBOARD</small></div></a>
-  <nav class="side-nav">
-    <p>OVERVIEW</p><a class="active" href="#dashboard">⌂ <span>Dashboard</span></a>
-    <p>MONITORING</p><a href="#liveVisitors">◉ <span>Live Visitors</span></a><a href="#activity">⌁ <span>Activity Feed</span></a>
-    <p>APPLICATIONS</p><a href="#applications">▤ <span>Applications</span></a><a href="#analytics">⌁ <span>Analytics</span></a><a href="#funnel">◒ <span>Funnel</span></a>
-    <p>REFERRALS</p><a href="#referralOverview">♙ <span>Overview</span></a><a href="#referralLeaderboard">★ <span>Leaderboard</span></a><a href="#referralFriends">♧ <span>Friends Joined</span></a>
-    <p>OPERATIONS</p><a href="#settings">⚙ <span>Settings</span></a>
-  </nav>
-  <div class="side-profile" id="adminProfile">
-    <span class="avatar" id="adminAvatar">A</span>
-    <div class="side-profile-main"><strong id="adminProfileName">Administrator</strong><small id="adminProfileEmail">Super Admin</small></div>
-    <div class="side-profile-actions"><button type="button" onclick="resetAdminPassword()" aria-label="Reset password" title="Reset password">🔑</button><button type="button" onclick="logout()" aria-label="Sign out" title="Sign out">↪</button></div>
+<div class="nav-menu-wrap" id="navMenuWrap">
+  <button class="nav-menu-button" id="navMenuButton" type="button" aria-expanded="false" aria-controls="navMenuPanel">
+    <span class="nav-menu-icon">☰</span><span>Navigation</span><span class="nav-menu-caret">▾</span>
+  </button>
+  <div class="nav-menu-panel" id="navMenuPanel" hidden>
+    <div class="nav-menu-heading">
+      <div><span class="eyebrow">ADMIN NAVIGATION</span><strong>Everything in one place</strong><small>Jump between monitoring, applications, analytics, referrals and system controls.</small></div>
+      <button class="nav-menu-close" id="navMenuClose" type="button" aria-label="Close navigation">×</button>
+    </div>
+    <div class="nav-cluster-grid">
+      <div class="nav-cluster">
+        <span class="nav-cluster-label">OVERVIEW</span>
+        <a href="#dashboard"><b>⌂</b><span><strong>Dashboard</strong><small>Live operational overview</small></span></a>
+      </div>
+      <div class="nav-cluster">
+        <span class="nav-cluster-label">MONITORING</span>
+        <a href="#liveVisitors"><b>◉</b><span><strong>Live Visitors</strong><small>Realtime visitor sessions</small></span></a>
+        <a href="#activity"><b>⌁</b><span><strong>Activity Feed</strong><small>Latest portal activity</small></span></a>
+      </div>
+      <div class="nav-cluster">
+        <span class="nav-cluster-label">APPLICATIONS</span>
+        <a href="#applications"><b>▤</b><span><strong>Applications</strong><small>Recent submissions & manager</small></span></a>
+        <a href="#analytics"><b>◌</b><span><strong>Analytics</strong><small>Submission pulse & audience</small></span></a>
+        <a href="#funnel"><b>◒</b><span><strong>Funnel & Performance</strong><small>Journey and domain insights</small></span></a>
+      </div>
+      <div class="nav-cluster">
+        <span class="nav-cluster-label">REFERRALS</span>
+        <a href="#referralOverview"><b>♙</b><span><strong>Referral Overview</strong><small>Ambassadors & conversion</small></span></a>
+        <a href="#referralLeaderboard"><b>★</b><span><strong>Leaderboard</strong><small>Top referrers</small></span></a>
+        <a href="#referralFriends"><b>♧</b><span><strong>Friends Joined</strong><small>Referral activity</small></span></a>
+      </div>
+      <div class="nav-cluster">
+        <span class="nav-cluster-label">OPERATIONS</span>
+        <a href="#settings"><b>⚙</b><span><strong>Settings & Health</strong><small>Alerts, health & data controls</small></span></a>
+        <button type="button" id="navResetPassword"><b>🔑</b><span><strong>Reset Password</strong><small>Update admin access</small></span></button>
+        <button type="button" id="navLogout"><b>↪</b><span><strong>Sign Out</strong><small>End admin session</small></span></button>
+      </div>
+    </div>
   </div>
-</aside>
-<div class="mobile-overlay" id="mobileOverlay"></div>
+</div>
 <section class="workspace">
 <header class="topbar">
   <button class="menu-toggle" id="menuToggle" aria-label="Open navigation">☰</button>

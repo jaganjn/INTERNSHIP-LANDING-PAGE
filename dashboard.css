@@ -577,3 +577,124 @@ main{padding:34px clamp(18px,3.5vw,52px) 70px!important;max-width:1800px!importa
 @media(max-width:1180px){.nav-cluster-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.topbar{height:auto;min-height:82px!important}.welcome{padding:14px 0}.topbar-tools{margin-left:auto}.nav-menu-wrap{order:0}}
 @media(max-width:820px){.topbar{min-height:66px!important;padding:0 12px!important;gap:9px!important}.welcome h1{font-size:13px!important}.welcome p{display:none!important}.topbar-tools{gap:6px!important}.nav-menu-button{min-height:38px;padding:0 10px;font-size:10px}.nav-menu-button .nav-menu-icon{font-size:14px}.nav-menu-panel{position:fixed;top:72px;left:10px;right:10px;width:auto;max-height:calc(100vh - 84px);overflow:auto;padding:14px;border-radius:18px}.nav-menu-heading{padding:2px 2px 14px}.nav-cluster-grid{grid-template-columns:1fr;gap:9px}.nav-cluster{padding:12px}.nav-cluster a,.nav-cluster button{padding:9px}main{padding:22px 12px 50px!important}.command-hero{padding:22px 19px!important}.panel{padding:17px!important}.v6-metrics .metric{min-height:138px!important}.two-col{gap:14px!important}.section-head{margin-top:28px!important}}
 @media(max-width:520px){.nav-menu-button span:nth-child(2){display:none}.nav-menu-button{width:40px;justify-content:center;padding:0}.nav-menu-panel{top:68px;left:7px;right:7px;max-height:calc(100vh - 76px)}.nav-menu-heading strong{font-size:15px}.command-hero{padding:20px 16px!important}.v6-metrics{gap:9px!important}.v6-metrics .metric{min-height:128px!important;padding:14px!important}.panel{padding:14px!important}}
+
+/* V5.61 — Accurate, readable application pulse chart */
+.chart-panel{overflow:hidden}
+.chart-summary{padding:13px 0 10px;gap:9px;align-items:center}
+.chart-summary strong{font-size:21px;line-height:1;color:#f8fbff;letter-spacing:-.02em}
+.chart-summary span:not(.summary-divider){font-size:10px;color:#93a6c0;line-height:1.25}
+.chart-summary strong:nth-of-type(2){font-size:18px}
+.chart-track{position:relative;height:100%;width:100%;display:flex;align-items:flex-end;justify-content:center;padding-top:26px}
+.chart-value{position:absolute;z-index:4;left:50%;transform:translateX(-50%);bottom:calc(var(--bar-h) + 7px);min-width:26px;padding:4px 6px;border:1px solid rgba(120,145,255,.20);border-radius:7px;background:rgba(8,17,32,.96);color:#dce6ff;font:800 11px/1 Inter,sans-serif;text-align:center;box-shadow:0 7px 18px rgba(0,0,0,.22);white-space:nowrap}
+.chart-bar{width:min(42px,72%);min-height:6px;flex:none}
+.chart-day small{margin-top:10px;color:#8195b1;font-size:10px;line-height:1.35;font-weight:600}
+.chart-day small::first-line{color:#a9b9d0}
+.bar-chart{height:270px;padding:16px 10px 6px;gap:12px;overflow:visible}
+.chart-day{min-width:0}
+.chart-day::before{top:27%;border-top-color:rgba(116,140,184,.11)}
+@media(max-width:820px){.bar-chart{height:230px;padding-left:4px;padding-right:4px;gap:8px}.chart-value{font-size:10px;padding:4px 5px}.chart-bar{width:min(34px,68%)}.chart-day small{font-size:9px}}
+
+/* =========================================================
+   V5.62 — Corporate command header + non-scrolling section popups
+   ========================================================= */
+body.admin-page{min-width:0}
+.section-viewer-open{overflow:hidden}
+.topbar{display:flex!important;align-items:center!important;min-height:92px!important;height:auto!important;padding:14px clamp(20px,3.6vw,54px)!important;gap:22px!important}
+.topbar .welcome{min-width:260px}
+.topbar-tools{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;flex-wrap:nowrap!important;margin-left:auto!important;min-width:0}
+.nav-menu-wrap{position:relative!important;order:0!important;flex:0 0 auto}
+.nav-menu-button{height:44px!important;min-height:44px!important;padding:0 15px!important;border-radius:12px!important;background:linear-gradient(180deg,rgba(15,32,54,.96),rgba(10,22,38,.96))!important;border-color:rgba(91,124,255,.23)!important;white-space:nowrap!important;box-shadow:0 10px 24px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.03)!important}
+.nav-menu-button:hover,.nav-menu-button[aria-expanded="true"]{border-color:rgba(89,126,255,.52)!important;box-shadow:0 12px 30px rgba(55,87,190,.18),inset 0 1px rgba(255,255,255,.05)!important;transform:translateY(-1px)}
+.nav-menu-icon{font-size:14px!important;color:#83a0ff!important}
+.nav-menu-panel{top:58px!important;right:0!important;width:min(1040px,calc(100vw - 40px))!important;max-height:min(78vh,680px)!important;overflow:auto!important;padding:22px!important;border-radius:20px!important;box-shadow:0 30px 100px rgba(0,0,0,.52)!important}
+.nav-cluster-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important}
+.nav-cluster{padding:16px!important;border-radius:15px!important}
+.nav-cluster a,.nav-cluster button{min-height:48px!important;padding:10px 11px!important}
+.nav-cluster strong{font-size:11px!important}.nav-cluster small{font-size:9px!important}
+main{width:100%!important;max-width:1720px!important;padding:38px clamp(20px,4vw,58px) 80px!important}
+.command-hero{min-height:208px!important;padding:34px 36px!important;margin-bottom:26px!important}
+.command-copy p{max-width:900px!important;line-height:1.8!important}
+.command-meta{margin-top:20px!important;gap:10px!important}
+.v6-metrics{gap:16px!important;margin-bottom:26px!important}
+.v6-metrics .metric{min-height:154px!important;padding:19px!important}
+.dashboard-grid,.analytics-band,.operations-grid{gap:22px!important}
+.dashboard-grid{align-items:stretch!important}
+.panel{padding:24px!important;border-radius:20px!important}
+.panel header{margin-bottom:19px!important;align-items:flex-start!important}
+.panel h2{font-size:15px!important}
+.panel-note{font-size:10px!important;line-height:1.6!important}
+.rank-list,.application-list,.visitor-list{max-height:430px!important;gap:9px!important}
+.two-col{gap:22px!important;margin-top:22px!important}
+.section-head{margin:46px 0 18px!important}
+.referral-area{margin-top:44px!important}
+.referral-area .section-head{margin-top:0!important}
+.referral-metrics{gap:16px!important}
+.referral-metrics article{min-height:112px!important;padding:19px!important}
+.settings{margin-top:22px!important}
+footer{padding:22px clamp(20px,4vw,58px) 46px!important}
+
+/* Focused popup workspace: the original section node is moved here temporarily,
+   preserving its existing Firebase listeners and interactive controls. */
+.section-viewer-shell{z-index:21000!important}
+.section-viewer-modal{position:relative;z-index:2;width:min(1320px,94vw);max-height:90vh;margin:5vh auto 0;display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(82,121,190,.28);border-radius:24px;background:linear-gradient(145deg,#091426 0%,#06101d 100%);box-shadow:0 42px 120px rgba(0,0,0,.62),0 0 0 1px rgba(255,255,255,.02) inset}
+.section-viewer-header{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;padding:24px 26px 18px;border-bottom:1px solid rgba(100,127,173,.15);background:linear-gradient(180deg,rgba(16,32,55,.44),rgba(9,18,32,.16))}
+.section-viewer-header h2{font:800 23px/1.1 Manrope;margin:6px 0 0;letter-spacing:-.45px}
+.section-viewer-header p{margin:7px 0 0;color:#788ca8;font-size:10px;line-height:1.5}
+.section-viewer-body{padding:24px;overflow:auto;overscroll-behavior:contain}
+.section-viewer-body>.command-hero{margin:0!important;min-height:0!important}
+.section-viewer-body>.panel,.section-viewer-body>.section-head,.section-viewer-body>.analytics-band,.section-viewer-body>.operations-grid,.section-viewer-body>.two-col,.section-viewer-body>.referral-area{margin-left:0!important;margin-right:0!important}
+.section-viewer-body>.referral-area{margin-top:0!important}
+.section-viewer-body>.referral-area>.section-head{margin:0 0 18px!important}
+.section-viewer-body>.referral-area .two-col{grid-template-columns:1fr 1fr!important}
+.section-viewer-body .panel{box-shadow:none}
+.section-viewer-body .panel-wide{grid-column:auto!important}
+.section-viewer-body .bar-chart{min-height:290px}
+.section-viewer-body .application-list,.section-viewer-body .visitor-list,.section-viewer-body .activity-feed{max-height:52vh!important}
+.section-viewer-body .table-wrap{max-width:100%;overflow:auto}
+.section-viewer-body .settings{margin-top:0!important}
+
+@media(max-width:1180px){
+  .topbar{gap:14px!important}
+  .topbar-tools{gap:8px!important}
+  .nav-menu-panel{width:min(920px,calc(100vw - 28px))!important}
+  .nav-cluster-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  main{padding-left:24px!important;padding-right:24px!important}
+  .v6-metrics{gap:12px!important}
+}
+@media(max-width:920px){
+  .topbar{align-items:center!important;min-height:80px!important;padding:12px 16px!important}
+  .welcome{min-width:0!important}
+  .welcome h1{font-size:15px!important}
+  .welcome p{font-size:10px!important}
+  .topbar-tools{gap:7px!important}
+  .connection{padding:8px 9px!important}
+  .clock{display:none!important}
+  .nav-menu-panel{position:fixed!important;top:76px!important;left:12px!important;right:12px!important;width:auto!important;max-height:calc(100vh - 90px)!important}
+  main{padding:28px 16px 60px!important}
+  .command-hero{padding:26px!important}
+  .section-viewer-modal{width:96vw;max-height:92vh;margin:4vh auto 0;border-radius:20px}
+  .section-viewer-header{padding:20px 20px 15px}
+  .section-viewer-body{padding:16px}
+  .section-viewer-body>.referral-area .two-col{grid-template-columns:1fr!important}
+}
+@media(max-width:680px){
+  .topbar{min-height:74px!important;padding:10px 12px!important;gap:8px!important}
+  .welcome h1{font-size:13px!important}
+  .topbar-tools{flex:0 0 auto}
+  .connection span{display:none!important}
+  .sound-quick-toggle{display:none!important}
+  .portal-btn{display:none!important}
+  .nav-menu-button{width:42px!important;padding:0!important;justify-content:center!important}
+  .nav-menu-button span:nth-child(2),.nav-menu-caret{display:none!important}
+  .nav-cluster-grid{grid-template-columns:1fr!important;gap:9px!important}
+  .nav-cluster{padding:12px!important}
+  main{padding:22px 12px 48px!important}
+  .command-hero{padding:20px 17px!important;border-radius:18px!important}
+  .command-copy h2{font-size:23px!important}
+  .v6-metrics .metric{min-height:132px!important;padding:15px!important}
+  .panel{padding:17px!important}
+  .section-viewer-modal{width:calc(100vw - 12px);max-height:94vh;margin:3vh auto 0;border-radius:18px}
+  .section-viewer-header{padding:17px 17px 13px}
+  .section-viewer-header h2{font-size:18px}
+  .section-viewer-body{padding:12px}
+}

@@ -4,13 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#07101f">
-<title>InternsForge — Admin Dashboard V5.50</title>
+<title>InternsForge — Admin Dashboard V5.62</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="dashboard.css">
 </head>
 <body class="admin-page">
 <div class="app-shell">
+<section class="workspace">
+<header class="topbar">
+  <button class="menu-toggle" id="menuToggle" aria-label="Open navigation">☰</button>
+  <div class="welcome"><h1>Welcome back, Admin! 👋</h1><p>Real-time internship operations, applications and growth intelligence.</p></div>
+  <div class="topbar-tools">
 <div class="nav-menu-wrap" id="navMenuWrap">
   <button class="nav-menu-button" id="navMenuButton" type="button" aria-expanded="false" aria-controls="navMenuPanel">
     <span class="nav-menu-icon">☰</span><span>Navigation</span><span class="nav-menu-caret">▾</span>
@@ -23,39 +28,34 @@
     <div class="nav-cluster-grid">
       <div class="nav-cluster">
         <span class="nav-cluster-label">OVERVIEW</span>
-        <a href="#dashboard"><b>⌂</b><span><strong>Dashboard</strong><small>Live operational overview</small></span></a>
+        <a href="#dashboard" data-popup-target="dashboard"><b>⌂</b><span><strong>Dashboard</strong><small>Live operational overview</small></span></a>
       </div>
       <div class="nav-cluster">
         <span class="nav-cluster-label">MONITORING</span>
-        <a href="#liveVisitors"><b>◉</b><span><strong>Live Visitors</strong><small>Realtime visitor sessions</small></span></a>
-        <a href="#activity"><b>⌁</b><span><strong>Activity Feed</strong><small>Latest portal activity</small></span></a>
+        <a href="#liveVisitors" data-popup-target="liveVisitors"><b>◉</b><span><strong>Live Visitors</strong><small>Realtime visitor sessions</small></span></a>
+        <a href="#activity" data-popup-target="activity"><b>⌁</b><span><strong>Activity Feed</strong><small>Latest portal activity</small></span></a>
       </div>
       <div class="nav-cluster">
         <span class="nav-cluster-label">APPLICATIONS</span>
-        <a href="#applications"><b>▤</b><span><strong>Applications</strong><small>Recent submissions & manager</small></span></a>
-        <a href="#analytics"><b>◌</b><span><strong>Analytics</strong><small>Submission pulse & audience</small></span></a>
-        <a href="#funnel"><b>◒</b><span><strong>Funnel & Performance</strong><small>Journey and domain insights</small></span></a>
+        <a href="#applications" data-popup-target="applications"><b>▤</b><span><strong>Applications</strong><small>Recent submissions & manager</small></span></a>
+        <a href="#analytics" data-popup-target="analytics"><b>◌</b><span><strong>Analytics</strong><small>Submission pulse & audience</small></span></a>
+        <a href="#funnel" data-popup-target="funnel"><b>◒</b><span><strong>Funnel & Performance</strong><small>Journey and domain insights</small></span></a>
       </div>
       <div class="nav-cluster">
         <span class="nav-cluster-label">REFERRALS</span>
-        <a href="#referralOverview"><b>♙</b><span><strong>Referral Overview</strong><small>Ambassadors & conversion</small></span></a>
-        <a href="#referralLeaderboard"><b>★</b><span><strong>Leaderboard</strong><small>Top referrers</small></span></a>
-        <a href="#referralFriends"><b>♧</b><span><strong>Friends Joined</strong><small>Referral activity</small></span></a>
+        <a href="#referralOverview" data-popup-target="referralOverview"><b>♙</b><span><strong>Referral Overview</strong><small>Ambassadors & conversion</small></span></a>
+        <a href="#referralLeaderboard" data-popup-target="referralLeaderboard"><b>★</b><span><strong>Leaderboard</strong><small>Top referrers</small></span></a>
+        <a href="#referralFriends" data-popup-target="referralFriends"><b>♧</b><span><strong>Friends Joined</strong><small>Referral activity</small></span></a>
       </div>
       <div class="nav-cluster">
         <span class="nav-cluster-label">OPERATIONS</span>
-        <a href="#settings"><b>⚙</b><span><strong>Settings & Health</strong><small>Alerts, health & data controls</small></span></a>
+        <a href="#settings" data-popup-target="settings"><b>⚙</b><span><strong>Settings & Health</strong><small>Alerts, health & data controls</small></span></a>
         <button type="button" id="navResetPassword"><b>🔑</b><span><strong>Reset Password</strong><small>Update admin access</small></span></button>
         <button type="button" id="navLogout"><b>↪</b><span><strong>Sign Out</strong><small>End admin session</small></span></button>
       </div>
     </div>
   </div>
 </div>
-<section class="workspace">
-<header class="topbar">
-  <button class="menu-toggle" id="menuToggle" aria-label="Open navigation">☰</button>
-  <div class="welcome"><h1>Welcome back, Admin! 👋</h1><p>Real-time internship operations, applications and growth intelligence.</p></div>
-  <div class="topbar-tools">
     <div class="connection" id="portalLiveStatus"><i></i><span id="portalLiveText">Connecting…</span></div>
     <button class="sound-quick-toggle" id="soundQuickToggle" type="button" aria-pressed="false" title="Enable notification sound">🔇</button>
     <div class="clock"><strong id="liveClock">--:--</strong><small id="liveDate">--</small></div>
@@ -149,11 +149,13 @@
     </article>
   </section>
 
-  <section class="section-head" id="referralOverview"><div><span class="eyebrow">REFERRAL MANAGEMENT</span><h2>Referral performance</h2><p>Track ambassadors, successful joins and referral conversion using the live referral records.</p></div></section>
-  <section class="referral-metrics"><article><span>Total codes</span><strong id="totalReferralCodes">0</strong></article><article><span>Successful referrals</span><strong id="successfulReferrals">0</strong></article><article><span>Referral conversion</span><strong id="referralConversionRate">0%</strong></article><article><span>Top ambassador</span><strong id="topAmbassador">—</strong><small id="topAmbassadorCount">No referrals yet</small></article></section>
-  <section class="two-col">
-    <article class="panel" id="referralLeaderboard"><header><div><span class="eyebrow">TOP PERFORMERS</span><h2>Referral leaderboard</h2></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>Student</th><th>Code</th><th>Joined</th><th>Status</th></tr></thead><tbody id="referralLeaderboardBody"><tr><td colspan="5" class="empty">No referral data yet…</td></tr></tbody></table></div></article>
-    <article class="panel" id="referralFriends"><header><div><span class="eyebrow">REFERRAL ACTIVITY</span><h2>Friends joined</h2></div><input id="referralSearch" type="search" placeholder="Search applicant, code or college"></header><div class="table-wrap"><table><thead><tr><th>Applicant</th><th>Referred by</th><th>College</th><th>Domain</th><th>Joined</th></tr></thead><tbody id="referralFriendsBody"><tr><td colspan="5" class="empty">No referred applications yet…</td></tr></tbody></table></div></article>
+  <section class="referral-area" id="referralOverview">
+    <section class="section-head"><div><span class="eyebrow">REFERRAL MANAGEMENT</span><h2>Referral performance</h2><p>Track ambassadors, successful joins and referral conversion using the live referral records.</p></div></section>
+    <section class="referral-metrics"><article><span>Total codes</span><strong id="totalReferralCodes">0</strong></article><article><span>Successful referrals</span><strong id="successfulReferrals">0</strong></article><article><span>Referral conversion</span><strong id="referralConversionRate">0%</strong></article><article><span>Top ambassador</span><strong id="topAmbassador">—</strong><small id="topAmbassadorCount">No referrals yet</small></article></section>
+    <section class="two-col">
+      <article class="panel" id="referralLeaderboard"><header><div><span class="eyebrow">TOP PERFORMERS</span><h2>Referral leaderboard</h2></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>Student</th><th>Code</th><th>Joined</th><th>Status</th></tr></thead><tbody id="referralLeaderboardBody"><tr><td colspan="5" class="empty">No referral data yet…</td></tr></tbody></table></div></article>
+      <article class="panel" id="referralFriends"><header><div><span class="eyebrow">REFERRAL ACTIVITY</span><h2>Friends joined</h2></div><input id="referralSearch" type="search" placeholder="Search applicant, code or college"></header><div class="table-wrap"><table><thead><tr><th>Applicant</th><th>Referred by</th><th>College</th><th>Domain</th><th>Joined</th></tr></thead><tbody id="referralFriendsBody"><tr><td colspan="5" class="empty">No referred applications yet…</td></tr></tbody></table></div></article>
+    </section>
   </section>
 
   <section class="panel settings" id="settings">
@@ -164,13 +166,23 @@
     <div class="settings-grid"><button onclick="deleteLiveVisitors()"><b>Clear tracking</b><span>Delete retained live visitor records</span></button><button onclick="deleteApplications()"><b>Delete applications</b><span>Remove submitted application records</span></button><button onclick="deleteReferralData()"><b>Delete referrals</b><span>Remove referral profiles and joins</span></button><button onclick="resetDashboard()"><b>Full reset</b><span>Clear dashboard data after confirmation</span></button></div>
   </section>
 </main>
-<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Admin Dashboard V5.40</span></footer>
-<nav class="bottom-nav"><a href="#dashboard">⌂<span>Dashboard</span></a><a href="#applications">▤<span>Applications</span></a><a href="#liveVisitors">◉<span>Live</span></a><a href="#activity">⌁<span>Activity</span></a><button id="moreNav">☰<span>More</span></button></nav>
+<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Admin Dashboard V5.62</span></footer>
 </section></div>
 
 <div id="applicationManagerModal" class="modal-shell" aria-hidden="true"><div class="modal-backdrop" data-close-manager></div><section class="manager-modal" role="dialog" aria-modal="true" aria-labelledby="managerTitle"><header class="manager-header"><div><span class="eyebrow">APPLICATION MANAGEMENT</span><h2 id="managerTitle">All Applications</h2><p id="managerCountLabel">0 records</p></div><button type="button" class="modal-close" data-close-manager aria-label="Close">×</button></header><div class="manager-toolbar"><input id="applicationSearch" type="search" placeholder="Search name, email, college, phone or ID"><select id="applicationDomainFilter"><option value="">All domains</option></select><select id="applicationStateFilter"><option value="">All states</option></select><select id="applicationYearFilter"><option value="">All years</option></select><select id="applicationLanguageFilter"><option value="">All languages</option></select><select id="applicationStatusFilter"><option value="">All statuses</option><option value="new">New</option><option value="reviewed">Reviewed</option><option value="shortlisted">Shortlisted</option><option value="selected">Selected</option><option value="rejected">Rejected</option></select><button id="clearApplicationFilters" class="panel-action secondary" type="button">Clear filters</button></div><div class="manager-table-wrap"><table class="manager-table"><thead><tr><th>Applicant</th><th>Academic</th><th>Domain</th><th>Status</th><th>Submitted</th><th>Action</th></tr></thead><tbody id="applicationManagerBody"><tr><td colspan="6" class="empty">No applications yet.</td></tr></tbody></table></div><footer class="manager-footer"><button id="managerPrev" class="panel-action secondary" type="button">← Previous</button><span id="managerPageInfo">Page 1 of 1</span><button id="managerNext" class="panel-action secondary" type="button">Next →</button></footer></section></div>
 
 <div id="applicationDetailModal" class="modal-shell" aria-hidden="true"><div class="modal-backdrop" data-close-detail></div><section class="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detailTitle"><header class="manager-header"><div><span class="eyebrow">APPLICATION PROFILE</span><h2 id="detailTitle">Applicant</h2><p id="detailSubTitle">Application details</p></div><button type="button" class="modal-close" data-close-detail aria-label="Close">×</button></header><div id="applicationDetailBody" class="detail-grid"></div><div class="detail-actions"><select id="detailStatus"><option value="new">New</option><option value="reviewed">Reviewed</option><option value="shortlisted">Shortlisted</option><option value="selected">Selected</option><option value="rejected">Rejected</option></select><textarea id="detailNotes" rows="4" placeholder="Add an admin note for this applicant…"></textarea><div class="detail-button-row"><button id="saveApplicationDetails" class="primary-action" type="button">Save Changes</button><button id="copyApplicationSummary" class="panel-action secondary" type="button">Copy Summary</button></div></div></section></div>
+
+<div id="sectionViewerModal" class="modal-shell section-viewer-shell" aria-hidden="true">
+  <div class="modal-backdrop" data-close-section-viewer></div>
+  <section class="section-viewer-modal" role="dialog" aria-modal="true" aria-labelledby="sectionViewerTitle">
+    <header class="section-viewer-header">
+      <div><span class="eyebrow" id="sectionViewerEyebrow">ADMIN VIEW</span><h2 id="sectionViewerTitle">Dashboard</h2><p id="sectionViewerSubtitle">Focused workspace</p></div>
+      <button type="button" class="modal-close" id="sectionViewerClose" aria-label="Close view">×</button>
+    </header>
+    <div class="section-viewer-body" id="sectionViewerBody"></div>
+  </section>
+</div>
 
 <div id="adminToastRegion" class="admin-toast-region" aria-live="polite" aria-atomic="true"></div>
 <div id="refreshOverlay" class="refresh-overlay" aria-hidden="true"><div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Loading live visitors and dashboard data…</small></div></div>

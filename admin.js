@@ -402,8 +402,10 @@ function renderApplications(newIds = new Set()) {
     const height = count ? Math.max(7, (count / max) * 100) : 3;
     return `
       <div class="chart-day" title="${count} application${count === 1 ? "" : "s"}">
-        <b class="chart-value">${count}</b>
-        <span class="chart-bar" style="height:${height}%"></span>
+        <div class="chart-track" style="--bar-h:${height}%">
+          <b class="chart-value">${count}</b>
+          <span class="chart-bar" style="height:${height}%"></span>
+        </div>
         <small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</small>
       </div>
     `;
@@ -990,18 +992,97 @@ function setupHeaderNavigation() {
   const button = el("navMenuButton");
   const panel = el("navMenuPanel");
   const close = el("navMenuClose");
+  const viewer = el("sectionViewerModal");
+  const viewerBody = el("sectionViewerBody");
+  const viewerTitle = el("sectionViewerTitle");
+  const viewerSubtitle = el("sectionViewerSubtitle");
+  const viewerClose = el("sectionViewerClose");
   if(!button || !panel) return;
-  const setOpen = (open) => {
+
+  let openSectionId = "";
+  let openSectionNode = null;
+  let openSectionPlaceholder = null;
+  let savedScrollY = 0;
+
+  const setMenuOpen = (open) => {
     button.setAttribute("aria-expanded", String(open));
     panel.hidden = !open;
   };
-  button.addEventListener("click", (event) => { event.stopPropagation(); setOpen(panel.hidden); });
-  close?.addEventListener("click", () => setOpen(false));
-  panel.querySelectorAll("a").forEach(link => link.addEventListener("click", () => setOpen(false)));
-  el("navResetPassword")?.addEventListener("click", () => { setOpen(false); resetAdminPassword(); });
-  el("navLogout")?.addEventListener("click", () => { setOpen(false); logout(); });
-  document.addEventListener("click", (event) => { if(wrap && !wrap.contains(event.target)) setOpen(false); });
-  document.addEventListener("keydown", (event) => { if(event.key === "Escape") setOpen(false); });
+
+  const titleMap = {
+    dashboard: ["OVERVIEW", "Operations dashboard", "A focused view of today’s internship operations."],
+    liveVisitors: ["MONITORING", "Live visitors", "Realtime visitor presence and form activity."],
+    activity: ["MONITORING", "Activity feed", "Recent operational events detected by the admin console."],
+    applications: ["APPLICATIONS", "Recent applications", "Recent submissions with a direct path to the full application manager."],
+    analytics: ["APPLICATIONS", "Application analytics", "Seven-day submission pulse based on Firebase submission timestamps."],
+    funnel: ["APPLICATIONS", "Funnel & performance", "Observed visitor journey and domain performance indicators."],
+    referralOverview: ["REFERRALS", "Referral performance", "Referral metrics, leaderboard and friends-joined activity."],
+    referralLeaderboard: ["REFERRALS", "Referral leaderboard", "Top-performing referral ambassadors and successful joins."],
+    referralFriends: ["REFERRALS", "Friends joined", "Applicants who joined through referral activity."],
+    settings: ["OPERATIONS", "Settings & health", "Notifications, system health and administrative controls."]
+  };
+
+  const closeViewer = () => {
+    if(openSectionNode && openSectionPlaceholder?.parentNode){
+      openSectionPlaceholder.parentNode.replaceChild(openSectionNode, openSectionPlaceholder);
+    }
+    openSectionNode = null;
+    openSectionPlaceholder = null;
+    openSectionId = "";
+    if(viewerBody) viewerBody.innerHTML = "";
+    viewer?.classList.remove("open");
+    viewer?.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("section-viewer-open");
+    window.requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
+  };
+
+  const openViewer = (targetId) => {
+    const target = el(targetId);
+    if(!target || !viewer || !viewerBody) return;
+
+    closeViewer();
+    const meta = titleMap[targetId] || ["ADMIN VIEW", targetId, "Focused workspace"];
+    if(viewerTitle) viewerTitle.textContent = meta[1];
+    if(viewerSubtitle) viewerSubtitle.textContent = meta[2];
+    const eyebrow = el("sectionViewerEyebrow");
+    if(eyebrow) eyebrow.textContent = meta[0];
+
+    savedScrollY = window.scrollY || window.pageYOffset || 0;
+    openSectionId = targetId;
+    openSectionNode = target;
+    openSectionPlaceholder = document.createComment(`InternsForge placeholder: ${targetId}`);
+    target.parentNode.insertBefore(openSectionPlaceholder, target);
+    viewerBody.appendChild(target);
+
+    setMenuOpen(false);
+    viewer.classList.add("open");
+    viewer.setAttribute("aria-hidden", "false");
+    document.body.classList.add("section-viewer-open");
+    window.requestAnimationFrame(() => window.scrollTo(0, savedScrollY));
+  };
+
+  button.addEventListener("click", (event) => { event.stopPropagation(); setMenuOpen(panel.hidden); });
+  close?.addEventListener("click", () => setMenuOpen(false));
+
+  panel.querySelectorAll("a[data-popup-target]").forEach(link => {
+    link.addEventListener("click", event => {
+      event.preventDefault();
+      event.stopPropagation();
+      openViewer(link.dataset.popupTarget);
+    });
+  });
+
+  el("navResetPassword")?.addEventListener("click", () => { setMenuOpen(false); resetAdminPassword(); });
+  el("navLogout")?.addEventListener("click", () => { setMenuOpen(false); logout(); });
+  document.addEventListener("click", (event) => { if(wrap && !wrap.contains(event.target)) setMenuOpen(false); });
+  document.addEventListener("keydown", (event) => {
+    if(event.key === "Escape") {
+      if(viewer?.classList.contains("open")) closeViewer();
+      else setMenuOpen(false);
+    }
+  });
+  viewerClose?.addEventListener("click", closeViewer);
+  viewer?.querySelectorAll("[data-close-section-viewer]").forEach(node => node.addEventListener("click", closeViewer));
 }
 
 function setupUI() {

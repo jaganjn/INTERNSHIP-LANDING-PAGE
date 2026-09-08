@@ -22,6 +22,8 @@ const E = {
   topColleges: el("topColleges"),
   topDomains: el("topDomains"),
   applicationsChart: el("applicationsChart"),
+  sevenDayTotal: el("sevenDayTotal"),
+  todayVsYesterday: el("todayVsYesterday"),
   totalReferralCodes: el("totalReferralCodes"),
   successfulReferrals: el("successfulReferrals"),
   referralConversionRate: el("referralConversionRate"),
@@ -271,11 +273,11 @@ function renderVisitors() {
 
   E.onlineCount.textContent = active.length;
   E.fillingCount.textContent = filling.length;
-  E.abandonedCount.textContent = abandoned.length;
+  if (E.abandonedCount) E.abandonedCount.textContent = abandoned.length;
   E.submittedCount.textContent = todayApplications.length;
 
   const sessionDenominator = Math.max(todaySessions.length, todayApplications.length);
-  E.conversionRate.textContent = sessionDenominator
+  if (E.conversionRate) E.conversionRate.textContent = sessionDenominator
     ? `${Math.min(100, Math.round((todayApplications.length / sessionDenominator) * 100))}%`
     : "0%";
 
@@ -381,13 +383,28 @@ function renderApplications(newIds = new Set()) {
     };
   });
   const max = Math.max(1, ...days.map(item => daily[item.key] || 0));
+  const sevenDayTotal = days.reduce((sum, item) => sum + (daily[item.key] || 0), 0);
+  const todayCount = daily[today] || 0;
+  const [ty, tm, td] = today.split("-").map(Number);
+  const previousDate = new Date(Date.UTC(ty, tm - 1, td, 6, 30, 0) - 24 * 60 * 60 * 1000);
+  const previousKey = getISTDateKey(previousDate.getTime());
+  const previousCount = daily[previousKey] || 0;
+  const vsPrevious = previousCount === 0 ? (todayCount ? 100 : 0) : Math.round(((todayCount - previousCount) / previousCount) * 100);
+  E.sevenDayTotal?.replaceChildren(document.createTextNode(String(sevenDayTotal)));
+  const trendTarget = E.todayVsYesterday;
+  if (trendTarget) {
+    trendTarget.textContent = `${vsPrevious >= 0 ? "+" : ""}${vsPrevious}%`;
+    trendTarget.style.color = vsPrevious >= 0 ? "#70e9ba" : "#ff8d9c";
+  }
 
   E.applicationsChart.innerHTML = days.map(({ date, key }) => {
     const count = daily[key] || 0;
+    const height = count ? Math.max(7, (count / max) * 100) : 3;
     return `
-      <div class="chart-day" title="${count} applications">
-        <span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span>
-        <small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${count}</small>
+      <div class="chart-day" title="${count} application${count === 1 ? "" : "s"}">
+        <b class="chart-value">${count}</b>
+        <span class="chart-bar" style="height:${height}%"></span>
+        <small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${date.toLocaleDateString("en-IN", { day: "2-digit", month: "short" })}</small>
       </div>
     `;
   }).join("");
@@ -692,9 +709,9 @@ function handleNewApplications(nextApplications) {
   );
   sendBrowserNotification(newItems.length, newItems[0]);
 
-  document.title = `(${newItems.length}) New Application${newItems.length > 1 ? "s" : ""} — Apex Admin`;
+  document.title = `(${newItems.length}) New Application${newItems.length > 1 ? "s" : ""} — InternsForge`;
   window.setTimeout(() => {
-    document.title = "InternsForge — Admin Command Center";
+    document.title = "InternsForge — Admin Dashboard";
   }, 8000);
 
   return new Set(newItems.map(app => app.id));
@@ -948,6 +965,26 @@ function listeners() {
   });
 }
 
+async function verifyDashboardDataAccess(){
+  const checks = [
+    ['liveVisitors','Live tracking'],
+    ['submittedApplications','Applications'],
+    ['referralJoins','Referrals']
+  ];
+  const results = await Promise.all(checks.map(async ([path,label]) => {
+    try { await db.ref(path).limitToFirst(1).once('value'); return [label,true,'OK']; }
+    catch(error){ console.warn(`${label} access check failed`, error); return [label,false,(error?.code||'Denied').replace(/^PERMISSION_DENIED:?\s*/,'Permission denied')]; }
+  }));
+  const denied = results.filter(([,ok])=>!ok);
+  const dbText = el('databaseHealthText');
+  if(dbText) dbText.textContent = denied.length ? `${denied.length} data source${denied.length>1?'s':''} denied` : 'Realtime Database: all core reads OK';
+  const visitorOk = results.find(([label])=>label==='Live tracking')?.[1];
+  const vh=el('visitorHealthText'), vd=el('visitorHealthDot');
+  if(vh) vh.textContent = visitorOk ? 'Realtime read OK' : 'Read denied';
+  vd?.classList.toggle('healthy',!!visitorOk); vd?.classList.toggle('unhealthy',!visitorOk);
+  const fh=el('firebaseHealthText'); if(fh && denied.length) fh.textContent = 'Connected · partial access';
+}
+
 function setupUI() {
   const sidebar = el("sidebar");
   const overlay = el("mobileOverlay");
@@ -978,6 +1015,7 @@ function setupUI() {
   el("refreshDashboardButton")?.addEventListener("click", refreshLiveVisitorsOnly);
   el("exportApplicationsButton")?.addEventListener("click", exportApplicationsCsv);
   setupNotificationSettings();
+  window.setTimeout(verifyDashboardDataAccess, 450);
 
   db.ref(".info/connected").on("value", snapshot => {
     const live = snapshot.val() === true;
@@ -1274,6 +1312,15 @@ async function resetDashboard() {
     const successful = Object.values(referralJoins).reduce((sum,joins)=>sum+Object.keys(joins||{}).length,0);
     getEl('totalReferralJoinsMetric')?.replaceChildren(document.createTextNode(String(successful)));
 
+    const statusCounts = applications.reduce((acc, app) => {
+      const status = appStatus(app);
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+    getEl('shortlistedMetric')?.replaceChildren(document.createTextNode(String(statusCounts.shortlisted || 0)));
+    getEl('selectedMetric')?.replaceChildren(document.createTextNode(String(statusCounts.selected || 0)));
+    renderStatusSnapshot(statusCounts);
+
     const domainMap = countMap(applications.map(app=>app.domain));
     const topDomain = Object.entries(domainMap).sort((a,b)=>b[1]-a[1])[0];
     const topMetric = getEl('topDomainMetric');
@@ -1291,6 +1338,22 @@ async function resetDashboard() {
     renderFunnel(); renderDomainPerformance();
   }
 
+  function renderStatusSnapshot(statusCounts = {}){
+    const target = getEl('statusSnapshot'); if(!target) return;
+    const items = [
+      ['new','New','#5b7cff'],
+      ['reviewed','Reviewed','#38c9ff'],
+      ['shortlisted','Shortlisted','#9a6bff'],
+      ['selected','Selected','#2ad59a'],
+      ['rejected','Rejected','#fb6479']
+    ];
+    const total = applications.length || 1;
+    target.innerHTML = items.map(([key,label,color]) => {
+      const count = statusCounts[key] || 0;
+      return `<div class="status-row"><label>${label}</label><i style="--w:${Math.round((count/total)*100)}%;--c:${color}"></i><span>${count}</span></div>`;
+    }).join('');
+  }
+
   function getVisitorRows(){
     return Object.entries(visitors).map(([id,v])=>({id,...v,state:sessionState(v)}));
   }
@@ -1304,53 +1367,52 @@ async function resetDashboard() {
     const submitted = applications.filter(a=>getISTDateKey(a.submittedAtMs||a.submittedAt)===todayKey).length;
     const max = Math.max(1,sessions,started,reviewing,submitted);
     const steps = [
-      ['Visitors', sessions],
-      ['Started form', started],
-      ['80%+ progress', reviewing],
-      ['Submitted', submitted]
+      ['Visitor records observed', sessions],
+      ['Form started', started],
+      ['80%+ form progress', reviewing],
+      ['Applications submitted', submitted]
     ];
     target.innerHTML = steps.map(([label,count],index)=>{
       const rate = index===0 ? 100 : sessions ? Math.min(100,Math.round((count/sessions)*100)) : 0;
-      return `<div><div class="funnel-row"><label>${esc(label)}</label><div class="funnel-track"><i style="width:${Math.max(count?5:0,(count/max)*100)}%"></i></div><span class="funnel-count">${count}</span></div><div class="funnel-rate">${rate}% of visitors</div></div>`;
+      return `<div><div class="funnel-row"><label>${esc(label)}</label><div class="funnel-track"><i style="width:${Math.max(count?5:0,(count/max)*100)}%"></i></div><span class="funnel-count">${count}</span></div><div class="funnel-rate">${rate}% of observed visitor records</div></div>`;
     }).join('');
   }
   function renderDomainPerformance(){
     const target = getEl('domainPerformance'); if(!target) return;
-    const map = {};
-    getVisitorRows().forEach(v=>{
-      const domain = v.fieldData?.domain || v.domain;
-      if (!domain) return;
-      map[domain] ||= {visitors:0, applications:0};
-      map[domain].visitors += 1;
-    });
-    applications.forEach(app=>{
-      const domain = app.domain || 'Unspecified';
-      map[domain] ||= {visitors:0,applications:0};
-      map[domain].applications += 1;
-    });
-    const rows = Object.entries(map).map(([domain,stat])=>({domain,...stat,rate:stat.visitors ? Math.min(100,(stat.applications/stat.visitors)*100) : 0})).sort((a,b)=>b.applications-a.applications || b.visitors-a.visitors).slice(0,8);
-    const max = Math.max(1,...rows.map(r=>Math.max(r.visitors,r.applications)));
-    target.innerHTML = rows.length ? rows.map(r=>`<div class="performance-row"><div><strong>${esc(r.domain)}</strong><small>${r.visitors} retained visitor${r.visitors===1?'':'s'}</small></div><div class="performance-metric"><b>${r.applications}</b><small>apps</small></div><div class="performance-metric"><b>${r.rate.toFixed(1)}%</b><small>conversion</small></div><div class="performance-bar"><i style="width:${Math.max(r.applications?5:0,((Math.max(r.visitors,r.applications))/max)*100)}%"></i></div></div>`).join('') : '<p class="empty">Domain traffic will appear as visitors interact with the portal.</p>';
+    const visitorMap = countMap(getVisitorRows().map(v=>v.fieldData?.domain || v.domain).filter(Boolean));
+    const applicationMap = countMap(applications.map(app=>app.domain).filter(Boolean));
+    const domains = [...new Set([...Object.keys(visitorMap), ...Object.keys(applicationMap)])]
+      .map(domain=>({domain, visitors:visitorMap[domain]||0, applications:applicationMap[domain]||0}))
+      .sort((a,b)=>b.applications-a.applications || b.visitors-a.visitors)
+      .slice(0,8);
+    const max = Math.max(1,...domains.map(r=>Math.max(r.applications,r.visitors)));
+    target.innerHTML = domains.length ? domains.map(r=>`<div class="performance-row"><div><strong>${esc(r.domain)}</strong><small>${r.visitors} observed visitor record${r.visitors===1?'':'s'} (retained)</small></div><div class="performance-metric"><b>${r.applications}</b><small>applications</small></div><div class="performance-metric"><b>${r.applications ? Math.round((r.applications/(applications.length||1))*100) : 0}%</b><small>of all apps</small></div><div class="performance-bar"><i style="width:${Math.max(r.applications?5:0,(Math.max(r.visitors,r.applications)/max)*100)}%"></i></div></div>`).join('') : '<p class="empty">Domain activity will appear as students interact with the portal.</p>';
   }
 
   function getManagerRows(){
     const query = String(getEl('applicationSearch')?.value || '').trim().toLowerCase();
     const domain = getEl('applicationDomainFilter')?.value || '';
     const state = getEl('applicationStateFilter')?.value || '';
+    const year = getEl('applicationYearFilter')?.value || '';
+    const language = getEl('applicationLanguageFilter')?.value || '';
     const status = getEl('applicationStatusFilter')?.value || '';
     managerFiltered = applications.filter(app=>{
-      const haystack = [app.id,app.name,app.email,app.phone,app.college,app.department,app.domain,app.state,app.communicationLanguage].map(v=>String(v||'').toLowerCase()).join(' ');
-      return (!query || haystack.includes(query)) && (!domain || String(app.domain||'')===domain) && (!state || String(app.state||'')===state) && (!status || appStatus(app)===status);
+      const haystack = [app.id,app.name,app.email,app.phone,app.college,app.department,app.domain,app.state,app.communicationLanguage,app.language,app.year].map(v=>String(v||'').toLowerCase()).join(' ');
+      return (!query || haystack.includes(query)) && (!domain || String(app.domain||'')===domain) && (!state || String(app.state||'')===state) && (!year || String(app.year||'')===year) && (!language || String(app.communicationLanguage||app.language||'')===language) && (!status || appStatus(app)===status);
     });
     managerFiltered.sort((a,b)=>asMs(b.submittedAtMs||b.submittedAt)-asMs(a.submittedAtMs||a.submittedAt));
     return managerFiltered;
   }
   function refreshFilterOptions(){
-    const domainSelect = getEl('applicationDomainFilter'); const stateSelect = getEl('applicationStateFilter');
+    const domainSelect = getEl('applicationDomainFilter'); const stateSelect = getEl('applicationStateFilter'); const yearSelect = getEl('applicationYearFilter'); const languageSelect = getEl('applicationLanguageFilter');
     const domains = [...new Set(applications.map(a=>String(a.domain||'').trim()).filter(Boolean))].sort();
     const states = [...new Set(applications.map(a=>String(a.state||'').trim()).filter(Boolean))].sort();
+    const years = [...new Set(applications.map(a=>String(a.year||'').trim()).filter(Boolean))].sort();
+    const languages = [...new Set(applications.map(a=>String(a.communicationLanguage||a.language||'').trim()).filter(Boolean))].sort();
     if(domainSelect){const current=domainSelect.value;domainSelect.innerHTML='<option value="">All domains</option>'+domains.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('');domainSelect.value=current;}
     if(stateSelect){const current=stateSelect.value;stateSelect.innerHTML='<option value="">All states</option>'+states.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');stateSelect.value=current;}
+    if(yearSelect){const current=yearSelect.value;yearSelect.innerHTML='<option value="">All years</option>'+years.map(y=>`<option value="${esc(y)}">${esc(y)}</option>`).join('');yearSelect.value=current;}
+    if(languageSelect){const current=languageSelect.value;languageSelect.innerHTML='<option value="">All languages</option>'+languages.map(l=>`<option value="${esc(l)}">${esc(l)}</option>`).join('');languageSelect.value=current;}
   }
   function renderApplicationManager(){
     const rows = getManagerRows();
@@ -1469,8 +1531,8 @@ async function resetDashboard() {
     getEl('saveApplicationDetails')?.addEventListener('click',saveAppDetails);
     getEl('managerPrev')?.addEventListener('click',()=>{managerPage--;renderApplicationManager();});
     getEl('managerNext')?.addEventListener('click',()=>{managerPage++;renderApplicationManager();});
-    getEl('clearApplicationFilters')?.addEventListener('click',()=>{getEl('applicationSearch').value='';getEl('applicationDomainFilter').value='';getEl('applicationStateFilter').value='';getEl('applicationStatusFilter').value='';managerPage=1;renderApplicationManager();});
-    ['applicationSearch','applicationDomainFilter','applicationStateFilter','applicationStatusFilter'].forEach(id=>getEl(id)?.addEventListener('input',()=>{managerPage=1;renderApplicationManager();}));
+    getEl('clearApplicationFilters')?.addEventListener('click',()=>{getEl('applicationSearch').value='';getEl('applicationDomainFilter').value='';getEl('applicationStateFilter').value='';getEl('applicationYearFilter').value='';getEl('applicationLanguageFilter').value='';getEl('applicationStatusFilter').value='';managerPage=1;renderApplicationManager();});
+    ['applicationSearch','applicationDomainFilter','applicationStateFilter','applicationYearFilter','applicationLanguageFilter','applicationStatusFilter'].forEach(id=>getEl(id)?.addEventListener('input',()=>{managerPage=1;renderApplicationManager();}));
     getEl('clearActivityLog')?.addEventListener('click',()=>{activityItems=[];saveActivity();renderActivityFeed();showToast('Activity log cleared','Only this browser’s local admin activity history was cleared.','info',4500);});
     getEl('copyApplicationSummary')?.addEventListener('click',async()=>{
       const app=findApp(selectedApplicationId);if(!app)return;

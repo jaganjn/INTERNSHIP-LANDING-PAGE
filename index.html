@@ -836,6 +836,45 @@ button:disabled{opacity:.58;cursor:not-allowed}
 }
 </style>
 
+
+<style id="site-section-popup-and-carousel-fix">
+/* Compact navigation-to-workspace presentation. */
+.site-section-modal{position:fixed;inset:0;z-index:1600;display:none;padding:clamp(14px,4vh,42px) clamp(12px,3vw,34px);background:rgba(5,14,29,.76);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;overscroll-behavior:contain}
+.site-section-modal.open{display:flex;animation:siteModalFade .18s ease-out both}
+.site-section-modal-backdrop{position:absolute;inset:0}
+.site-section-modal-panel{position:relative;z-index:1;width:min(1220px,100%);height:min(86dvh,900px);display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(108,137,232,.24);border-radius:28px;background:linear-gradient(180deg,#f8fbff 0%,#eef3f9 100%);box-shadow:0 32px 110px rgba(0,0,0,.34);color:#13243f}
+.site-section-modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;padding:24px 28px 18px;border-bottom:1px solid #dbe4ef;background:rgba(255,255,255,.95);flex:0 0 auto}
+.site-section-modal-head-copy{min-width:0}.site-section-modal-kicker{display:block;margin-bottom:5px;font-size:10px;font-weight:850;letter-spacing:1.7px;text-transform:uppercase;color:#4d67df}.site-section-modal-head h2{margin:0;font-size:clamp(24px,3vw,38px);letter-spacing:-1.1px;color:#12233f}.site-section-modal-head p{margin:7px 0 0;font-size:12px;line-height:1.55;color:#627795;max-width:760px}
+.site-section-modal-close{width:42px;height:42px;display:grid;place-items:center;border:1px solid #d7e2ef;border-radius:13px;background:#fff;color:#17305a;font-size:23px;font-weight:800;cursor:pointer;box-shadow:0 7px 20px rgba(24,46,84,.08);transition:transform .18s ease,background .18s ease}.site-section-modal-close:hover{transform:translateY(-1px);background:#f5f8fd}
+.site-section-modal-content{min-height:0;overflow:auto;padding:24px 28px 30px;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#bfcce0 transparent}
+.site-section-modal-content > section,.site-section-modal-content > div{max-width:none}
+.site-section-modal-content .section{padding-left:0!important;padding-right:0!important}
+.site-section-modal-content .section-heading{max-width:820px}.site-section-modal-content .section-heading h2{color:#12233f}.site-section-modal-content .section-heading p{color:#607694}
+@keyframes siteModalFade{from{opacity:0}to{opacity:1}}
+@keyframes siteModalIn{from{transform:translateY(10px) scale(.985);opacity:.4}to{transform:translateY(0) scale(1);opacity:1}}
+.site-section-modal.open .site-section-modal-panel{animation:siteModalIn .2s ease-out both}
+@media(max-width:720px){.site-section-modal{padding:8px;align-items:flex-end}.site-section-modal-panel{height:94dvh;border-radius:22px 22px 0 0}.site-section-modal-head{padding:18px 18px 15px}.site-section-modal-head h2{font-size:22px}.site-section-modal-head p{font-size:11px}.site-section-modal-content{padding:18px 16px 24px}.site-section-modal-close{width:40px;height:40px}}
+
+/* Smooth auto-scrolling card tracks on tablet/mobile. Desktop remains a full grid when all cards fit. */
+@media(max-width:1100px){
+  .journey-scroller,.persona-track,.receive-grid,.project-grid,.proof-grid,.how-grid,.domain-category-preview,.domain-card-grid{display:flex!important;overflow-x:auto!important;overflow-y:hidden!important;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:16px!important;padding-bottom:12px!important}
+  .journey-scroller::-webkit-scrollbar,.persona-track::-webkit-scrollbar,.receive-grid::-webkit-scrollbar,.project-grid::-webkit-scrollbar,.proof-grid::-webkit-scrollbar,.how-grid::-webkit-scrollbar,.domain-category-preview::-webkit-scrollbar,.domain-card-grid::-webkit-scrollbar{display:none}
+  .journey-step-card{flex:0 0 min(76vw,340px)!important;min-width:min(76vw,340px)!important;scroll-snap-align:start}
+  .persona-card{flex:0 0 min(78vw,360px)!important;min-width:min(78vw,360px)!important;scroll-snap-align:start}
+  .receive-grid>article{flex:0 0 min(76vw,360px)!important;min-width:min(76vw,360px)!important;scroll-snap-align:start}
+  .project-grid>article,.proof-grid>article{flex:0 0 min(72vw,330px)!important;min-width:min(72vw,330px)!important;scroll-snap-align:start}
+  .how-grid>article{flex:0 0 min(64vw,300px)!important;min-width:min(64vw,300px)!important;scroll-snap-align:start}
+  .domain-category-preview>.domain-category{flex:0 0 min(82vw,720px)!important;min-width:min(82vw,720px)!important;scroll-snap-align:start}
+  .domain-card-grid>.domain-card{flex:0 0 min(72vw,360px)!important;min-width:min(72vw,360px)!important;scroll-snap-align:start}
+}
+@media(max-width:600px){
+  .journey-step-card{flex-basis:78vw!important;min-width:78vw!important}.persona-card{flex-basis:82vw!important;min-width:82vw!important}
+  .receive-grid>article{flex-basis:82vw!important;min-width:82vw!important}.project-grid>article,.proof-grid>article{flex-basis:84vw!important;min-width:84vw!important}.how-grid>article{flex-basis:84vw!important;min-width:84vw!important}
+  .domain-category-preview>.domain-category{flex-basis:88vw!important;min-width:88vw!important}
+  .domain-card-grid>.domain-card{flex-basis:82vw!important;min-width:82vw!important}
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -845,12 +884,12 @@ button:disabled{opacity:.58;cursor:not-allowed}
     <span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span>
   </a>
   <nav class="desktop-nav" aria-label="Primary navigation">
-    <a href="#home" aria-current="page">Home</a><a href="#programme">Programme</a><a href="#projects">Projects</a><a href="#domains">Domains</a><a href="#how">Process</a><a href="#faq">FAQ</a>
+    <a href="#home" aria-current="page" data-popup-target="home">Home</a><a href="#programme" data-popup-target="programme">Programme</a><a href="#projects" data-popup-target="projects">Projects</a><a href="#domains" data-popup-target="domains">Domains</a><a href="#how" data-popup-target="how">Process</a><a href="#faq" data-popup-target="faq">FAQ</a>
   </nav>
-  <a class="header-cta" href="#apply">Start Your Application <span>↗</span></a>
+  <a class="header-cta open-application" href="#apply">Start Your Application <span>↗</span></a>
   <details class="mobile-menu">
     <summary aria-label="Open navigation"><span></span><span></span><span></span></summary>
-    <div><a href="#home">Home</a><a href="#programme">Programme</a><a href="#projects">Projects</a><a href="#domains">Domains</a><a href="#how">Process</a><a href="#faq">FAQ</a><a href="#apply">Start Application</a></div>
+    <div><a href="#home" data-popup-target="home">Home</a><a href="#programme" data-popup-target="programme">Programme</a><a href="#projects" data-popup-target="projects">Projects</a><a href="#domains" data-popup-target="domains">Domains</a><a href="#how" data-popup-target="how">Process</a><a href="#faq" data-popup-target="faq">FAQ</a><a href="#apply" class="open-application">Start Application</a></div>
   </details>
 </header>
 
@@ -2271,7 +2310,7 @@ console.info('SkillPath guided form build: Final V11');
 <script id="unified-mobile-motion">
 (function(){
   'use strict';
-  const media = window.matchMedia('(max-width:600px)');
+  const media = window.matchMedia('(max-width:1100px)');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const controllers = new Set();
   let domainController = null;
@@ -2381,7 +2420,8 @@ console.info('SkillPath guided form build: Final V11');
     setupCarousel(document.querySelector('.project-grid'), ':scope > article', 3600);
     setupCarousel(document.querySelector('.proof-grid'), ':scope > article', 3600);
     setupCarousel(document.querySelector('.how-grid'), ':scope > article', 3600);
-    setupCarousel(document.querySelector('.domain-category-preview'), ':scope > .domain-category', 3600);
+    document.querySelectorAll('.domain-category-preview').forEach(track=>setupCarousel(track, ':scope > .domain-category', 3800));
+    document.querySelectorAll('.domain-card-grid').forEach(track=>setupCarousel(track, ':scope > .domain-card', 3200));
     setupDomainModal();
   }
 
@@ -2552,6 +2592,90 @@ console.info('SkillPath guided form build: Final V11');
     if (!btn) return;
     event.preventDefault();
     clearApplication();
+  });
+})();
+</script>
+
+
+<script id="navigation-popup-and-application-fix">
+(function(){
+  'use strict';
+  const body=document.body;
+  let restoreScroll=0;
+  let activeModal=null;
+
+  function lock(){ restoreScroll=window.scrollY; body.classList.add('no-scroll'); document.documentElement.style.overflow='hidden'; }
+  function unlock(){ body.classList.remove('no-scroll'); document.documentElement.style.overflow=''; window.scrollTo({top:restoreScroll,behavior:'auto'}); }
+
+  function closeWorkspace(){
+    if(!activeModal) return;
+    activeModal.remove(); activeModal=null; unlock();
+  }
+
+  function cloneSection(target){
+    const original=document.getElementById(target);
+    if(!original) return null;
+    const clone=original.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
+    clone.querySelectorAll('script').forEach(el=>el.remove());
+    return clone;
+  }
+
+  function openWorkspace(target,title,kicker,description){
+    closeWorkspace();
+    const clone=cloneSection(target);
+    if(!clone) return false;
+    lock();
+    const modal=document.createElement('div');
+    modal.className='site-section-modal open';
+    modal.setAttribute('role','dialog');
+    modal.setAttribute('aria-modal','true');
+    modal.innerHTML=`<div class="site-section-modal-backdrop" data-close-workspace></div><section class="site-section-modal-panel"><header class="site-section-modal-head"><div class="site-section-modal-head-copy"><span class="site-section-modal-kicker">${kicker}</span><h2>${title}</h2><p>${description}</p></div><button class="site-section-modal-close" type="button" aria-label="Close">×</button></header><div class="site-section-modal-content"></div></section>`;
+    modal.querySelector('.site-section-modal-content').appendChild(clone);
+    document.body.appendChild(modal);
+    activeModal=modal;
+    modal.querySelector('.site-section-modal-close').addEventListener('click',closeWorkspace);
+    modal.addEventListener('click',e=>{ if(e.target.matches('[data-close-workspace]')) closeWorkspace(); });
+    return true;
+  }
+
+  function openApplicationSafely(){
+    const opener=document.querySelector('.open-application');
+    if(opener && !document.body.classList.contains('application-modal-open')){
+      // Use the existing application modal implementation so backend hooks remain untouched.
+      opener.dispatchEvent(new MouseEvent('click',{bubbles:true,cancelable:true,view:window}));
+    }
+  }
+
+  const meta={
+    home:['Home','OVERVIEW','Explore the programme at a glance before you decide what to do next.'],
+    programme:['Programme','PROGRAMME','See the programme structure, format and practical learning experience.'],
+    projects:['Projects','PROJECTS','Review the kind of practical work students can build through the programme.'],
+    how:['Process','HOW IT WORKS','See the application-to-completion journey in a simple sequence.'],
+    faq:['FAQ','QUESTIONS','Find quick answers before starting your application.']
+  };
+
+  document.querySelectorAll('[data-popup-target]').forEach(link=>{
+    link.addEventListener('click',e=>{
+      e.preventDefault();
+      const target=link.dataset.popupTarget;
+      if(target==='domains'){ document.getElementById('openDomainExplorer')?.click(); return; }
+      if(!meta[target]) return;
+      const [title,kicker,desc]=meta[target];
+      openWorkspace(target,title,kicker,desc);
+    });
+  });
+
+  // Header CTA must open the application modal instead of jumping to #apply.
+  const headerCta=document.querySelector('.site-header .header-cta.open-application');
+  if(headerCta){
+    headerCta.addEventListener('click',e=>{ e.preventDefault(); openApplicationSafely(); });
+  }
+
+  document.addEventListener('keydown',e=>{
+    if(e.key!=='Escape') return;
+    if(activeModal) closeWorkspace();
   });
 })();
 </script>

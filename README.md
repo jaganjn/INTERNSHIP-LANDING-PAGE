@@ -99,3 +99,7 @@ Password recovery now includes a custom Firebase email action handler at reset-p
 - Spark-compatible public aggregate application counter retained.
 - Login-page password recovery and custom reset-password handler retained.
 - Mobile domain/card contrast improvements and automatic card transitions retained.
+
+
+## Google Sheets Recovery
+The Admin Dashboard includes Sync Today to Sheets and Recover All Firebase Data. The Apps Script accepts Firebase recovery payloads and deduplicates by Application ID/fingerprint.

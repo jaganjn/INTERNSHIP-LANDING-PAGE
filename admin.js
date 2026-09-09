@@ -1162,16 +1162,36 @@ async function resetDashboard() {
   }
 }
 
-/* Google Sheets: recover today's Firebase applications */
+/* Google Sheets: Firebase recovery */
 const SHEETS_RECOVERY_ENDPOINT = "https://script.google.com/macros/s/AKfycbykckN1IqJxrzGTbJt7FSC7z0F9h_2z2JhihsBncDoYlmXhaFhSc6b8PX5FL8HbkBPY-g/exec";
+function parseApplicationTimestamp(raw) {
+  if (raw === null || raw === undefined || raw === "") return NaN;
+  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
+  const text = String(raw).trim();
+  if (/^\d{13}$/.test(text)) return Number(text);
+  if (/^\d{10}$/.test(text)) return Number(text) * 1000;
+  const m = text.match(/^(\d{2})-(\d{2})-(\d{4})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+  if (m) {
+    const utc = Date.UTC(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4]) - 5, Number(m[5]) - 30, Number(m[6] || 0));
+    return utc;
+  }
+  const parsed = Date.parse(text);
+  return Number.isNaN(parsed) ? NaN : parsed;
+}
 function isApplicationFromTodayIST(app) {
   const today = new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Kolkata"}).format(new Date());
-  for (const raw of [app.submittedAtMs,app.submittedAt,app.timestamp,app.createdAt]) {
-    if (raw===null || raw===undefined || raw==="") continue;
-    const ms = typeof raw === "number" ? raw : Date.parse(String(raw));
-    if (!Number.isNaN(ms) && new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata"}).format(new Date(ms))===today) return true;
+  for (const raw of [app?.submittedAtMs, app?.submittedAt, app?.timestamp, app?.createdAt, app?.createdAtMs]) {
+    const ms = parseApplicationTimestamp(raw);
+    if (!Number.isNaN(ms) && new Intl.DateTimeFormat("en-CA", {timeZone:"Asia/Kolkata"}).format(new Date(ms)) === today) return true;
   }
   return false;
+}
+async function sendApplicationsToSheets(applications) {
+  await fetch(SHEETS_RECOVERY_ENDPOINT, {
+    method:"POST", mode:"no-cors",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify({action:"syncApplications", applications})
+  });
 }
 async function syncTodayToSheets(){
   const btn=document.getElementById("syncTodaySheetsBtn"), status=document.getElementById("syncTodaySheetsStatus");
@@ -1180,12 +1200,28 @@ async function syncTodayToSheets(){
   btn.disabled=true; btn.style.opacity=".65"; status.textContent="⏳ Reading today's applications from Firebase...";
   try{
     const snap=await db.ref("submittedApplications").once("value"), all=snap.val()||{};
-    const applications=Object.entries(all).map(([key,app])=>({...app,applicationId:(app&&(app.applicationId||app.id))||(key)})).filter(isApplicationFromTodayIST);
+    const applications=Object.entries(all).map(([key,app])=>({...app,applicationId:(app&&(app.applicationId||app.id))||key})).filter(isApplicationFromTodayIST);
     if(!applications.length){status.textContent="ℹ️ No applications from today were found in Firebase.";return;}
     status.textContent=`⏳ Found ${applications.length} today's application(s). Sending to Google Sheets...`;
-    await fetch(SHEETS_RECOVERY_ENDPOINT,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"syncApplications",applications})});
-    status.textContent=`✅ Sync request sent for ${applications.length} today's application(s). Check Google Sheets in 10–20 seconds.`;
-    alert(`Recovery sync sent successfully.\n\n${applications.length} today's application(s) were sent to Google Sheets.\n\nWait 10–20 seconds, then refresh the Sheet.`);
+    await sendApplicationsToSheets(applications);
+    status.textContent=`✅ Recovery request sent for ${applications.length} today's application(s). Refresh the Sheet after 10–20 seconds.`;
+    alert(`Recovery sync sent.\n\n${applications.length} today's application(s) were sent to Google Sheets.\n\nWait 10–20 seconds, then refresh the Sheet.`);
   }catch(e){console.error(e);status.textContent="❌ Recovery failed. Check the browser console for details.";alert("Recovery failed: "+(e.message||e));}
+  finally{btn.disabled=false;btn.style.opacity="1";}
+}
+async function recoverAllFirebaseToSheets(){
+  const btn=document.getElementById("recoverAllSheetsBtn"), status=document.getElementById("syncTodaySheetsStatus");
+  if(!btn||!status)return;
+  if(!confirm("Recover ALL applications currently stored in Firebase into Google Sheets?\n\nThis is safe to run: existing Sheet records are skipped automatically."))return;
+  btn.disabled=true; btn.style.opacity=".65"; status.textContent="⏳ Reading all Firebase applications...";
+  try{
+    const snap=await db.ref("submittedApplications").once("value"), all=snap.val()||{};
+    const applications=Object.entries(all).map(([key,app])=>({...app,applicationId:(app&&(app.applicationId||app.id))||key}));
+    if(!applications.length){status.textContent="ℹ️ Firebase currently has no submitted applications.";return;}
+    status.textContent=`⏳ Found ${applications.length} application(s). Sending recovery request...`;
+    await sendApplicationsToSheets(applications);
+    status.textContent=`✅ Recovery request sent for ${applications.length} application(s). Refresh the Sheet after 10–20 seconds.`;
+    alert(`Full recovery sync sent.\n\n${applications.length} Firebase application(s) were sent to Google Sheets.\n\nWait 10–20 seconds, then refresh the Sheet.`);
+  }catch(e){console.error(e);status.textContent="❌ Full recovery failed. Check the browser console for details.";alert("Full recovery failed: "+(e.message||e));}
   finally{btn.disabled=false;btn.style.opacity="1";}
 }

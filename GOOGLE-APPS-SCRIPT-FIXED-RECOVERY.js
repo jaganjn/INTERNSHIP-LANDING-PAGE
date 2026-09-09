@@ -12,7 +12,7 @@ const CONFIG = {
     "Timestamp", "Application ID", "Name", "Phone", "Email", "College",
     "Department", "Year", "Domain", "State", "Communication Language",
     "Start Availability", "Application Reason", "Interest", "Referral Code",
-    "Referred By", "Referral URL", "Submitted At", "Submitted At Ms"
+    "Referred By", "Referral URL", "Submitted At", "Submitted At Ms", "Call Status", "Remarks"
   ]
 };
 
@@ -129,7 +129,7 @@ function buildRow(headers, app) {
     startavailability:"Start Availability", availability:"Start Availability", whenareyouavailabletostart:"Start Availability",
     applicationreason:"Application Reason", reason:"Application Reason", whyareyouapplying:"Application Reason",
     interest:"Interest", referralcode:"Referral Code", referredby:"Referred By", referralurl:"Referral URL",
-    submittedat:"Submitted At", submittedatms:"Submitted At Ms"
+    submittedat:"Submitted At", submittedatms:"Submitted At Ms", callstatus:"Call Status", remarks:"Remarks"
   };
   return headers.map(function(header) {
     const key = map[normalizeHeader(header)];

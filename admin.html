@@ -72,8 +72,9 @@
     <h2>📊 Google Sheets Recovery</h2>
     <span>Today</span>
   </div>
-  <p style="color:#94a3b8;margin:0 0 14px;line-height:1.6;">Recover today's applications already stored in Firebase but missing from Google Sheets. Existing Sheet rows are skipped automatically.</p>
+  <p style="color:#94a3b8;margin:0 0 14px;line-height:1.6;">Recover applications already stored in Firebase but missing from Google Sheets. Existing Sheet rows are skipped automatically. Use the full recovery button for older records too.</p>
   <button id="syncTodaySheetsBtn" onclick="syncTodayToSheets()" style="padding:12px 18px;border:0;border-radius:10px;cursor:pointer;font-weight:700;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;">🔄 Sync Today to Sheets</button>
+  <button id="recoverAllSheetsBtn" onclick="recoverAllFirebaseToSheets()" style="padding:12px 18px;margin-left:8px;border:1px solid #6366f1;border-radius:10px;cursor:pointer;font-weight:700;background:#fff;color:#4f46e5;">📥 Recover All Firebase Data</button>
   <div id="syncTodaySheetsStatus" style="margin-top:12px;color:#94a3b8;"></div>
 </section>
 

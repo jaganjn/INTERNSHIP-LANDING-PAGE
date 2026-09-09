@@ -236,10 +236,6 @@ function visitorCard(visitor, inactive = false) {
         <div><small>College</small><strong>${esc(visitor.fieldData?.college || visitor.college || "—")}</strong></div>
         <div><small>Department</small><strong>${esc(visitor.fieldData?.department || visitor.department || "—")}</strong></div>
         <div><small>Year</small><strong>${esc(visitor.fieldData?.year || visitor.year || "—")}</strong></div>
-        <div><small>State / UT</small><strong>${esc(visitor.fieldData?.state || visitor.state || "—")}</strong></div>
-        <div><small>Language</small><strong>${esc(visitor.fieldData?.communicationLanguage || visitor.communicationLanguage || "—")}</strong></div>
-        <div><small>Start</small><strong>${esc(visitor.fieldData?.startAvailability || visitor.startAvailability || "—")}</strong></div>
-        <div><small>Reason</small><strong>${esc(visitor.fieldData?.applicationReason || visitor.applicationReason || "—")}</strong></div>
         <div><small>Domain</small><strong>${esc(visitor.fieldData?.domain || visitor.domain || "—")}</strong></div>
         <div><small>Consent</small><strong>${(visitor.fieldData?.consent ?? false) ? "Accepted" : "Not accepted"}</strong></div>
       </div>
@@ -355,7 +351,7 @@ function renderApplications(newIds = new Set()) {
       <div class="application-top">
         <div>
           <strong>${esc(app.name || "Unknown")}</strong>
-          <small>${esc(app.college || "—")} • ${esc(app.state || "—")} • ${esc(app.domain || "—")}</small>
+          <small>${esc(app.college || "—")} • ${esc(app.domain || "—")}</small>
         </div>
         <span class="status submitted">Submitted</span>
       </div>
@@ -755,10 +751,9 @@ function exportApplicationsCsv() {
     return;
   }
 
-  const headers = ["Name", "Phone", "Email", "College", "Department", "Year", "State / UT", "Communication Language", "Start Availability", "Application Reason", "Domain", "Referral Code", "Submitted At"];
+  const headers = ["Name", "Phone", "Email", "College", "Department", "Year", "Domain", "Referral Code", "Submitted At"];
   const rows = applications.map(app => [
     app.name, app.phone, app.email, app.college, app.department, app.year,
-    app.state || "", app.communicationLanguage || "", app.startAvailability || "", app.applicationReason || "",
     app.domain, app.referralCode || app.referredBy || "",
     new Date(asMs(app.submittedAtMs || app.submittedAt) || Date.now()).toISOString()
   ]);

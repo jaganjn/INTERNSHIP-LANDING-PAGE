@@ -745,6 +745,82 @@ async function performFullRefresh() {
   }
 }
 
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbykckN1IqJxrzGTbJt7FSC7z0F9h_2z2JhihsBncDoYlmXhaFhSc6b8PX5FL8HbkBPY-g/exec';
+
+function firebaseApplicationPayload(app) {
+  return {
+    applicationId: app.id || app.applicationId || '',
+    name: app.name || '',
+    phone: app.phone || '',
+    email: app.email || '',
+    college: app.college || '',
+    department: app.department || '',
+    year: app.year || '',
+    domain: app.domain || '',
+    state: app.state || '',
+    communicationLanguage: app.communicationLanguage || app.language || '',
+    startAvailability: app.startAvailability || '',
+    applicationReason: app.applicationReason || '',
+    interest: app.interest || '',
+    referralCode: app.referralCode || '',
+    referredBy: app.referredBy || '',
+    referralUrl: app.referralUrl || '',
+    submittedAt: app.submittedAt || '',
+    submittedAtMs: app.submittedAtMs || '',
+    source: app.source || 'internsforge_admin_sync'
+  };
+}
+
+async function syncApplicationsToGoogleSheets() {
+  if (!applications.length) {
+    showToast('Nothing to sync', 'Firebase has no submitted applications.', 'info');
+    return;
+  }
+
+  const button = el('syncSheetsButton');
+  if (button) {
+    button.disabled = true;
+    button.textContent = 'Syncing…';
+  }
+
+  let sent = 0;
+  try {
+    // Sequential delivery avoids overwhelming Apps Script and LockService.
+    for (const app of applications) {
+      const payload = firebaseApplicationPayload(app);
+      await fetch(SHEET_ENDPOINT, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      sent++;
+      if (button) button.textContent = `Syncing ${sent}/${applications.length}…`;
+      await new Promise(resolve => setTimeout(resolve, 120));
+    }
+
+    showToast(
+      'Google Sheets sync sent',
+      `${sent} Firebase application${sent === 1 ? '' : 's'} sent. Existing rows are updated instead of duplicated.`,
+      'success',
+      7000
+    );
+  } catch (error) {
+    console.error('Google Sheets sync failed:', error);
+    showToast(
+      'Sheets sync interrupted',
+      `${sent} application${sent === 1 ? '' : 's'} were sent before the connection stopped. Run Sync again to continue; duplicates are prevented by Application ID.`,
+      'error',
+      8000
+    );
+  } finally {
+    if (button) {
+      button.disabled = false;
+      button.textContent = 'Sync to Google Sheets';
+    }
+  }
+}
+
 function exportApplicationsCsv() {
   if (!applications.length) {
     showToast("Nothing to export", "No submitted applications are available.", "info");
@@ -956,6 +1032,7 @@ function setupUI() {
   window.setInterval(tick, 1000);
 
   el("refreshDashboardButton")?.addEventListener("click", performFullRefresh);
+  el("syncSheetsButton")?.addEventListener("click", syncApplicationsToGoogleSheets);
   el("exportApplicationsButton")?.addEventListener("click", exportApplicationsCsv);
   setupNotificationSettings();
 

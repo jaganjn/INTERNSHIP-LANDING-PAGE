@@ -1193,7 +1193,7 @@ async function sendApplicationsToSheets(applications) {
     body:JSON.stringify({action:"syncApplications", applications})
   });
 }
-async async function syncTodayToSheets(){
+async function syncTodayToSheets(){
   const btn=document.getElementById("syncTodaySheetsBtn"), status=document.getElementById("syncTodaySheetsStatus");
   if(!btn||!status)return;
   if(!confirm("Sync all applications from TODAY (IST) stored in Firebase to Google Sheets?\n\nExisting applications will be skipped automatically."))return;

@@ -42,6 +42,8 @@ let initialApplicationSnapshotLoaded = false;
 let soundUnlocked = false;
 let audioContext = null;
 let refreshInProgress = false;
+let crmFilteredApplications = [];
+let activeApplicationId = null;
 
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -339,7 +341,7 @@ function renderApplications(newIds = new Set()) {
   applications.forEach(app => {
     if (app.college) college[app.college] = (college[app.college] || 0) + 1;
     if (app.domain) domain[app.domain] = (domain[app.domain] || 0) + 1;
-    const timestamp = asMs(app.submittedAtMs || app.submittedAt);
+    const timestamp = asMs(app.submittedAtMs || app.submittedAt || app.timestamp);
     if (timestamp) {
       const key = getISTDateKey(timestamp);
       daily[key] = (daily[key] || 0) + 1;
@@ -349,13 +351,10 @@ function renderApplications(newIds = new Set()) {
   E.recentApplications.innerHTML = applications.slice(0, 8).map(app => `
     <article class="application-item ${newIds.has(app.id) ? "new-application" : ""}">
       <div class="application-top">
-        <div>
-          <strong>${esc(app.name || "Unknown")}</strong>
-          <small>${esc(app.college || "—")} • ${esc(app.domain || "—")}</small>
-        </div>
-        <span class="status submitted">Submitted</span>
+        <div><strong>${esc(app.name || "Unknown")}</strong><small>${esc(app.college || "—")} • ${esc(app.domain || "—")}</small></div>
+        <span class="status submitted">${esc(app.callStatus || "Not Contacted")}</span>
       </div>
-      <small>${fmt(app.submittedAtMs || app.submittedAt)}</small>
+      <small>${fmt(app.submittedAtMs || app.submittedAt || app.timestamp)}</small>
     </article>
   `).join("") || '<p class="empty">No applications yet.</p>';
 
@@ -365,27 +364,234 @@ function renderApplications(newIds = new Set()) {
   const today = getTodayISTKey();
   const days = [...Array(7)].map((_, index) => {
     const [year, month, day] = today.split("-").map(Number);
-    // Build the day from an IST noon anchor to avoid DST/local-midnight shifts.
     const date = new Date(Date.UTC(year, month - 1, day, 6, 30, 0) - (6 - index) * 24 * 60 * 60 * 1000);
-    return {
-      date,
-      key: getISTDateKey(date.getTime())
-    };
+    return { date, key: getISTDateKey(date.getTime()) };
   });
   const max = Math.max(1, ...days.map(item => daily[item.key] || 0));
 
   E.applicationsChart.innerHTML = days.map(({ date, key }) => {
     const count = daily[key] || 0;
-    return `
-      <div class="chart-day" title="${count} applications">
-        <span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span>
-        <small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${count}</small>
-      </div>
-    `;
+    return `<div class="chart-day" title="${count} applications"><span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span><small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${count}</small></div>`;
   }).join("");
 
   renderVisitors();
   renderReferrals();
+  renderApplicationCRM();
+}
+
+function getCallStatus(app) {
+  return String(app?.callStatus || "Not Contacted").trim() || "Not Contacted";
+}
+
+function getFollowUpMs(app) {
+  return asMs(app?.nextFollowUpAt || app?.nextFollowUp || app?.followUpAt);
+}
+
+function isFollowUpDue(app) {
+  const ms = getFollowUpMs(app);
+  return ms > 0 && ms <= Date.now();
+}
+
+function formatFollowUp(app) {
+  const ms = getFollowUpMs(app);
+  if (!ms) return "—";
+  const date = new Date(ms);
+  const day = new Intl.DateTimeFormat("en-IN", {timeZone: IST_TIME_ZONE, day:"2-digit", month:"short"}).format(date);
+  const time = new Intl.DateTimeFormat("en-IN", {timeZone: IST_TIME_ZONE, hour:"2-digit", minute:"2-digit"}).format(date);
+  return `${day} • ${time}`;
+}
+
+function followUpClass(app) {
+  if (isFollowUpDue(app)) return "due";
+  const ms = getFollowUpMs(app);
+  if (!ms) return "none";
+  return "upcoming";
+}
+
+function populateCrmFilters() {
+  const domainSelect = el("crmDomainFilter");
+  const yearSelect = el("crmYearFilter");
+  if (!domainSelect || !yearSelect) return;
+  const domains = [...new Set(applications.map(a => String(a.domain || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const years = [...new Set(applications.map(a => String(a.year || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const currentDomain = domainSelect.value, currentYear = yearSelect.value;
+  domainSelect.innerHTML = '<option value="">All domains</option>' + domains.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
+  yearSelect.innerHTML = '<option value="">All years</option>' + years.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
+  domainSelect.value = domains.includes(currentDomain) ? currentDomain : "";
+  yearSelect.value = years.includes(currentYear) ? currentYear : "";
+}
+
+function filterCrmApplications() {
+  const q = String(el("crmSearch")?.value || "").trim().toLowerCase();
+  const status = el("crmStatusFilter")?.value || "";
+  const domain = el("crmDomainFilter")?.value || "";
+  const year = el("crmYearFilter")?.value || "";
+  const follow = el("crmFollowupFilter")?.value || "";
+  const now = Date.now();
+  const startToday = new Date(); startToday.setHours(0,0,0,0);
+  const endToday = new Date(startToday.getTime()+86400000);
+
+  crmFilteredApplications = applications.filter(app => {
+    const hay = [app.id, app.applicationId, app.name, app.phone, app.email, app.college, app.department, app.domain].map(v=>String(v||"").toLowerCase()).join(" ");
+    if (q && !hay.includes(q)) return false;
+    if (status && getCallStatus(app) !== status) return false;
+    if (domain && String(app.domain||"") !== domain) return false;
+    if (year && String(app.year||"") !== year) return false;
+    const fu = getFollowUpMs(app);
+    if (follow === "due" && !(fu && fu <= now)) return false;
+    if (follow === "today" && !(fu >= startToday.getTime() && fu < endToday.getTime())) return false;
+    if (follow === "upcoming" && !(fu > endToday.getTime())) return false;
+    if (follow === "none" && fu) return false;
+    return true;
+  });
+  renderCrmTable(crmFilteredApplications);
+}
+
+function renderApplicationCRM() {
+  populateCrmFilters();
+  const counts = {not:0, due:0, interested:0, selected:0, joined:0};
+  applications.forEach(app => {
+    const status = getCallStatus(app);
+    if (status === "Not Contacted") counts.not++;
+    if (isFollowUpDue(app)) counts.due++;
+    if (status === "Interested") counts.interested++;
+    if (status === "Selected") counts.selected++;
+    if (status === "Joined") counts.joined++;
+  });
+  el("crmTotal").textContent = applications.length;
+  el("crmNotContacted").textContent = counts.not;
+  el("crmFollowUps").textContent = counts.due;
+  el("crmInterested").textContent = counts.interested;
+  el("crmSelected").textContent = counts.selected;
+  el("crmJoined").textContent = counts.joined;
+  filterCrmApplications();
+}
+
+function statusClass(status) {
+  return String(status).toLowerCase().replace(/[^a-z]+/g,"-").replace(/^-|-$/g,"");
+}
+
+function renderCrmTable(rows) {
+  const body = el("crmTableBody");
+  if (!body) return;
+  el("crmResultCount").textContent = `${rows.length} application${rows.length === 1 ? "" : "s"}`;
+  body.innerHTML = rows.slice(0, 100).map(app => {
+    const status = getCallStatus(app);
+    const followClass = followUpClass(app);
+    return `<tr>
+      <td><div class="crm-student"><span class="crm-avatar">${esc((app.name||"A").trim().charAt(0).toUpperCase())}</span><div><strong>${esc(app.name||"Unknown")}</strong><small>${esc(app.email||"—")}<br>${esc(app.phone||"—")}</small></div></div></td>
+      <td><strong>${esc(app.college||"—")}</strong><small>${esc(app.department||"—")} • Year ${esc(app.year||"—")}</small></td>
+      <td><span class="domain-pill">${esc(app.domain||"—")}</span></td>
+      <td><small>${esc(fmt(app.submittedAtMs||app.submittedAt||app.timestamp))}</small></td>
+      <td><span class="crm-status ${statusClass(status)}">${esc(status)}</span></td>
+      <td><span class="follow-pill ${followClass}">${isFollowUpDue(app) ? "⚠ " : ""}${esc(formatFollowUp(app))}</span></td>
+      <td><small>${esc(app.assignedTo||"Unassigned")}</small></td>
+      <td><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button></td>
+    </tr>`;
+  }).join("") || '<tr><td colspan="8" class="empty">No applications match your filters.</td></tr>';
+  body.querySelectorAll(".crm-open-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
+}
+
+function toDateTimeLocal(ms) {
+  if (!ms) return "";
+  const d = new Date(ms);
+  const pad = n => String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function openApplicationModal(id) {
+  const app = applications.find(item => item.id === id);
+  if (!app) return;
+  activeApplicationId = id;
+  el("applicationModalTitle").textContent = app.name || "Student Application";
+  el("applicationModalSubtitle").textContent = `${app.college || "—"} • ${app.domain || "—"} • ${app.email || "—"}`;
+  el("applicationStudentDetails").innerHTML = detailRows([
+    ["Phone", app.phone], ["Email", app.email], ["State", app.state], ["Communication", app.communicationLanguage || app.language]
+  ]);
+  el("applicationAcademicDetails").innerHTML = detailRows([
+    ["College", app.college], ["Department", app.department], ["Year", app.year], ["Domain", app.domain], ["Start availability", app.startAvailability], ["Application reason", app.applicationReason]
+  ]);
+  el("modalCallStatus").value = getCallStatus(app);
+  el("modalFollowUp").value = toDateTimeLocal(getFollowUpMs(app));
+  el("modalAssignedTo").value = app.assignedTo || "";
+  el("modalRemarks").value = app.remarks || "";
+  el("modalSaveStatus").textContent = "";
+  el("applicationModal").classList.add("show");
+  el("applicationModal").setAttribute("aria-hidden","false");
+}
+
+function detailRows(rows) {
+  return rows.map(([label,val]) => `<div class="detail-row"><span>${esc(label)}</span><strong>${esc(val || "—")}</strong></div>`).join("");
+}
+
+function closeApplicationModal() {
+  activeApplicationId = null;
+  el("applicationModal")?.classList.remove("show");
+  el("applicationModal")?.setAttribute("aria-hidden","true");
+}
+
+function toFirebaseDateValue(value) {
+  if (!value) return "";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString();
+}
+
+async function saveApplicationCRM() {
+  if (!activeApplicationId) return;
+  const app = applications.find(item => item.id === activeApplicationId);
+  if (!app) return;
+  const statusEl = el("modalSaveStatus");
+  const updates = {
+    callStatus: el("modalCallStatus").value,
+    nextFollowUpAt: toFirebaseDateValue(el("modalFollowUp").value),
+    assignedTo: String(el("modalAssignedTo").value || "").trim(),
+    remarks: String(el("modalRemarks").value || "").trim(),
+    lastContactedAt: Date.now()
+  };
+  try {
+    statusEl.textContent = "Saving…";
+    await db.ref(`submittedApplications/${activeApplicationId}`).update(updates);
+    Object.assign(app, updates);
+    statusEl.textContent = "✓ Saved and queued for Google Sheets sync.";
+    showToast("Application updated", `${app.name || "Student"}'s CRM details were saved.`, "success", 3500);
+    sendApplicationUpdateToSheets(app).catch(error => console.warn("Sheets CRM sync failed:", error));
+    renderApplications();
+  } catch (error) {
+    console.error("CRM update failed:", error);
+    statusEl.textContent = "Could not save. Check Firebase permissions.";
+    showToast("Update failed", error?.message || "Firebase denied the update.", "error", 6500);
+  }
+}
+
+async function sendApplicationUpdateToSheets(app) {
+  const payload = {...app, applicationId: app.applicationId || app.id};
+  return fetch(SHEETS_RECOVERY_ENDPOINT, {
+    method:"POST", mode:"no-cors", headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify({action:"updateApplication", application:payload})
+  });
+}
+
+async function syncCrmToSheets() {
+  if (!applications.length) { showToast("Nothing to sync", "There are no Firebase applications to sync.", "info"); return; }
+  if (!confirm(`Sync all ${applications.length} CRM records to Google Sheets?\n\nExisting Sheet rows will be updated by Application ID; missing rows will be added.`)) return;
+  const btn = el("syncCrmSheetsBtn");
+  btn.disabled = true;
+  try {
+    await sendApplicationsToSheets(applications, true);
+    showToast("CRM sync sent", `${applications.length} applications were sent for update/add processing. Refresh the Sheet after 10–20 seconds.`, "success", 7000);
+  } catch (error) {
+    showToast("CRM sync failed", error?.message || "Unable to send CRM sync.", "error", 7000);
+  } finally { btn.disabled = false; }
+}
+
+function exportCrmCsv() {
+  if (!crmFilteredApplications.length) { showToast("Nothing to export", "No applications match the current filters.", "info"); return; }
+  const headers = ["Timestamp","Application ID","Name","Phone","Email","College","Department","Year","Domain","State","Communication Language","Start Availability","Application Reason","Call Status","Next Follow-up","Assigned To","Last Contacted","Remarks"];
+  const rows = crmFilteredApplications.map(a => [a.submittedAtMs||a.submittedAt||a.timestamp,a.id||a.applicationId,a.name,a.phone,a.email,a.college,a.department,a.year,a.domain,a.state,a.communicationLanguage||a.language,a.startAvailability,a.applicationReason,getCallStatus(a),a.nextFollowUpAt||"",a.assignedTo||"",a.lastContactedAt||"",a.remarks||""]);
+  const csv = [headers,...rows].map(row => row.map(v => `"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\ufeff",csv],{type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`internsforge-crm-${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  showToast("CRM CSV exported", `${crmFilteredApplications.length} applications exported.`, "success");
 }
 
 const reward = count =>
@@ -957,6 +1163,17 @@ function setupUI() {
 
   el("refreshDashboardButton")?.addEventListener("click", performFullRefresh);
   el("exportApplicationsButton")?.addEventListener("click", exportApplicationsCsv);
+  el("exportCrmButton")?.addEventListener("click", exportCrmCsv);
+  el("syncCrmSheetsBtn")?.addEventListener("click", syncCrmToSheets);
+  ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmFollowupFilter"].forEach(id => el(id)?.addEventListener("input", filterCrmApplications));
+  el("crmClearFilters")?.addEventListener("click", () => { el("crmSearch").value=""; el("crmStatusFilter").value=""; el("crmDomainFilter").value=""; el("crmYearFilter").value=""; el("crmFollowupFilter").value=""; filterCrmApplications(); });
+  el("closeApplicationModal")?.addEventListener("click", closeApplicationModal);
+  el("applicationModal")?.addEventListener("click", event => { if (event.target.id === "applicationModal") closeApplicationModal(); });
+  el("saveApplicationCrm")?.addEventListener("click", saveApplicationCRM);
+  el("callApplication")?.addEventListener("click", () => { const app=applications.find(a=>a.id===activeApplicationId); if(app?.phone) window.location.href=`tel:${String(app.phone).replace(/[^+\d]/g,"")}`; });
+  el("whatsappApplication")?.addEventListener("click", () => { const app=applications.find(a=>a.id===activeApplicationId); if(app?.phone) window.open(`https://wa.me/${String(app.phone).replace(/[^\d]/g,"")}`,"_blank","noopener"); });
+  el("emailApplication")?.addEventListener("click", () => { const app=applications.find(a=>a.id===activeApplicationId); if(app?.email) window.location.href=`mailto:${app.email}`; });
+  document.addEventListener("keydown", event => { if(event.key === "Escape" && el("applicationModal")?.classList.contains("show")) closeApplicationModal(); });
   setupNotificationSettings();
 
   db.ref(".info/connected").on("value", snapshot => {
@@ -1186,11 +1403,11 @@ function isApplicationFromTodayIST(app) {
   }
   return false;
 }
-async function sendApplicationsToSheets(applications) {
+async function sendApplicationsToSheets(applications, updateExisting = false) {
   await fetch(SHEETS_RECOVERY_ENDPOINT, {
     method:"POST", mode:"no-cors",
     headers:{"Content-Type":"text/plain;charset=utf-8"},
-    body:JSON.stringify({action:"syncApplications", applications})
+    body:JSON.stringify({action:"syncApplications", updateExisting, applications})
   });
 }
 async function syncTodayToSheets(){

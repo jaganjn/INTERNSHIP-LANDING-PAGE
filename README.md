@@ -103,3 +103,20 @@ Password recovery now includes a custom Firebase email action handler at reset-p
 
 ## Google Sheets Recovery
 The Admin Dashboard includes Sync Today to Sheets and Recover All Firebase Data. The Apps Script accepts Firebase recovery payloads and deduplicates by Application ID/fingerprint.
+
+
+## Application CRM (v6)
+The upgraded admin dashboard includes a dedicated Application CRM with:
+- Search across name, phone, email, college and Application ID.
+- Filters for call status, domain, year and follow-up state.
+- Not Contacted, Interested, Selected, Joined and follow-up counters.
+- Student detail modal with Call, WhatsApp and Email quick actions.
+- Call Status, Next Follow-up, Assigned To, Last Contacted and Remarks.
+- CRM CSV export of the current filtered view.
+- CRM-to-Sheets sync using Application ID so existing Sheet rows can be updated rather than duplicated.
+
+### Google Sheets columns
+The updated Apps Script maintains the existing columns and adds:
+`Call Status`, `Next Follow-up`, `Assigned To`, `Last Contacted`, and `Remarks`.
+
+After replacing `Code.gs`, update the existing Web App deployment to a new version. Keep the same Web App URL used by the dashboard.

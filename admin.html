@@ -14,7 +14,7 @@
   <nav class="side-nav">
     <a class="active" href="#dashboard">⌂ <span>Dashboard</span></a>
     <p>MONITORING</p><a href="#liveVisitors">◉ <span>Live Visitors</span></a><a href="#activity">⌁ <span>Real-time Activity</span></a>
-    <p>APPLICATIONS</p><a href="#applications">▤ <span>Recent Applications</span></a><a href="#analytics">⌁ <span>Analytics</span></a>
+    <p>APPLICATIONS</p><a href="#applicationCRM">▤ <span>Application CRM</span></a><a href="#applications">▥ <span>Recent Applications</span></a><a href="#analytics">⌁ <span>Analytics</span></a>
     <p>REFERRALS</p><a href="#referralOverview">♙ <span>Overview</span></a><a href="#referralLeaderboard">★ <span>Leaderboard</span></a><a href="#referralFriends">♧ <span>Friends Joined</span></a>
     <p>SETTINGS</p><a href="#settings">⚙ <span>Data Controls</span></a>
   </nav>
@@ -51,6 +51,40 @@
   <article class="metric"><span class="metric-icon violet">↗</span><div><p>Conversion Rate</p><h3 id="conversionRate">0%</h3><small>Submitted ÷ sessions</small></div></article>
   <article class="metric"><span class="metric-icon rose">×</span><div><p>Abandoned</p><h3 id="abandonedCount">0</h3><small>Expired incomplete forms</small></div></article>
 </section>
+
+<section class="crm-section" id="applicationCRM">
+  <div class="section-head crm-head">
+    <div><span class="eyebrow">APPLICATION CRM</span><h2>Application Management</h2><p>Search, filter, contact, assign and follow up without leaving the dashboard.</p></div>
+    <div class="crm-head-actions">
+      <button id="syncCrmSheetsBtn" class="panel-action" type="button">☁ Sync CRM to Sheets</button>
+      <button id="exportCrmButton" class="panel-action" type="button">Export CRM CSV</button>
+    </div>
+  </div>
+  <div class="crm-metrics">
+    <article><span>All Applications</span><strong id="crmTotal">0</strong></article>
+    <article><span>Not Contacted</span><strong id="crmNotContacted">0</strong></article>
+    <article><span>Follow-ups Due</span><strong id="crmFollowUps">0</strong></article>
+    <article><span>Interested</span><strong id="crmInterested">0</strong></article>
+    <article><span>Selected</span><strong id="crmSelected">0</strong></article>
+    <article><span>Joined</span><strong id="crmJoined">0</strong></article>
+  </div>
+  <div class="crm-toolbar">
+    <div class="crm-search"><span>⌕</span><input id="crmSearch" type="search" placeholder="Search name, phone, email, college or application ID"></div>
+    <select id="crmStatusFilter"><option value="">All call statuses</option><option>Not Contacted</option><option>Called</option><option>Call Back</option><option>Interested</option><option>Selected</option><option>Joined</option><option>Not Interested</option><option>Not Reachable</option></select>
+    <select id="crmDomainFilter"><option value="">All domains</option></select>
+    <select id="crmYearFilter"><option value="">All years</option></select>
+    <select id="crmFollowupFilter"><option value="">All follow-ups</option><option value="due">Due / overdue</option><option value="today">Today</option><option value="upcoming">Upcoming</option><option value="none">No follow-up</option></select>
+    <button id="crmClearFilters" class="panel-action secondary" type="button">Clear</button>
+  </div>
+  <div class="crm-table-wrap">
+    <table class="crm-table">
+      <thead><tr><th>Student</th><th>College / Academic</th><th>Domain</th><th>Submitted</th><th>Call Status</th><th>Follow-up</th><th>Assigned To</th><th>Action</th></tr></thead>
+      <tbody id="crmTableBody"><tr><td colspan="8" class="empty">Loading applications…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="crm-footer"><span id="crmResultCount">0 applications</span><small>Changes are saved to Firebase and synced to Google Sheets.</small></div>
+</section>
+
 <section class="dashboard-grid">
   <article class="panel panel-wide" id="activity"><header><div><span class="eyebrow">APPLICATION FLOW</span><h2>7-Day Applications Overview</h2></div><span class="live-chip">● Live</span></header><div id="applicationsChart" class="bar-chart"></div></article>
   <article class="panel" id="analytics"><header><div><span class="eyebrow">COLLEGE INSIGHTS</span><h2>Top Colleges</h2></div></header><div id="topColleges" class="rank-list"><p class="empty">No data yet…</p></div></article>
@@ -108,9 +142,26 @@
 
 <div class="settings-grid"><button onclick="deleteLiveVisitors()"><b>Clear Tracking</b><span>Delete live session records</span></button><button onclick="deleteApplications()"><b>Delete Applications</b><span>Remove submitted records</span></button><button onclick="deleteReferralData()"><b>Delete Referrals</b><span>Remove referral records</span></button><button onclick="resetDashboard()"><b>Full Reset</b><span>Clear all dashboard data</span></button></div></section>
 </main>
-<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Version 4.0</span></footer>
+<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Admin CRM v6.0</span></footer>
 <nav class="bottom-nav"><a href="#dashboard">⌂<span>Dashboard</span></a><a href="#applications">▤<span>Applications</span></a><a href="#liveVisitors">◉<span>Live</span></a><a href="#activity">⌁<span>Activity</span></a><button id="moreNav">☰<span>More</span></button></nav>
 </section></div>
+<div id="applicationModal" class="application-modal" aria-hidden="true">
+  <div class="application-modal-card" role="dialog" aria-modal="true" aria-labelledby="applicationModalTitle">
+    <header class="application-modal-header"><div><span class="eyebrow">APPLICATION DETAILS</span><h2 id="applicationModalTitle">Student Application</h2><p id="applicationModalSubtitle">—</p></div><button id="closeApplicationModal" type="button" class="modal-close" aria-label="Close">×</button></header>
+    <div class="application-modal-grid">
+      <section class="student-detail-card"><h3>Student</h3><div id="applicationStudentDetails"></div></section>
+      <section class="student-detail-card"><h3>Academic & Internship</h3><div id="applicationAcademicDetails"></div></section>
+      <section class="student-detail-card crm-edit-card"><h3>Contact & Follow-up</h3>
+        <label>Call Status<select id="modalCallStatus"><option>Not Contacted</option><option>Called</option><option>Call Back</option><option>Interested</option><option>Selected</option><option>Joined</option><option>Not Interested</option><option>Not Reachable</option></select></label>
+        <label>Next Follow-up<input id="modalFollowUp" type="datetime-local"></label>
+        <label>Assigned To<input id="modalAssignedTo" type="text" placeholder="Admin / counselor name"></label>
+        <label>Remarks<textarea id="modalRemarks" rows="4" placeholder="Add call notes, next steps or remarks…"></textarea></label>
+        <div class="modal-actions"><button id="saveApplicationCrm" class="primary-action" type="button">Save Changes</button><button id="callApplication" class="panel-action" type="button">📞 Call</button><button id="whatsappApplication" class="panel-action" type="button">💬 WhatsApp</button><button id="emailApplication" class="panel-action" type="button">✉ Email</button></div>
+        <small id="modalSaveStatus" class="modal-save-status"></small>
+      </section>
+    </div>
+  </div>
+</div>
 <div id="adminToastRegion" class="admin-toast-region" aria-live="polite" aria-atomic="true"></div>
 <div id="refreshOverlay" class="refresh-overlay" aria-hidden="true">
   <div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Cleaning abandoned sessions and loading fresh data…</small></div>

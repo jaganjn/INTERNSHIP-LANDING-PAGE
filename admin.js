@@ -1457,3 +1457,56 @@ async function recoverAllFirebaseToSheets(){
   }catch(e){console.error(e);status.textContent="❌ Full recovery failed. Check the browser console for details.";alert("Full recovery failed: "+(e.message||e));}
   finally{btn.disabled=false;btn.style.opacity="1";}
 }
+
+
+/* === Compact admin workspace navigation === */
+(function setupCompactAdminWorkspace(){
+  const menu=document.getElementById('adminModuleMenu');
+  const hint=document.getElementById('adminModuleHint');
+  if(!menu) return;
+  const crm=document.getElementById('applicationCRM');
+  const grid=document.querySelector('.dashboard-grid.admin-module');
+  const recovery=document.getElementById('sheetsRecovery');
+  const settings=document.getElementById('settings');
+  const referralParts=[...document.querySelectorAll('.admin-referral-module')];
+  const hideAll=()=>{
+    [crm,recovery,settings].forEach(n=>n?.classList.remove('module-selected'));
+    grid?.classList.remove('module-open');
+    grid?.querySelectorAll('.admin-module').forEach(n=>n.classList.remove('module-selected'));
+    referralParts.forEach(n=>n.classList.remove('module-selected'));
+    if(hint) hint.hidden=false;
+  };
+  const openModule=target=>{
+    hideAll();
+    if(target==='referrals'){
+      referralParts.forEach(n=>n.classList.add('module-selected'));
+      if(hint){hint.hidden=false;hint.innerHTML='<strong>Referral Management</strong><span>Referral overview, leaderboard and friends joined are open below.</span>';}
+    }else if(target==='applicationCRM'){
+      crm?.classList.add('module-selected'); if(hint) hint.hidden=true;
+    }else if(target==='sheetsRecovery'){
+      recovery?.classList.add('module-selected'); if(hint) hint.hidden=true;
+    }else if(target==='settings'){
+      settings?.classList.add('module-selected'); if(hint) hint.hidden=true;
+    }else if(grid){
+      grid.classList.add('module-open');
+      const panel=grid.querySelector('#'+CSS.escape(target));
+      if(panel) panel.classList.add('module-selected');
+      if(hint) hint.hidden=true;
+    }
+    menu.open=false;
+    window.scrollTo({top:Math.max(0,(document.querySelector('.hero')?.offsetTop||0)-12),behavior:'smooth'});
+    document.querySelectorAll('.side-nav a,.bottom-nav a').forEach(a=>a.classList.remove('active'));
+    document.querySelector(`.side-nav a[href="#${CSS.escape(target)}"]`)?.classList.add('active');
+  };
+  menu.querySelectorAll('[data-admin-module]').forEach(btn=>btn.addEventListener('click',()=>openModule(btn.dataset.adminModule)));
+  const navMap={dashboard:'dashboard',liveVisitors:'liveVisitors',activity:'activity',applicationCRM:'applicationCRM',applications:'applications',analytics:'analytics',referralOverview:'referrals',referralLeaderboard:'referrals',referralFriends:'referrals',settings:'settings'};
+  document.querySelectorAll('.side-nav a[href^="#"],.bottom-nav a[href^="#"]').forEach(link=>{
+    link.addEventListener('click',event=>{
+      const raw=link.getAttribute('href')?.slice(1), target=navMap[raw]||raw;
+      event.preventDefault();
+      if(!target||target==='dashboard'){hideAll();menu.open=false;if(hint){hint.hidden=false;hint.innerHTML='<strong>Workspace ready</strong><span>Open a module from the <b>☰ Open workspace</b> menu above. Only the section you choose will expand.</span>';}window.scrollTo({top:0,behavior:'smooth'});return;}
+      openModule(target);
+    });
+  });
+  hideAll();
+})();

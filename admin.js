@@ -30,7 +30,8 @@ const E = {
   referralLeaderboardBody: el("referralLeaderboardBody"),
   referralFriendsBody: el("referralFriendsBody"),
   referralSearch: el("referralSearch"),
-  applicationVisitorCount: el("applicationVisitorCount")
+  applicationVisitorCount: el("applicationVisitorCount"),
+  applicationVisitorCountMetric: el("applicationVisitorCountMetric")
 };
 
 let applications = [];
@@ -1104,7 +1105,9 @@ function listeners() {
 
   db.ref("publicStats/applicationVisitorCount").on("value", snapshot => {
     const count = Number(snapshot.val());
-    if (E.applicationVisitorCount) E.applicationVisitorCount.textContent = Number.isFinite(count) && count >= 0 ? Math.floor(count).toLocaleString("en-IN") : "0";
+    const displayCount = Number.isFinite(count) && count >= 0 ? Math.floor(count).toLocaleString("en-IN") : "0";
+    if (E.applicationVisitorCount) E.applicationVisitorCount.textContent = displayCount;
+    if (E.applicationVisitorCountMetric) E.applicationVisitorCountMetric.textContent = displayCount;
   });
 
   // Near-real-time CRM -> Google Sheets sync. This listens only for future Firebase record changes, so opening the dashboard does not re-send all existing applications.
@@ -1481,6 +1484,7 @@ async function recoverAllFirebaseToSheets(){
     activity: ['Applications Activity', 'Live application flow and the last 7 days.'],
     analytics: ['College Insights', 'See which colleges are generating applications.'],
     liveVisitors: ['Live Visitors', 'Monitor active visitors and application sessions.'],
+    landingPage: ['Open Landing Page', 'Return to the public InternsForge landing page.'],
     applicationVisitors: ['Total Application Visitors', 'See how many unique browser sessions have opened the application form.'],
     applications: ['Recent Applications', 'Review the latest submitted applications.'],
     domainInsights: ['Domain Insights', 'See application distribution by internship domain.'],
@@ -1556,7 +1560,15 @@ async function recoverAllFirebaseToSheets(){
   }
 
   menu.querySelectorAll('[data-admin-module]').forEach(btn => {
-    btn.addEventListener('click', () => openModule(btn.dataset.adminModule));
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.adminModule;
+      if(target === 'landingPage'){
+        menu.open = false;
+        window.location.href = 'index.html';
+        return;
+      }
+      openModule(target);
+    });
   });
 
   closeBtn?.addEventListener('click', closeModule);

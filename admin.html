@@ -16,7 +16,7 @@
       <div class="connection" id="portalLiveStatus"><i></i><span id="portalLiveText">Connecting…</span></div>
       <button class="sound-quick-toggle" id="soundQuickToggle" type="button" aria-pressed="false" title="Enable notification sound">🔇</button>
       <div class="clock"><strong id="liveClock">--:--</strong><small id="liveDate">--</small></div>
-      <a class="portal-btn" href="index.html">Open Portal ↗</a>
+      <a class="portal-btn" href="index.html" aria-label="Open InternsForge landing page">Landing Page ↗</a>
     </div>
 </header>
 <main>
@@ -37,6 +37,7 @@
         <button type="button" data-admin-module="referrals">♙ <span>Referral Management</span></button>
         <button type="button" data-admin-module="sheetsRecovery">☁ <span>Google Sheets</span></button>
         <button type="button" data-admin-module="settings">⚙ <span>Settings</span></button>
+        <button type="button" class="hub-landing-link" data-admin-module="landingPage">↗ <span>Open Landing Page</span></button>
         <button type="button" data-admin-module="dashboard">⌂ <span>Dashboard Home</span></button>
       </div>
     </details>
@@ -48,6 +49,7 @@
   <article class="metric"><span class="metric-icon green">✓</span><div><p>Submitted Today</p><h3 id="submittedCount">0</h3><small>Successful applications</small></div></article>
   <article class="metric"><span class="metric-icon violet">↗</span><div><p>Conversion Rate</p><h3 id="conversionRate">0%</h3><small>Submitted ÷ sessions</small></div></article>
   <article class="metric"><span class="metric-icon rose">×</span><div><p>Abandoned</p><h3 id="abandonedCount">0</h3><small>Expired incomplete forms</small></div></article>
+  <article class="metric metric-visitor-total"><span class="metric-icon cyan">◌</span><div><p>Total Application Visitors</p><h3 id="applicationVisitorCountMetric">0</h3><small>Unique form-opening sessions</small></div></article>
 </section>
 
 <section class="crm-section" id="applicationCRM">

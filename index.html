@@ -1927,6 +1927,13 @@ console.info('SkillPath guided form build: Final V11');
     window.scrollTo({top:restoreScroll,behavior:'instant'});
   }
   openButtons.forEach(btn=>btn.addEventListener('click',()=>openApplication()));
+  document.addEventListener('click', event => {
+    const btn = event.target.closest('.open-application, #floatingCta');
+    if (!btn) return;
+    if (btn === openButtons.find(b => b === btn)) return;
+    event.preventDefault();
+    openApplication(btn.dataset.domain || '');
+  });
   closeBtn?.addEventListener('click',closeApplication); closeTop?.addEventListener('click',closeApplication);
   applicationZone?.addEventListener('click',e=>{ if(e.target===applicationZone) closeApplication(); });
   document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(document.getElementById('domainModal')?.classList.contains('open')) closeDomain(); else closeApplication(); }});
@@ -2265,7 +2272,7 @@ console.info('SkillPath guided form build: Final V11');
   function closePopup(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('site-info-open');}
   menu.querySelectorAll('[data-site-popup]').forEach(btn=>btn.addEventListener('click',()=>openPopup(btn.dataset.sitePopup)));
   close.addEventListener('click',closePopup);done.addEventListener('click',closePopup);modal.addEventListener('click',e=>{if(e.target===modal)closePopup();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopup();});
-  document.querySelectorAll('.hero-nav-dropdown .open-application').forEach(btn=>btn.addEventListener('click',()=>{menu.open=false;document.body.classList.add('application-modal-open');}));
+  document.querySelectorAll('.hero-nav-dropdown .open-application').forEach(btn=>btn.addEventListener('click',()=>{menu.open=false;}));
 })();
 </script>
 

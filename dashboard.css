@@ -541,8 +541,8 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opa
 .admin-page .hero-health strong{display:flex;align-items:center;gap:7px;margin:6px 0;font-size:10px}
 .admin-page .hero-health i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 4px rgba(33,199,134,.09)}
 .admin-page .hero-module-menu{position:relative;margin:0}
-.admin-page .hero-module-menu summary{min-width:150px;height:42px;padding:0 14px;gap:8px;border-radius:11px;background:linear-gradient(135deg,#3156d8,#6547e9);border:1px solid rgba(130,160,255,.38);box-shadow:0 10px 26px rgba(49,86,216,.22);font-size:11px}
-.admin-page .hero-module-menu summary span{font-size:13px;opacity:.9}
+.admin-page .hero-module-menu summary{min-width:166px;height:46px;padding:0 13px 0 11px;gap:9px;border-radius:14px;background:linear-gradient(180deg,rgba(18,34,58,.96),rgba(8,20,37,.96));border:1px solid rgba(91,167,255,.34);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 28px rgba(0,0,0,.28),0 0 0 1px rgba(22,198,255,.04);font-size:11px;letter-spacing:.01em;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease}.admin-page .hero-module-menu summary:hover{transform:translateY(-1px);border-color:rgba(79,203,255,.62);background:linear-gradient(180deg,rgba(20,43,70,.98),rgba(8,22,40,.98));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 14px 34px rgba(0,0,0,.34),0 0 24px rgba(47,169,255,.10)}.admin-page .hero-module-menu[open] summary{border-color:rgba(112,129,255,.72);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 3px rgba(83,114,255,.10),0 14px 36px rgba(0,0,0,.34)}
+.admin-page .hero-module-menu summary .hub-button-icon{width:25px;height:25px;border-radius:8px;display:grid;grid-template-columns:repeat(2,5px);grid-template-rows:repeat(2,5px);gap:3px;place-content:center;background:linear-gradient(135deg,rgba(61,185,255,.18),rgba(121,92,255,.18));border:1px solid rgba(99,171,255,.24);box-shadow:inset 0 0 12px rgba(64,142,255,.08)}.admin-page .hero-module-menu summary .hub-button-icon i{width:5px;height:5px;border-radius:2px;background:#8edcff;box-shadow:0 0 7px rgba(78,198,255,.55)}.admin-page .hero-module-menu summary .hub-button-label{font-size:11px;font-weight:800;letter-spacing:.01em;flex:1;text-align:left;color:#f4f8ff}.admin-page .hero-module-menu summary .hub-button-chevron{font-size:14px;line-height:1;color:#8fdcff;opacity:.9;transform:translateY(-1px);transition:transform .18s ease}.admin-page .hero-module-menu[open] summary .hub-button-chevron{transform:rotate(180deg)}
 .admin-page .hero-module-dropdown{right:0;top:49px;width:275px;padding:8px;background:rgba(5,17,31,.98);border-color:rgba(78,138,255,.28);box-shadow:0 24px 70px rgba(0,0,0,.55);grid-template-columns:1fr 1fr;gap:5px}
 .admin-page .hero-module-dropdown button{display:flex;align-items:center;gap:9px;min-height:40px;padding:9px 10px;font-size:10px;border:1px solid transparent}
 .admin-page .hero-module-dropdown button:hover{border-color:rgba(92,133,255,.25)}
@@ -586,6 +586,15 @@ body.module-modal-open{overflow:hidden}
   .admin-page main{padding:14px 10px 30px}
   .admin-page .hero-actions{align-items:stretch}
   .admin-page .hero-health{min-width:0}
-  .admin-page .hero-module-menu summary{min-width:130px}
+  .admin-page .hero-module-menu summary{min-width:142px;height:44px}
   .admin-page .hero-module-dropdown{top:47px}
 }
+
+/* Total Application Visitors module */
+.application-visitor-stat{display:flex;align-items:flex-end;gap:14px;padding:22px;border:1px solid #1b2a43;border-radius:14px;background:linear-gradient(145deg,#101e34,#0b1729);margin-bottom:12px}
+.application-visitor-stat strong{font:800 48px Manrope;line-height:1;color:#f7f9fc;background:linear-gradient(90deg,#42a5ff,#8b5cf6,#27d7bd);-webkit-background-clip:text;background-clip:text;color:transparent}
+.application-visitor-stat span{max-width:420px;color:#8fa2bd;font-size:11px;line-height:1.6}
+.application-visitor-note{padding:14px 16px;border:1px solid #20304a;border-radius:12px;background:#0b1728}
+.application-visitor-note b{font-size:10px;letter-spacing:.08em;color:#a8b9d3;text-transform:uppercase}
+.application-visitor-note p{margin:7px 0 0;color:#7f93af;font-size:10px;line-height:1.65}
+@media(max-width:600px){.application-visitor-stat{display:block}.application-visitor-stat strong{display:block;margin-bottom:8px}}

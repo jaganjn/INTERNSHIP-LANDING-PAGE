@@ -29,7 +29,8 @@ const E = {
   topAmbassadorCount: el("topAmbassadorCount"),
   referralLeaderboardBody: el("referralLeaderboardBody"),
   referralFriendsBody: el("referralFriendsBody"),
-  referralSearch: el("referralSearch")
+  referralSearch: el("referralSearch"),
+  applicationVisitorCount: el("applicationVisitorCount")
 };
 
 let applications = [];
@@ -1101,6 +1102,11 @@ function listeners() {
     renderVisitors();
   });
 
+  db.ref("publicStats/applicationVisitorCount").on("value", snapshot => {
+    const count = Number(snapshot.val());
+    if (E.applicationVisitorCount) E.applicationVisitorCount.textContent = Number.isFinite(count) && count >= 0 ? Math.floor(count).toLocaleString("en-IN") : "0";
+  });
+
   // Near-real-time CRM -> Google Sheets sync. This listens only for future Firebase record changes, so opening the dashboard does not re-send all existing applications.
   db.ref("submittedApplications").on("child_changed", snapshot => {
     const app = { id: snapshot.key, ...(snapshot.val() || {}) };
@@ -1475,6 +1481,7 @@ async function recoverAllFirebaseToSheets(){
     activity: ['Applications Activity', 'Live application flow and the last 7 days.'],
     analytics: ['College Insights', 'See which colleges are generating applications.'],
     liveVisitors: ['Live Visitors', 'Monitor active visitors and application sessions.'],
+    applicationVisitors: ['Total Application Visitors', 'See how many unique browser sessions have opened the application form.'],
     applications: ['Recent Applications', 'Review the latest submitted applications.'],
     domainInsights: ['Domain Insights', 'See application distribution by internship domain.'],
     referrals: ['Referral Management', 'Referral performance, leaderboard and friends joined.'],
@@ -1513,7 +1520,7 @@ async function recoverAllFirebaseToSheets(){
       restoreModules();
       if(hint){
         hint.hidden = false;
-        hint.innerHTML = '<strong>Workspace ready</strong><span>Open <b>☰ Navigation</b> and choose a module. It will open in a focused popup, keeping this dashboard compact.</span>';
+        hint.innerHTML = '<strong>Workspace ready</strong><span>Open <b>Control Hub</b> and choose a module. It will open in a focused popup, keeping this dashboard compact.</span>';
       }
     }, 180);
   }

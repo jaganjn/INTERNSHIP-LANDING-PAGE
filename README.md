@@ -120,3 +120,7 @@ The updated Apps Script maintains the existing columns and adds:
 `Call Status`, `Next Follow-up`, `Assigned To`, `Last Contacted`, and `Remarks`.
 
 After replacing `Code.gs`, update the existing Web App deployment to a new version. Keep the same Web App URL used by the dashboard.
+
+
+## Total Application Visitors
+The admin Control Hub includes a Total Application Visitors module. The public portal increments `publicStats/applicationVisitorCount` once per browser session when the application form is opened. Firebase rules permit only the safe +1 public increment; admins can read the aggregate. Historical counts begin after this version is deployed.

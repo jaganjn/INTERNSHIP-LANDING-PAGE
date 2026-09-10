@@ -25,12 +25,13 @@
   <div class="hero-actions">
     <div class="hero-health"><span>System Health</span><strong><i></i> Live & Synced</strong><small id="lastUpdatedText">Waiting for data…</small></div>
     <details class="hero-module-menu" id="adminModuleMenu">
-      <summary>☰ Navigation <span>⌄</span></summary>
+      <summary aria-label="Open Control Hub"><span class="hub-button-icon" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="hub-button-label">Control Hub</span><span class="hub-button-chevron" aria-hidden="true">⌄</span></summary>
       <div class="hero-module-dropdown" role="menu">
         <button type="button" data-admin-module="applicationCRM">▤ <span>Application CRM</span></button>
         <button type="button" data-admin-module="activity">⌁ <span>Applications Activity</span></button>
         <button type="button" data-admin-module="analytics">◫ <span>College Insights</span></button>
         <button type="button" data-admin-module="liveVisitors">◉ <span>Live Visitors</span></button>
+        <button type="button" data-admin-module="applicationVisitors">◌ <span>Total Application Visitors</span></button>
         <button type="button" data-admin-module="applications">▥ <span>Recent Applications</span></button>
         <button type="button" data-admin-module="domainInsights">◆ <span>Domain Insights</span></button>
         <button type="button" data-admin-module="referrals">♙ <span>Referral Management</span></button>
@@ -82,11 +83,12 @@
   <div class="crm-footer"><span id="crmResultCount">0 applications</span><small id="crmSyncStatus">● Firebase live • CRM edits are pushed to Google Sheets automatically. Bulk sync is available above.</small></div>
 </section>
 
-<div id="adminModuleHint" class="admin-module-hint"><strong>Workspace ready</strong><span>Open <b>☰ Navigation</b> and choose a module. It will open in a focused popup, keeping this dashboard compact.</span></div>
+<div id="adminModuleHint" class="admin-module-hint"><strong>Workspace ready</strong><span>Open <b>Control Hub</b> and choose a module. It will open in a focused popup, keeping this dashboard compact.</span></div>
 <section class="dashboard-grid admin-module" data-admin-module-section="dashboardPanels">
   <article class="panel panel-wide admin-module" id="activity"><header><div><span class="eyebrow">APPLICATION FLOW</span><h2>7-Day Applications Overview</h2></div><span class="live-chip">● Live</span></header><div id="applicationsChart" class="bar-chart"></div></article>
   <article class="panel admin-module" id="analytics"><header><div><span class="eyebrow">COLLEGE INSIGHTS</span><h2>Top Colleges</h2></div></header><div id="topColleges" class="rank-list"><p class="empty">No data yet…</p></div></article>
   <article class="panel live-panel admin-module" id="liveVisitors"><header><div><span class="eyebrow">PRESENCE</span><h2>Active Visitors</h2></div><button id="refreshDashboardButton" class="icon-action refresh-action" type="button" aria-label="Refresh dashboard and clear abandoned sessions"><span>↻</span><small>Refresh</small></button></header><div id="visitorList" class="visitor-list"><p class="empty">Waiting for visitors…</p></div></article>
+  <article class="panel admin-module application-visitor-panel" id="applicationVisitors"><header><div><span class="eyebrow">APPLICATION TRAFFIC</span><h2>Total Application Visitors</h2></div><span class="live-chip">● Tracking</span></header><div class="application-visitor-stat"><strong id="applicationVisitorCount">0</strong><span>Unique browser sessions that opened the application form</span></div><div class="application-visitor-note"><b>What this counts</b><p>A visitor is counted once per browser session when they open the internship application form. Closing and reopening the form in the same session does not create another count.</p></div></article>
   <article class="panel admin-module" id="applications"><header><div><span class="eyebrow">LATEST DATA</span><h2>Recent Applications</h2></div>
       <button id="exportApplicationsButton" class="panel-action" type="button">Export CSV</button>
     </header><div id="recentApplications" class="application-list"><p class="empty">No applications yet…</p></div></article>

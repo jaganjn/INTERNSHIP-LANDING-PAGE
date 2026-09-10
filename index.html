@@ -1898,7 +1898,23 @@ console.info('SkillPath guided form build: Final V11');
   const closeBtn=document.getElementById('closeApplication');
   const closeTop=document.getElementById('closeApplicationTop');
   let restoreScroll=0;
+  const APPLICATION_VISITOR_SESSION_KEY='internsforge_application_visitor_counted_v1';
+  let applicationVisitorCounted = sessionStorage.getItem(APPLICATION_VISITOR_SESSION_KEY) === '1';
+  function countApplicationVisitor(){
+    if (applicationVisitorCounted || typeof db === 'undefined') return;
+    applicationVisitorCounted = true;
+    sessionStorage.setItem(APPLICATION_VISITOR_SESSION_KEY,'1');
+    db.ref('publicStats/applicationVisitorCount').transaction(current => {
+      const n=Number(current);
+      return Number.isFinite(n) && n >= 0 ? Math.floor(n)+1 : 1;
+    }).catch(error => {
+      applicationVisitorCounted = false;
+      sessionStorage.removeItem(APPLICATION_VISITOR_SESSION_KEY);
+      console.warn('Application visitor counter update failed:', error);
+    });
+  }
   function openApplication(domain){
+    countApplicationVisitor();
     restoreScroll=window.scrollY;
     body.classList.add('application-modal-open');
     if(domain){ const field=document.getElementById('domain'); if(field){field.value=domain; field.dispatchEvent(new Event('change',{bubbles:true}));} }

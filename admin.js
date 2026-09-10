@@ -552,7 +552,7 @@ async function saveApplicationCRM() {
     statusEl.textContent = "Saving…";
     await db.ref(`submittedApplications/${activeApplicationId}`).update(updates);
     Object.assign(app, updates);
-    statusEl.textContent = "✓ Saved and queued for Google Sheets sync.";
+    statusEl.textContent = "✓ Saved to Firebase • Sheets sync sent.";
     showToast("Application updated", `${app.name || "Student"}'s CRM details were saved.`, "success", 3500);
     sendApplicationUpdateToSheets(app).catch(error => console.warn("Sheets CRM sync failed:", error));
     renderApplications();
@@ -1099,6 +1099,21 @@ function listeners() {
   visitorRoot.on("child_removed", snapshot => {
     delete visitors[snapshot.key];
     renderVisitors();
+  });
+
+  // Near-real-time CRM -> Google Sheets sync. This listens only for future Firebase record changes, so opening the dashboard does not re-send all existing applications.
+  db.ref("submittedApplications").on("child_changed", snapshot => {
+    const app = { id: snapshot.key, ...(snapshot.val() || {}) };
+    const statusEl = el("crmSyncStatus");
+    if (statusEl) { statusEl.textContent = "● Syncing CRM change to Google Sheets…"; statusEl.className = "crm-syncing"; }
+    sendApplicationUpdateToSheets(app)
+      .then(() => {
+        if (statusEl) { statusEl.textContent = "● Firebase live • Last CRM change sent to Google Sheets just now."; statusEl.className = "crm-synced"; }
+      })
+      .catch(error => {
+        console.warn("Realtime CRM Sheets sync failed:", error);
+        if (statusEl) { statusEl.textContent = "● Firebase live • Sheets sync needs attention."; statusEl.className = "crm-sync-error"; }
+      });
   });
 
   db.ref("submittedApplications").on("value", snapshot => {

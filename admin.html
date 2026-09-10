@@ -54,7 +54,7 @@
 
 <section class="crm-section" id="applicationCRM">
   <div class="section-head crm-head">
-    <div><span class="eyebrow">APPLICATION CRM</span><h2>Application Management</h2><p>Search, filter, contact, assign and follow up without leaving the dashboard.</p></div>
+    <div><span class="eyebrow">APPLICATION CRM <b class="crm-live-badge">● LIVE SYNC</b></span><h2>Application Management</h2><p>Search, filter, contact, assign and follow up without leaving the dashboard.</p></div>
     <div class="crm-head-actions">
       <button id="syncCrmSheetsBtn" class="panel-action" type="button">☁ Sync CRM to Sheets</button>
       <button id="exportCrmButton" class="panel-action" type="button">Export CRM CSV</button>
@@ -82,7 +82,7 @@
       <tbody id="crmTableBody"><tr><td colspan="8" class="empty">Loading applications…</td></tr></tbody>
     </table>
   </div>
-  <div class="crm-footer"><span id="crmResultCount">0 applications</span><small>Changes are saved to Firebase and synced to Google Sheets.</small></div>
+  <div class="crm-footer"><span id="crmResultCount">0 applications</span><small id="crmSyncStatus">● Firebase live • CRM edits are pushed to Google Sheets automatically. Bulk sync is available above.</small></div>
 </section>
 
 <section class="dashboard-grid">

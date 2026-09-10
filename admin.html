@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>InternsForge — Admin Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body class="admin-page">
+<div class="app-shell">
+<section class="workspace">
+<header class="topbar">
+    <div class="welcome"><h1>Welcome back, Admin! 👋</h1><p>Live internship operations and application activity.</p></div>
+  <div class="topbar-tools">
+      <div class="connection" id="portalLiveStatus"><i></i><span id="portalLiveText">Connecting…</span></div>
+      <button class="sound-quick-toggle" id="soundQuickToggle" type="button" aria-pressed="false" title="Enable notification sound">🔇</button>
+      <div class="clock"><strong id="liveClock">--:--</strong><small id="liveDate">--</small></div>
+      <a class="portal-btn" href="index.html">Open Portal ↗</a>
+    </div>
+</header>
+<main>
+<section class="hero" id="dashboard">
+  <div><span class="eyebrow">REAL-TIME CONTROL CENTER</span><h2>Internship Operations Dashboard</h2><p>Choose a workspace below when you need it. Your dashboard stays compact until you open a module.</p></div>
+  <div class="hero-actions">
+    <div class="hero-health"><span>System Health</span><strong><i></i> Live & Synced</strong><small id="lastUpdatedText">Waiting for data…</small></div>
+    <details class="hero-module-menu" id="adminModuleMenu">
+      <summary>☰ Navigation <span>⌄</span></summary>
+      <div class="hero-module-dropdown" role="menu">
+        <button type="button" data-admin-module="applicationCRM">▤ <span>Application CRM</span></button>
+        <button type="button" data-admin-module="activity">⌁ <span>Applications Activity</span></button>
+        <button type="button" data-admin-module="analytics">◫ <span>College Insights</span></button>
+        <button type="button" data-admin-module="liveVisitors">◉ <span>Live Visitors</span></button>
+        <button type="button" data-admin-module="applications">▥ <span>Recent Applications</span></button>
+        <button type="button" data-admin-module="domainInsights">◆ <span>Domain Insights</span></button>
+        <button type="button" data-admin-module="referrals">♙ <span>Referral Management</span></button>
+        <button type="button" data-admin-module="sheetsRecovery">☁ <span>Google Sheets</span></button>
+        <button type="button" data-admin-module="settings">⚙ <span>Settings</span></button>
+        <button type="button" data-admin-module="dashboard">⌂ <span>Dashboard Home</span></button>
+      </div>
+    </details>
+  </div>
+</section>
+<section class="metric-grid">
+  <article class="metric"><span class="metric-icon blue">◉</span><div><p>Live Visitors</p><h3 id="onlineCount">0</h3><small>Active in last 45 sec</small></div></article>
+  <article class="metric"><span class="metric-icon amber">✎</span><div><p>Currently Filling</p><h3 id="fillingCount">0</h3><small>Form in progress</small></div></article>
+  <article class="metric"><span class="metric-icon green">✓</span><div><p>Submitted Today</p><h3 id="submittedCount">0</h3><small>Successful applications</small></div></article>
+  <article class="metric"><span class="metric-icon violet">↗</span><div><p>Conversion Rate</p><h3 id="conversionRate">0%</h3><small>Submitted ÷ sessions</small></div></article>
+  <article class="metric"><span class="metric-icon rose">×</span><div><p>Abandoned</p><h3 id="abandonedCount">0</h3><small>Expired incomplete forms</small></div></article>
+</section>
+
+<section class="crm-section" id="applicationCRM">
+  <div class="section-head crm-head">
+    <div><span class="eyebrow">APPLICATION CRM <b class="crm-live-badge">● LIVE SYNC</b></span><h2>Application Management</h2><p>Search, filter, contact, assign and follow up without leaving the dashboard.</p></div>
+    <div class="crm-head-actions">
+      <button id="syncCrmSheetsBtn" class="panel-action" type="button">☁ Sync CRM to Sheets</button>
+      <button id="exportCrmButton" class="panel-action" type="button">Export CRM CSV</button>
+    </div>
+  </div>
+  <div class="crm-metrics">
+    <article><span>All Applications</span><strong id="crmTotal">0</strong></article>
+    <article><span>Not Contacted</span><strong id="crmNotContacted">0</strong></article>
+    <article><span>Follow-ups Due</span><strong id="crmFollowUps">0</strong></article>
+    <article><span>Interested</span><strong id="crmInterested">0</strong></article>
+    <article><span>Selected</span><strong id="crmSelected">0</strong></article>
+    <article><span>Joined</span><strong id="crmJoined">0</strong></article>
+  </div>
+  <div class="crm-toolbar">
+    <div class="crm-search"><span>⌕</span><input id="crmSearch" type="search" placeholder="Search name, phone, email, college or application ID"></div>
+    <select id="crmStatusFilter"><option value="">All call statuses</option><option>Not Contacted</option><option>Called</option><option>Call Back</option><option>Interested</option><option>Selected</option><option>Joined</option><option>Not Interested</option><option>Not Reachable</option></select>
+    <select id="crmDomainFilter"><option value="">All domains</option></select>
+    <select id="crmYearFilter"><option value="">All years</option></select>
+    <select id="crmFollowupFilter"><option value="">All follow-ups</option><option value="due">Due / overdue</option><option value="today">Today</option><option value="upcoming">Upcoming</option><option value="none">No follow-up</option></select>
+    <button id="crmClearFilters" class="panel-action secondary" type="button">Clear</button>
+  </div>
+  <div class="crm-table-wrap">
+    <table class="crm-table">
+      <thead><tr><th>Student</th><th>College / Academic</th><th>Domain</th><th>Submitted</th><th>Call Status</th><th>Follow-up</th><th>Assigned To</th><th>Action</th></tr></thead>
+      <tbody id="crmTableBody"><tr><td colspan="8" class="empty">Loading applications…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="crm-footer"><span id="crmResultCount">0 applications</span><small id="crmSyncStatus">● Firebase live • CRM edits are pushed to Google Sheets automatically. Bulk sync is available above.</small></div>
+</section>
+
+<div id="adminModuleHint" class="admin-module-hint"><strong>Workspace ready</strong><span>Open <b>☰ Navigation</b> and choose a module. It will open in a focused popup, keeping this dashboard compact.</span></div>
+<section class="dashboard-grid admin-module" data-admin-module-section="dashboardPanels">
+  <article class="panel panel-wide admin-module" id="activity"><header><div><span class="eyebrow">APPLICATION FLOW</span><h2>7-Day Applications Overview</h2></div><span class="live-chip">● Live</span></header><div id="applicationsChart" class="bar-chart"></div></article>
+  <article class="panel admin-module" id="analytics"><header><div><span class="eyebrow">COLLEGE INSIGHTS</span><h2>Top Colleges</h2></div></header><div id="topColleges" class="rank-list"><p class="empty">No data yet…</p></div></article>
+  <article class="panel live-panel admin-module" id="liveVisitors"><header><div><span class="eyebrow">PRESENCE</span><h2>Active Visitors</h2></div><button id="refreshDashboardButton" class="icon-action refresh-action" type="button" aria-label="Refresh dashboard and clear abandoned sessions"><span>↻</span><small>Refresh</small></button></header><div id="visitorList" class="visitor-list"><p class="empty">Waiting for visitors…</p></div></article>
+  <article class="panel admin-module" id="applications"><header><div><span class="eyebrow">LATEST DATA</span><h2>Recent Applications</h2></div>
+      <button id="exportApplicationsButton" class="panel-action" type="button">Export CSV</button>
+    </header><div id="recentApplications" class="application-list"><p class="empty">No applications yet…</p></div></article>
+  <article class="panel admin-module" id="domainInsights"><header><div><span class="eyebrow">DOMAIN INSIGHTS</span><h2>Applications by Domain</h2></div></header><div id="topDomains" class="rank-list"><p class="empty">No data yet…</p></div></article>
+</section>
+<section class="section-head admin-referral-module" id="referralOverview"><div><span class="eyebrow">REFERRAL MANAGEMENT</span><h2>Referral Performance</h2><p>Live referral profiles, joins and reward eligibility.</p></div></section>
+<section class="referral-metrics admin-referral-module"><article><span>Total Codes</span><strong id="totalReferralCodes">0</strong></article><article><span>Successful Referrals</span><strong id="successfulReferrals">0</strong></article><article><span>Referral Conversion</span><strong id="referralConversionRate">0%</strong></article><article><span>Top Ambassador</span><strong id="topAmbassador">—</strong><small id="topAmbassadorCount">No referrals yet</small></article></section>
+<section class="two-col admin-referral-module">
+<article class="panel" id="referralLeaderboard"><header><div><span class="eyebrow">TOP PERFORMERS</span><h2>Referral Leaderboard</h2></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>Student</th><th>Code</th><th>Joined</th><th>Status</th></tr></thead><tbody id="referralLeaderboardBody"><tr><td colspan="5" class="empty">No referral data yet…</td></tr></tbody></table></div></article>
+<article class="panel" id="referralFriends"><header><div><span class="eyebrow">REFERRAL ACTIVITY</span><h2>Friends Joined</h2></div><input id="referralSearch" type="search" placeholder="Search"></header><div class="table-wrap"><table><thead><tr><th>Applicant</th><th>Referred By</th><th>College</th><th>Domain</th><th>Joined</th></tr></thead><tbody id="referralFriendsBody"><tr><td colspan="5" class="empty">No referred applications yet…</td></tr></tbody></table></div></article>
+</section>
+
+<section class="panel admin-module" id="sheetsRecovery" style="margin-top:25px;">
+  <div class="panel-header">
+    <h2>📊 Google Sheets Recovery</h2>
+    <span>Today</span>
+  </div>
+  <p style="color:#94a3b8;margin:0 0 14px;line-height:1.6;">Recover applications already stored in Firebase but missing from Google Sheets. Existing Sheet rows are skipped automatically. Use the full recovery button for older records too.</p>
+  <button id="syncTodaySheetsBtn" onclick="syncTodayToSheets()" style="padding:12px 18px;border:0;border-radius:10px;cursor:pointer;font-weight:700;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;">🔄 Sync Today to Sheets</button>
+  <button id="recoverAllSheetsBtn" onclick="recoverAllFirebaseToSheets()" style="padding:12px 18px;margin-left:8px;border:1px solid #6366f1;border-radius:10px;cursor:pointer;font-weight:700;background:#fff;color:#4f46e5;">📥 Recover All Firebase Data</button>
+  <div id="syncTodaySheetsStatus" style="margin-top:12px;color:#94a3b8;"></div>
+</section>
+
+<section class="panel settings admin-module" id="settings">
+<header><div><span class="eyebrow">ADMINISTRATION</span><h2>Settings & Data Controls</h2></div></header>
+
+<div class="notification-settings">
+  <div class="setting-copy">
+    <span class="setting-icon">🔔</span>
+    <div><strong>New Application Alerts</strong><small>Play a loud two-stage alert and show a toast only for genuinely new submissions.</small></div>
+  </div>
+  <label class="switch-row">
+    <input id="soundEnabled" type="checkbox">
+    <span class="switch"></span>
+    <b>Sound</b>
+  </label>
+  <label class="volume-row">Volume
+    <input id="notificationVolume" type="range" min="0" max="100" value="90">
+    <output id="volumeValue">90%</output>
+  </label>
+  <button id="testSoundButton" class="panel-action" type="button">Test Sound</button>
+  <button id="browserNotificationButton" class="panel-action secondary" type="button" aria-pressed="false">Enable Browser Alerts</button>
+</div>
+
+<div class="system-health-grid">
+  <article><i id="firebaseHealthDot"></i><span>Firebase</span><strong id="firebaseHealthText">Checking</strong></article>
+  <article><i class="healthy"></i><span>Live Tracking</span><strong>Enabled</strong></article>
+  <article><i class="healthy"></i><span>Referral System</span><strong>Enabled</strong></article>
+  <article><i class="healthy"></i><span>Sound Alerts</span><strong id="soundHealthText">Disabled</strong></article>
+</div>
+
+<div class="settings-grid"><button onclick="deleteLiveVisitors()"><b>Clear Tracking</b><span>Delete live session records</span></button><button onclick="deleteApplications()"><b>Delete Applications</b><span>Remove submitted records</span></button><button onclick="deleteReferralData()"><b>Delete Referrals</b><span>Remove referral records</span></button><button onclick="resetDashboard()"><b>Full Reset</b><span>Clear all dashboard data</span></button></div></section>
+</main>
+<footer><span>© 2026 InternsForge</span><span>Firebase Realtime Database • Admin CRM v6.0</span></footer>
+</section></div>
+<div id="adminModuleModal" class="admin-module-modal" aria-hidden="true">
+  <div class="admin-module-modal-card" role="dialog" aria-modal="true" aria-labelledby="adminModuleModalTitle">
+    <header class="admin-module-modal-header">
+      <div><span class="eyebrow">ADMIN WORKSPACE</span><h2 id="adminModuleModalTitle">Workspace</h2><p id="adminModuleModalSubtitle">Focused module</p></div>
+      <button id="closeAdminModuleModal" type="button" class="admin-module-modal-close" aria-label="Close module">×</button>
+    </header>
+    <div id="adminModuleModalBody" class="admin-module-modal-body"></div>
+  </div>
+</div>
+<div id="applicationModal" class="application-modal" aria-hidden="true">
+  <div class="application-modal-card" role="dialog" aria-modal="true" aria-labelledby="applicationModalTitle">
+    <header class="application-modal-header"><div><span class="eyebrow">APPLICATION DETAILS</span><h2 id="applicationModalTitle">Student Application</h2><p id="applicationModalSubtitle">—</p></div><button id="closeApplicationModal" type="button" class="modal-close" aria-label="Close">×</button></header>
+    <div class="application-modal-grid">
+      <section class="student-detail-card"><h3>Student</h3><div id="applicationStudentDetails"></div></section>
+      <section class="student-detail-card"><h3>Academic & Internship</h3><div id="applicationAcademicDetails"></div></section>
+      <section class="student-detail-card crm-edit-card"><h3>Contact & Follow-up</h3>
+        <label>Call Status<select id="modalCallStatus"><option>Not Contacted</option><option>Called</option><option>Call Back</option><option>Interested</option><option>Selected</option><option>Joined</option><option>Not Interested</option><option>Not Reachable</option></select></label>
+        <label>Next Follow-up<input id="modalFollowUp" type="datetime-local"></label>
+        <label>Assigned To<input id="modalAssignedTo" type="text" placeholder="Admin / counselor name"></label>
+        <label>Remarks<textarea id="modalRemarks" rows="4" placeholder="Add call notes, next steps or remarks…"></textarea></label>
+        <div class="modal-actions"><button id="saveApplicationCrm" class="primary-action" type="button">Save Changes</button><button id="callApplication" class="panel-action" type="button">📞 Call</button><button id="whatsappApplication" class="panel-action" type="button">💬 WhatsApp</button><button id="emailApplication" class="panel-action" type="button">✉ Email</button></div>
+        <small id="modalSaveStatus" class="modal-save-status"></small>
+      </section>
+    </div>
+  </div>
+</div>
+<div id="adminToastRegion" class="admin-toast-region" aria-live="polite" aria-atomic="true"></div>
+<div id="refreshOverlay" class="refresh-overlay" aria-hidden="true">
+  <div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Cleaning abandoned sessions and loading fresh data…</small></div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js"></script>
+</body></html>

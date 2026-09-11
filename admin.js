@@ -121,15 +121,17 @@ function getAlertSettings() {
   const defaults = { enabled: true, volume: 90 };
   try {
     // Keep the notification sound preference in persistent localStorage.
-    // Migrate the previous key once so an already-enabled admin stays enabled.
+    // If no preference exists yet, sound is ON by default.
     let raw = localStorage.getItem(ALERT_STORAGE_KEY);
     if (!raw) {
       raw = localStorage.getItem(LEGACY_ALERT_STORAGE_KEY);
       if (raw) localStorage.setItem(ALERT_STORAGE_KEY, raw);
     }
-    const parsed = raw ? JSON.parse(raw) : {};
+    if (!raw) return defaults;
+
+    const parsed = JSON.parse(raw);
     return {
-      enabled: parsed.enabled === true,
+      enabled: parsed.enabled !== false,
       volume: Math.min(100, Math.max(0, Number(parsed.volume ?? defaults.volume) || defaults.volume))
     };
   } catch {
@@ -657,28 +659,38 @@ function renderFriends(rows) {
     : '<tr><td colspan="5" class="empty">No referred applications yet.</td></tr>';
 }
 
-function unlockAudio() {
+async function unlockAudio() {
   try {
-    audioContext ||= new (window.AudioContext || window.webkitAudioContext)();
-    if (audioContext.state === "suspended") audioContext.resume();
-    soundUnlocked = true;
-  } catch {
+    if (!audioContext) {
+      const AudioCtor = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtor) return false;
+      audioContext = new AudioCtor();
+    }
+
+    if (audioContext.state === "suspended") {
+      await audioContext.resume();
+    }
+
+    soundUnlocked = audioContext.state === "running";
+    return soundUnlocked;
+  } catch (error) {
+    console.warn("Audio unlock failed:", error);
     soundUnlocked = false;
+    return false;
   }
 }
 
-function playNotificationSound() {
+async function playNotificationSound() {
   const settings = getAlertSettings();
-  if (!settings.enabled) return;
+  if (!settings.enabled || settings.volume <= 0) return false;
 
-  unlockAudio();
-  if (!audioContext || !soundUnlocked) return;
+  const ready = await unlockAudio();
+  if (!ready || !audioContext) return false;
 
   const now = audioContext.currentTime;
   const volume = Math.max(0.01, settings.volume / 100);
   const master = audioContext.createGain();
 
-  // Strong two-stage alert designed to remain audible on mobile speakers.
   master.gain.setValueAtTime(0.0001, now);
   master.gain.exponentialRampToValueAtTime(volume * 0.78, now + 0.02);
   master.gain.setValueAtTime(volume * 0.78, now + 0.82);
@@ -695,21 +707,23 @@ function playNotificationSound() {
   notes.forEach(note => {
     const oscillator = audioContext.createOscillator();
     const gain = audioContext.createGain();
-    const start = now + note.start;
-    const end = start + note.duration;
+    const startTime = now + note.start;
+    const endTime = startTime + note.duration;
 
     oscillator.type = note.type;
-    oscillator.frequency.setValueAtTime(note.frequency, start);
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(note.level, start + 0.012);
-    gain.gain.setValueAtTime(note.level, Math.max(start + 0.013, end - 0.06));
-    gain.gain.exponentialRampToValueAtTime(0.0001, end);
+    oscillator.frequency.setValueAtTime(note.frequency, startTime);
+    gain.gain.setValueAtTime(0.0001, startTime);
+    gain.gain.exponentialRampToValueAtTime(note.level, startTime + 0.012);
+    gain.gain.setValueAtTime(note.level, Math.max(startTime + 0.013, endTime - 0.06));
+    gain.gain.exponentialRampToValueAtTime(0.0001, endTime);
 
     oscillator.connect(gain);
     gain.connect(master);
-    oscillator.start(start);
-    oscillator.stop(end + 0.02);
+    oscillator.start(startTime);
+    oscillator.stop(endTime + 0.02);
   });
+
+  return true;
 }
 
 function getBrowserAlertEnabled() {
@@ -1012,12 +1026,15 @@ function setupNotificationSettings() {
     updateSoundUi();
   };
 
-  el("soundEnabled")?.addEventListener("change", () => {
-    unlockAudio();
+  el("soundEnabled")?.addEventListener("change", async () => {
     persist();
     if (el("soundEnabled").checked) {
-      playNotificationSound();
-      showToast("Sound alerts enabled", "A tone will play for each new application.", "success");
+      const played = await playNotificationSound();
+      showToast(
+        played ? "Sound alerts enabled" : "Sound enabled — click Test Sound",
+        played ? "A tone will play for each new application." : "Your browser requires a user gesture before audio can play.",
+        played ? "success" : "info"
+      );
     }
   });
 
@@ -1025,23 +1042,27 @@ function setupNotificationSettings() {
     persist();
   });
 
-  el("testSoundButton")?.addEventListener("click", () => {
-    unlockAudio();
+  el("testSoundButton")?.addEventListener("click", async () => {
     const settings = getAlertSettings();
     if (!settings.enabled) {
       saveAlertSettings({ ...settings, enabled: true });
       updateSoundUi();
     }
-    playNotificationSound();
-    showToast("Test notification", "This is the new-application alert sound.", "info");
+    const played = await playNotificationSound();
+    showToast(
+      played ? "Test sound played" : "Sound could not start",
+      played ? "Notification audio is working." : "Check your browser/site sound permission and try again.",
+      played ? "success" : "error",
+      5000
+    );
   });
 
-  el("soundQuickToggle")?.addEventListener("click", () => {
-    unlockAudio();
+  el("soundQuickToggle")?.addEventListener("click", async () => {
     const settings = getAlertSettings();
-    saveAlertSettings({ ...settings, enabled: !settings.enabled });
+    const enabled = !settings.enabled;
+    saveAlertSettings({ ...settings, enabled });
     updateSoundUi();
-    if (!settings.enabled) playNotificationSound();
+    if (enabled) await playNotificationSound();
   });
 
   el("browserNotificationButton")?.addEventListener("click", async () => {
@@ -1188,6 +1209,9 @@ function listeners() {
 }
 
 function setupUI() {
+  // Initialise notification controls; this was previously defined but never called.
+  setupNotificationSettings();
+
   const sidebar = el("sidebar");
   const overlay = el("mobileOverlay");
   const toggle = () => {

@@ -1646,25 +1646,29 @@ async function submitApplication() {
 
   async function registerToday(){
     const dateKey = getISTDateKey();
-    const markerRef = db.ref(`publicStats/dailyLandingVisitors/${dateKey}/${visitorId}`);
+    // Store the daily marker inside the existing landingPageVisitors record.
+    // This keeps daily traffic compatible with Firebase rules that already
+    // allow public creation of landingPageVisitors, without requiring a
+    // separate new database rule just for dailyLandingVisitors.
+    const visitorRef = db.ref(`publicStats/landingPageVisitors/${visitorId}`);
 
     try {
-      // The date is part of the Firebase path, so the same browser is counted
-      // once today, but can legitimately be counted once again tomorrow.
-      const result = await markerRef.transaction(current => {
+      const result = await visitorRef.transaction(current => {
+        const now = Date.now();
         if (current === null) {
-          return { firstSeen: firebase.database.ServerValue.TIMESTAMP };
+          return {
+            firstSeen: now,
+            daily: { [dateKey]: { firstSeen: now } }
+          };
         }
-        return;
+        const daily = current.daily && typeof current.daily === 'object' ? { ...current.daily } : {};
+        if (daily[dateKey]) return;
+        daily[dateKey] = { firstSeen: now };
+        return { ...current, daily };
       });
 
-      // Keep the legacy lifetime marker too, so existing analytics/data are
-      // not lost while the new daily traffic system becomes the source of truth.
-      if (result?.committed) {
-        db.ref(`publicStats/landingPageVisitors/${visitorId}`).transaction(current => {
-          if (current === null) return { firstSeen: firebase.database.ServerValue.TIMESTAMP };
-          return;
-        }).catch(() => {});
+      if (!result?.committed) {
+        console.warn('Daily landing visitor registration was not committed.');
       }
     } catch (error) {
       console.warn('Daily landing visitor registration failed:', error);

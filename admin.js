@@ -1125,25 +1125,30 @@ function listeners() {
     }
   });
 
-  // Daily website traffic: one persistent browser ID can create at most one
-  // record under each IST date. The last 7 days are loaded as a small range.
-  const trafficToday = getTodayISTKey();
-  const [ty, tm, td] = trafficToday.split("-").map(Number);
-  const trafficStart = new Date(Date.UTC(ty, tm - 1, td, 6, 30, 0) - (6 * 24 * 60 * 60 * 1000));
-  const trafficStartKey = getISTDateKey(trafficStart.getTime());
-  db.ref("publicStats/dailyLandingVisitors").orderByKey().startAt(trafficStartKey).on("value", snapshot => {
+  // Daily website traffic. Read the existing public visitor records and count
+  // visitors that have a marker for today's IST date. Each browser/device has
+  // one persistent ID, so refreshes do not inflate the daily number.
+  db.ref("publicStats/landingPageVisitors").on("value", snapshot => {
     const data = snapshot.val() || {};
+    const today = getTodayISTKey();
     const counts = {};
-    Object.entries(data).forEach(([dateKey, visitorsForDay]) => {
-      counts[dateKey] = Object.keys(visitorsForDay || {}).length;
+
+    Object.values(data).forEach(visitor => {
+      const daily = visitor?.daily;
+      if (daily && typeof daily === "object") {
+        Object.keys(daily).forEach(dateKey => {
+          counts[dateKey] = (counts[dateKey] || 0) + 1;
+        });
+      }
     });
 
-    const todayCount = counts[trafficToday] || 0;
+    const todayCount = counts[today] || 0;
     if (E.landingPageVisitorCountMetric) {
       E.landingPageVisitorCountMetric.textContent = todayCount.toLocaleString("en-IN");
     }
 
     if (E.landingTrafficChart) {
+      const [ty, tm, td] = today.split("-").map(Number);
       const days = [...Array(7)].map((_, index) => {
         const date = new Date(Date.UTC(ty, tm - 1, td, 6, 30, 0) - ((6 - index) * 24 * 60 * 60 * 1000));
         return { date, key: getISTDateKey(date.getTime()) };

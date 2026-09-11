@@ -1,0 +1,40 @@
+INTERNSFORGE — FINAL CORRECTIONS — 2026-09-11
+
+FIXES INCLUDED
+1. Admin Firebase connection indicator now uses Firebase Realtime Database .info/connected.
+   It shows Connected when the database is actually connected and Reconnecting when offline.
+2. Notification sound controls fixed/strengthened.
+   - Test Sound enables sound and plays a two-stage alert.
+   - Volume control persists.
+   - Quick mute/unmute persists.
+   - New application alert plays only for applications detected after the initial snapshot.
+   - Default sound setting for a fresh browser is enabled.
+   - First user interaction arms Web Audio so browser autoplay restrictions are respected.
+3. Removed the Total Landing Page Visitors dashboard card and its listener.
+4. Dashboard CRM no longer sends the same CRM change twice to Google Sheets.
+5. Code.gs fixed so duplicate column headers are consolidated before missing headers are added.
+   Existing data in duplicate columns is merged into the first matching column where the first is blank,
+   then duplicate columns are removed from right to left.
+6. Existing Dashboard -> Google Sheets Web App receiver and Sheet -> Firebase bridge are retained.
+
+DEPLOYMENT
+A. Website/Vercel:
+   Replace the project files with this package and deploy.
+   admin.js is cache-busted as admin.js?v=20260911-fix2.
+
+B. Google Apps Script:
+   Replace Code.gs completely, save, then Deploy -> Manage deployments -> Edit -> New version.
+   Execute as: Me
+   Who has access: Anyone
+
+C. After deployment:
+   Open Admin Dashboard.
+   Confirm the top status changes from Connecting... to Connected.
+   Open Settings -> Test Sound.
+   Then edit one CRM field and confirm it reaches Google Sheets.
+
+NOTE
+Browser sound cannot bypass browser autoplay rules before any user interaction. The dashboard arms
+Web Audio on the first click/key press. After that, new application alerts can play while the dashboard
+is open. Background push sound while the dashboard is closed requires browser push infrastructure;
+this package does not require Cloud Functions for the in-dashboard sound alert.

@@ -118,7 +118,7 @@ const isToday = value => {
 };
 
 function getAlertSettings() {
-  const defaults = { enabled: false, volume: 90 };
+  const defaults = { enabled: true, volume: 90 };
   try {
     // Keep the notification sound preference in persistent localStorage.
     // Migrate the previous key once so an already-enabled admin stays enabled.
@@ -557,7 +557,6 @@ async function saveApplicationCRM() {
     Object.assign(app, updates);
     statusEl.textContent = "✓ Saved to Firebase • Sheets sync sent.";
     showToast("Application updated", `${app.name || "Student"}'s CRM details were saved.`, "success", 3500);
-    sendApplicationUpdateToSheets(app).catch(error => console.warn("Sheets CRM sync failed:", error));
     renderApplications();
   } catch (error) {
     console.error("CRM update failed:", error);
@@ -893,7 +892,7 @@ function handleNewApplications(nextApplications) {
   );
   sendBrowserNotification(newItems.length, newItems[0]);
 
-  document.title = `(${newItems.length}) New Application${newItems.length > 1 ? "s" : ""} — Apex Admin`;
+  document.title = `(${newItems.length}) New Application${newItems.length > 1 ? "s" : ""} — InternsForge Admin`;
   window.setTimeout(() => {
     document.title = "InternsForge — Admin Command Center";
   }, 8000);
@@ -1077,8 +1076,37 @@ function setupNotificationSettings() {
   }
   updateBrowserAlertUi();
 
-  document.addEventListener("pointerdown", unlockAudio, { once: true });
-  document.addEventListener("keydown", unlockAudio, { once: true });
+  const armSound = () => {
+    unlockAudio();
+    if (audioContext?.state === "running") {
+      document.removeEventListener("pointerdown", armSound);
+      document.removeEventListener("keydown", armSound);
+    }
+  };
+  document.addEventListener("pointerdown", armSound);
+  document.addEventListener("keydown", armSound);
+}
+
+function setupFirebaseConnectionStatus() {
+  const status = el("portalLiveStatus");
+  const text = el("portalLiveText");
+  const dot = status?.querySelector("i");
+  const healthDot = el("firebaseHealthDot");
+  const healthText = el("firebaseHealthText");
+
+  const render = connected => {
+    if (status) status.classList.toggle("is-offline", !connected);
+    if (dot) dot.classList.toggle("connected", connected);
+    if (text) text.textContent = connected ? "Connected" : "Reconnecting…";
+    if (healthDot) {
+      healthDot.classList.toggle("healthy", connected);
+      healthDot.classList.toggle("unhealthy", !connected);
+    }
+    if (healthText) healthText.textContent = connected ? "Connected" : "Reconnecting";
+  };
+
+  render(false);
+  db.ref(".info/connected").on("value", snapshot => render(snapshot.val() === true));
 }
 
 function listeners() {
@@ -1102,12 +1130,6 @@ function listeners() {
   visitorRoot.on("child_removed", snapshot => {
     delete visitors[snapshot.key];
     renderVisitors();
-  });
-
-  db.ref("publicStats/landingPageVisitorCount").on("value", snapshot => {
-    const count = Number(snapshot.val());
-    const displayCount = Number.isFinite(count) && count >= 0 ? Math.floor(count).toLocaleString("en-IN") : "0";
-    if (E.landingPageVisitorCountMetric) E.landingPageVisitorCountMetric.textContent = displayCount;
   });
 
   db.ref("publicStats/applicationVisitorCount").on("value", snapshot => {
@@ -1302,6 +1324,7 @@ auth.onAuthStateChanged(user => {
   }
 
   document.body.style.visibility = "visible";
+  setupFirebaseConnectionStatus();
   setupUI();
   listeners();
 });

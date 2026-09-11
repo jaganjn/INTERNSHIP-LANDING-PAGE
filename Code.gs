@@ -541,22 +541,106 @@ function getSheet() {
 }
 
 function ensureHeaders(sheet) {
-  if (sheet.getLastColumn() === 0) {
-    sheet.getRange(1,1,1,CONFIG.HEADERS.length).setValues([CONFIG.HEADERS]);
-    formatHeader(sheet); return;
+  const required = CONFIG.HEADERS.slice();
+  const lastColumn = sheet.getLastColumn();
+
+  if (lastColumn === 0) {
+    sheet.getRange(1, 1, 1, required.length).setValues([required]);
+    formatHeader(sheet);
+    return;
   }
+
   let headers = getHeaders(sheet);
+
   if (!headers.some(Boolean)) {
-    sheet.getRange(1,1,1,CONFIG.HEADERS.length).setValues([CONFIG.HEADERS]);
-    formatHeader(sheet); return;
+    sheet.getRange(1, 1, 1, required.length).setValues([required]);
+    formatHeader(sheet);
+    return;
   }
-  CONFIG.HEADERS.forEach(required => {
-    if (!headers.some(existing => normalizeHeader(existing) === normalizeHeader(required))) {
-      const col = sheet.getLastColumn()+1;
-      sheet.getRange(1,col).setValue(required);
-      headers.push(required);
+
+  /*
+   * IMPORTANT:
+   * Older versions could accidentally create duplicate CRM headers.
+   * Before adding anything, consolidate duplicate normalized headers.
+   * Data from a duplicate column is copied into the first column only
+   * where the first column is blank, then the duplicate column is deleted.
+   */
+  const seen = {};
+  const duplicateColumns = [];
+
+  headers.forEach((header, index) => {
+    const normalized = normalizeHeader(header);
+    if (!normalized) return;
+
+    if (seen[normalized]) {
+      duplicateColumns.push({
+        column: index + 1,
+        primaryColumn: seen[normalized]
+      });
+    } else {
+      seen[normalized] = index + 1;
     }
   });
+
+  // Merge duplicate data before deleting duplicate columns.
+  duplicateColumns.forEach(item => {
+    const rowCount = sheet.getLastRow();
+    if (rowCount < 2) return;
+
+    const primaryValues = sheet
+      .getRange(2, item.primaryColumn, rowCount - 1, 1)
+      .getValues();
+
+    const duplicateValues = sheet
+      .getRange(2, item.column, rowCount - 1, 1)
+      .getValues();
+
+    let changed = false;
+
+    for (let i = 0; i < primaryValues.length; i++) {
+      const primary = String(primaryValues[i][0] ?? '').trim();
+      const duplicate = duplicateValues[i][0];
+
+      if (!primary && duplicate !== '' && duplicate !== null && duplicate !== undefined) {
+        primaryValues[i][0] = duplicate;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      sheet
+        .getRange(2, item.primaryColumn, rowCount - 1, 1)
+        .setValues(primaryValues);
+    }
+  });
+
+  // Delete from right to left so column indexes remain valid.
+  duplicateColumns
+    .map(item => item.column)
+    .sort((a, b) => b - a)
+    .forEach(column => sheet.deleteColumn(column));
+
+  headers = getHeaders(sheet);
+
+  // Now add only genuinely missing required headers.
+  const existing = {};
+  headers.forEach(header => {
+    const normalized = normalizeHeader(header);
+    if (normalized && !existing[normalized]) {
+      existing[normalized] = true;
+    }
+  });
+
+  required.forEach(header => {
+    const normalized = normalizeHeader(header);
+
+    if (!existing[normalized]) {
+      const column = sheet.getLastColumn() + 1;
+      sheet.getRange(1, column).setValue(header);
+      existing[normalized] = true;
+    }
+  });
+
   formatHeader(sheet);
 }
 

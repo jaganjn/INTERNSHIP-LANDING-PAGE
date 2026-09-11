@@ -523,9 +523,8 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
   const statusEl = el("crmSyncStatus");
   if (statusEl) { statusEl.textContent = `● Assigning ${app.name || "lead"} to ${clean || "Unassigned"}…`; statusEl.className = "crm-syncing"; }
   try {
-    await db.ref(`submittedApplications/${appId}`).update({ assignedTo: clean, lastContactedAt: Date.now() });
+    await db.ref(`submittedApplications/${appId}`).update({ assignedTo: clean });
     app.assignedTo = clean;
-    app.lastContactedAt = Date.now();
     if (statusEl) { statusEl.textContent = `● Lead assigned • ${clean || "Unassigned"}`; statusEl.className = "crm-synced"; }
     renderApplicationCRM();
     showToast("Lead assigned", `${app.name || "Student"} → ${clean || "Unassigned"}. The counselor sheet will update automatically.`, "success", 4500);
@@ -713,8 +712,7 @@ async function saveApplicationCRM() {
     callStatus: el("modalCallStatus").value,
     nextFollowUpAt: toFirebaseDateValue(el("modalFollowUp").value),
     assignedTo: String(el("modalAssignedTo").value || "").trim(),
-    remarks: String(el("modalRemarks").value || "").trim(),
-    lastContactedAt: Date.now()
+    remarks: String(el("modalRemarks").value || "").trim()
   };
   try {
     statusEl.textContent = "Saving…";
@@ -1415,7 +1413,26 @@ function setupUI() {
   el("closeApplicationModal")?.addEventListener("click", closeApplicationModal);
   el("applicationModal")?.addEventListener("click", event => { if (event.target.id === "applicationModal") closeApplicationModal(); });
   el("saveApplicationCrm")?.addEventListener("click", saveApplicationCRM);
-  el("callApplication")?.addEventListener("click", () => { const app=applications.find(a=>a.id===activeApplicationId); if(app?.phone) window.location.href=`tel:${String(app.phone).replace(/[^+\d]/g,"")}`; });
+  async function markApplicationContacted(app) {
+    if (!app?.id) return;
+    const contactedAt = Date.now();
+    try {
+      await db.ref(`submittedApplications/${app.id}`).update({ lastContactedAt: contactedAt });
+      app.lastContactedAt = contactedAt;
+      renderApplicationCRM();
+    } catch (error) {
+      console.error("Could not update Last Contacted:", error);
+      showToast("Contact timestamp failed", "The message/call can still continue, but Last Contacted could not be updated.", "error", 4500);
+    }
+  }
+
+  el("callApplication")?.addEventListener("click", async () => {
+    const app=applications.find(a=>a.id===activeApplicationId);
+    if(app?.phone) {
+      await markApplicationContacted(app);
+      window.location.href=`tel:${String(app.phone).replace(/[^+\d]/g,"")}`;
+    }
+  });
   // Personalized communication templates for SMS, WhatsApp and Email.
   function buildInternshipMessage(app) {
     const name = app?.name || "Student";
@@ -1458,7 +1475,7 @@ Learn • Build • Experience • Grow`;
     return digits;
   }
 
-  el("whatsappApplication")?.addEventListener("click", () => {
+  el("whatsappApplication")?.addEventListener("click", async () => {
     const app = applications.find(a => a.id === activeApplicationId);
     if (!app?.phone) return;
 
@@ -1469,9 +1486,10 @@ Learn • Build • Experience • Grow`;
     }
 
     const message = encodeURIComponent(buildInternshipMessage(app));
+    await markApplicationContacted(app);
     window.open(`https://wa.me/${digits}?text=${message}`, "_blank", "noopener,noreferrer");
   });
-  el("smsApplication")?.addEventListener("click", () => {
+  el("smsApplication")?.addEventListener("click", async () => {
     const app = applications.find(a => a.id === activeApplicationId);
     if (!app?.phone) return;
 
@@ -1482,9 +1500,10 @@ Learn • Build • Experience • Grow`;
     }
 
     const body = encodeURIComponent(buildInternshipMessage(app));
+    await markApplicationContacted(app);
     window.location.href = `sms:+${digits}?body=${body}`;
   });
-  el("emailApplication")?.addEventListener("click", () => {
+  el("emailApplication")?.addEventListener("click", async () => {
     const app = applications.find(a => a.id === activeApplicationId);
     if (!app?.email) return;
 
@@ -1493,6 +1512,7 @@ Learn • Build • Experience • Grow`;
     const subject = encodeURIComponent(`InternsForge Internship 2026 — ${domain}`);
     const body = encodeURIComponent(buildInternshipMessage(app));
 
+    await markApplicationContacted(app);
     window.location.href = `mailto:${app.email}?subject=${subject}&body=${body}`;
   });
 }

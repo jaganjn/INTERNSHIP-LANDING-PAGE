@@ -951,17 +951,17 @@ function formatRecoveryTimestamp(raw, blankIfMissing) {
   if(raw===null||raw===undefined||raw==="") return blankIfMissing ? "" : nowString();
   if(typeof raw === "number" || /^[0-9]{10,13}$/.test(String(raw))) {
     const n=Number(raw), ms=String(raw).length===10?n*1000:n;
-    return Utilities.formatDate(new Date(ms),CONFIG.TIMEZONE,"dd-MM-yyyy HH:mm:ss");
+    return Utilities.formatDate(new Date(ms),CONFIG.TIMEZONE,"dd-MM-yyyy hh:mm:ss a");
   }
   const s=String(raw).trim();
   const m=s.match(/^(\d{2})-(\d{2})-(\d{4})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
   if(m)return `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}:${m[6]||"00"}`;
   const parsed=new Date(s);
-  return isNaN(parsed.getTime()) ? s : Utilities.formatDate(parsed,CONFIG.TIMEZONE,"dd-MM-yyyy HH:mm:ss");
+  return isNaN(parsed.getTime()) ? s : Utilities.formatDate(parsed,CONFIG.TIMEZONE,"dd-MM-yyyy hh:mm:ss a");
 }
 
 function normalizeHeader(header){return String(header||"").toLowerCase().replace(/[^a-z0-9]/g,"");}
 function value(input){return input===null||input===undefined?"":String(input).trim();}
-function nowString(){return Utilities.formatDate(new Date(),CONFIG.TIMEZONE,"dd-MM-yyyy HH:mm:ss");}
+function nowString(){return Utilities.formatDate(new Date(),CONFIG.TIMEZONE,"dd-MM-yyyy hh:mm:ss a");}
 function formatHeader(sheet){const cols=sheet.getLastColumn();if(cols){sheet.getRange(1,1,1,cols).setFontWeight("bold");sheet.setFrozenRows(1);}}
 function jsonResponse(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);}

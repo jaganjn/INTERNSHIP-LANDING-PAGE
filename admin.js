@@ -752,8 +752,8 @@ async function syncCrmToSheets() {
 
 function exportCrmCsv() {
   if (!crmFilteredApplications.length) { showToast("Nothing to export", "No applications match the current filters.", "info"); return; }
-  const headers = ["Timestamp","Application ID","Name","Phone","Email","College","Department","Year","Domain","State","Communication Language","Start Availability","Application Reason","Call Status","Next Follow-up","Assigned To","Last Contacted","Remarks"];
-  const rows = crmFilteredApplications.map(a => [a.submittedAtMs||a.submittedAt||a.timestamp,a.id||a.applicationId,a.name,a.phone,a.email,a.college,a.department,a.year,a.domain,a.state,a.communicationLanguage||a.language,a.startAvailability,a.applicationReason,getCallStatus(a),a.nextFollowUpAt||"",a.assignedTo||"",a.lastContactedAt||"",a.remarks||""]);
+  const headers = ["Timestamp","Application ID","Name","Phone","Email","College","Department","Year","Domain","State","Communication Language","Start Availability","Application Reason","Call Status","Next Follow-up","Assigned To","Remarks"];
+  const rows = crmFilteredApplications.map(a => [a.submittedAtMs||a.submittedAt||a.timestamp,a.id||a.applicationId,a.name,a.phone,a.email,a.college,a.department,a.year,a.domain,a.state,a.communicationLanguage||a.language,a.startAvailability,a.applicationReason,getCallStatus(a),a.nextFollowUpAt||"",a.assignedTo||"",a.remarks||""]);
   const csv = [headers,...rows].map(row => row.map(v => `"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
   const blob = new Blob(["\ufeff",csv],{type:"text/csv;charset=utf-8"});
   const url = URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`internsforge-crm-${new Date().toISOString().slice(0,10)}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
@@ -1413,23 +1413,9 @@ function setupUI() {
   el("closeApplicationModal")?.addEventListener("click", closeApplicationModal);
   el("applicationModal")?.addEventListener("click", event => { if (event.target.id === "applicationModal") closeApplicationModal(); });
   el("saveApplicationCrm")?.addEventListener("click", saveApplicationCRM);
-  async function markApplicationContacted(app) {
-    if (!app?.id) return;
-    const contactedAt = Date.now();
-    try {
-      await db.ref(`submittedApplications/${app.id}`).update({ lastContactedAt: contactedAt });
-      app.lastContactedAt = contactedAt;
-      renderApplicationCRM();
-    } catch (error) {
-      console.error("Could not update Last Contacted:", error);
-      showToast("Contact timestamp failed", "The message/call can still continue, but Last Contacted could not be updated.", "error", 4500);
-    }
-  }
-
   el("callApplication")?.addEventListener("click", async () => {
     const app=applications.find(a=>a.id===activeApplicationId);
     if(app?.phone) {
-      await markApplicationContacted(app);
       window.location.href=`tel:${String(app.phone).replace(/[^+\d]/g,"")}`;
     }
   });
@@ -1486,7 +1472,6 @@ Learn • Build • Experience • Grow`;
     }
 
     const message = encodeURIComponent(buildInternshipMessage(app));
-    await markApplicationContacted(app);
     window.open(`https://wa.me/${digits}?text=${message}`, "_blank", "noopener,noreferrer");
   });
   el("smsApplication")?.addEventListener("click", async () => {
@@ -1500,7 +1485,6 @@ Learn • Build • Experience • Grow`;
     }
 
     const body = encodeURIComponent(buildInternshipMessage(app));
-    await markApplicationContacted(app);
     window.location.href = `sms:+${digits}?body=${body}`;
   });
   el("emailApplication")?.addEventListener("click", async () => {
@@ -1512,7 +1496,6 @@ Learn • Build • Experience • Grow`;
     const subject = encodeURIComponent(`InternsForge Internship 2026 — ${domain}`);
     const body = encodeURIComponent(buildInternshipMessage(app));
 
-    await markApplicationContacted(app);
     window.location.href = `mailto:${app.email}?subject=${subject}&body=${body}`;
   });
 }

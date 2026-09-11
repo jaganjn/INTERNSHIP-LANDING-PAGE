@@ -10,7 +10,7 @@ const CONFIG = {
     "Timestamp", "Application ID", "Name", "Phone", "Email", "College",
     "Department", "Year", "Domain", "State", "Communication Language",
     "Start Availability", "Application Reason", "Call Status", "Next Follow-up",
-    "Assigned To", "Last Contacted", "Remarks"
+    "Assigned To", "Remarks"
   ]
 };
 
@@ -131,7 +131,6 @@ function syncCounselorRowToFirebase(counselorSheet, rowNumber) {
     callStatus: value(app["Call Status"]),
     nextFollowUpAt: sheetDateToIso(app["Next Follow-up"]),
     assignedTo: value(app["Assigned To"]),
-    lastContactedAt: sheetDateToTimestamp(app["Last Contacted"]),
     remarks: value(app["Remarks"])
   };
 
@@ -180,7 +179,6 @@ function syncSheetRowToFirebase(rowNumber) {
     callStatus: value(record.callstatus),
     nextFollowUpAt: sheetDateToIso(record.nextfollowup || record.followup),
     assignedTo: value(record.assignedto),
-    lastContactedAt: sheetDateToTimestamp(record.lastcontacted),
     remarks: value(record.remarks || record.remark)
   };
 
@@ -577,7 +575,7 @@ function updateRowByApplicationId(sheet, headers, rowNumber, app) {
   const newRow = buildRow(headers, app);
   headers.forEach((header,i) => {
     // Never erase an existing admin note with an empty Firebase value.
-    if (String(newRow[i] ?? "").trim() !== "" || ["Call Status","Next Follow-up","Assigned To","Last Contacted","Remarks"].includes(header)) next[i] = newRow[i] ?? current[i];
+    if (String(newRow[i] ?? "").trim() !== "" || ["Call Status","Next Follow-up","Assigned To","Remarks"].includes(header)) next[i] = newRow[i] ?? current[i];
   });
   sheet.getRange(rowNumber,1,1,headers.length).setValues([next]);
 }
@@ -735,7 +733,7 @@ function syncApplicationToCounselorSheet(app, previousAssignedTo) {
     headers.forEach((header, index) => {
       const incoming = row[index];
       if (String(incoming ?? "").trim() !== "" || [
-        "Call Status", "Next Follow-up", "Assigned To", "Last Contacted", "Remarks"
+        "Call Status", "Next Follow-up", "Assigned To", "Remarks"
       ].includes(header)) {
         next[index] = incoming ?? current[index];
       }
@@ -780,7 +778,6 @@ function buildApplicationObject(data, applicationId) {
     "Call Status": value(data.callStatus || data["Call Status"]),
     "Next Follow-up": formatRecoveryTimestamp(data.nextFollowUpAt || data.nextFollowUp || data.followUpAt || data["Next Follow-up"], true),
     "Assigned To": value(data.assignedTo || data["Assigned To"]),
-    "Last Contacted": formatRecoveryTimestamp(data.lastContactedAt || data.lastContacted || data["Last Contacted"], true),
     "Remarks": value(data.remarks || data.remark || data.Remarks)
   };
 }
@@ -796,7 +793,7 @@ function buildRow(headers, app) {
       state:"State", stateut:"State", stateunionterritory:"State", communicationlanguage:"Communication Language", language:"Communication Language", languages:"Communication Language",
       startavailability:"Start Availability", availability:"Start Availability", whenareyouavailabletostart:"Start Availability",
       applicationreason:"Application Reason", reason:"Application Reason", whyareyouapplying:"Application Reason", interest:"Application Reason",
-      callstatus:"Call Status", nextfollowup:"Next Follow-up", followup:"Next Follow-up", assignedto:"Assigned To", lastcontacted:"Last Contacted", remarks:"Remarks", remark:"Remarks"
+      callstatus:"Call Status", nextfollowup:"Next Follow-up", followup:"Next Follow-up", assignedto:"Assigned To", remarks:"Remarks", remark:"Remarks"
     };
     return map[n] ? (app[map[n]] || "") : "";
   });
@@ -827,6 +824,15 @@ function ensureHeaders(sheet) {
     formatHeader(sheet);
     return;
   }
+
+  // Last Contacted is no longer part of the InternsForge CRM sheet.
+  // Remove the legacy column automatically if it still exists.
+  const obsoleteColumns = [];
+  headers.forEach((header, index) => {
+    if (normalizeHeader(header) === "lastcontacted") obsoleteColumns.push(index + 1);
+  });
+  obsoleteColumns.sort((a, b) => b - a).forEach(column => sheet.deleteColumn(column));
+  if (obsoleteColumns.length) headers = getHeaders(sheet);
 
   /*
    * IMPORTANT:

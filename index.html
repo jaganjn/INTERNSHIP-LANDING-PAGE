@@ -1619,8 +1619,8 @@ async function submitApplication() {
 
 // Daily landing-page traffic tracking.
 // One persistent browser/device ID is counted once per IST calendar day.
-// Each day's unique visitor marker is stored at:
-// publicStats/dailyLandingVisitors/YYYY-MM-DD/{visitorId}
+// IMPORTANT: this uses the existing publicStats/landingPageVisitors path so
+// it works with the already-published Firebase rules as well.
 (function trackDailyLandingPageTraffic(){
   function start(){
     if (typeof db === 'undefined' || typeof firebase === 'undefined') {
@@ -1628,7 +1628,7 @@ async function submitApplication() {
       return;
     }
 
-    const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v7';
+    const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v8';
     let visitorId;
     try {
       visitorId = localStorage.getItem(VISITOR_ID_KEY);
@@ -1650,13 +1650,23 @@ async function submitApplication() {
 
     async function registerToday(){
       const dateKey = getISTDateKey();
-      const dailyRef = db.ref(`publicStats/dailyLandingVisitors/${dateKey}/${visitorId}`);
+      const visitorRef = db.ref(`publicStats/landingPageVisitors/${visitorId}`);
       try {
-        const result = await dailyRef.transaction(current => current || {
-          firstSeen: firebase.database.ServerValue.TIMESTAMP
+        const result = await visitorRef.transaction(current => {
+          const record = current && typeof current === 'object' ? current : {};
+          const days = record.days && typeof record.days === 'object' ? record.days : {};
+          if (days[dateKey]) return record;
+          return {
+            ...record,
+            firstSeen: record.firstSeen || firebase.database.ServerValue.TIMESTAMP,
+            days: {
+              ...days,
+              [dateKey]: firebase.database.ServerValue.TIMESTAMP
+            }
+          };
         });
-        if (result?.committed) {
-          console.log('Daily landing visitor registered:', dateKey, visitorId);
+        if (result && result.committed) {
+          console.log('Daily landing visitor recorded:', dateKey);
         }
       } catch (error) {
         console.warn('Daily landing visitor registration failed:', error);
@@ -1668,8 +1678,6 @@ async function submitApplication() {
     setInterval(registerToday, 60 * 1000);
   }
 
-  // Firebase.js is loaded immediately before this script, but defer once so
-  // the tracker never races initialization on slower browsers.
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', start, { once: true });
   } else {

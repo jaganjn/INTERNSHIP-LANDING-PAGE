@@ -1,0 +1,19 @@
+
+(function(){
+  const menu=document.getElementById('heroNavMenu'), modal=document.getElementById('siteInfoModal');
+  const title=document.getElementById('siteInfoTitle'), kicker=document.getElementById('siteInfoKicker'), text=document.getElementById('siteInfoText'), grid=document.getElementById('siteInfoGrid'), close=document.getElementById('siteInfoClose'), done=document.getElementById('siteInfoDone');
+  if(!menu||!modal) return;
+  const content={
+    home:{kicker:'WELCOME',title:'Build real projects. Become career ready.',text:'InternsForge is a guided online internship programme designed to help students build practical experience, strengthen skills and prepare for placements.',cards:[['35','Career domains'],['1st–Final','All years eligible'],['2–3 Months','Programme duration'],['~60 sec','Application time']]},
+    programme:{kicker:'PROGRAMME',title:'A practical path from learning to proof.',text:'Choose a career track, work through practical projects and strengthen your profile before placements. The programme is online and open across degrees and departments.',cards:[['Online','Learn from anywhere'],['Any Degree','All departments welcome'],['Guided','Structured application'],['Profile','Application review follows submission']]},
+    projects:{kicker:'PROJECTS',title:'Projects that give your learning a visible outcome.',text:'Sample project tracks are designed around practical work so students can turn concepts into portfolio-ready evidence and explain what they built.',cards:[['Build','Practical project work'],['Validate','Completion credentials'],['Improve','Guided learning support'],['Prepare','Resume and interview readiness']]},
+    domains:{kicker:'DOMAINS',title:'Explore the career domains available.',text:'Open the domain explorer to browse the available tracks, see what each domain focuses on and choose a programme that fits your direction.',cards:[['35','Career domains'],['Explore','Domain descriptions'],['Compare','Learning and project focus'],['Choose','Apply directly from the explorer']]},
+    how:{kicker:'PROCESS',title:'A simple journey from application to programme.',text:'Start with your profile, choose your domain, complete the guided application and review your details before submission. The application draft is saved on your device while you progress.',cards:[['01','Basic information'],['02','Academic profile'],['03','Preferences'],['04','Review & submit']]},
+    faq:{kicker:'FAQ',title:'Quick answers before you apply.',text:'The programme is designed for students across years and departments. You can explore domains before applying, and the application gives you an application reference after successful submission.',cards:[['Who','Students from 1st to final year'],['Eligibility','Any degree / department'],['Application','Guided, mobile-friendly form'],['Reference','Provided after submission']]}
+  };
+  function openPopup(key){const item=content[key]||content.home;kicker.textContent=item.kicker;title.textContent=item.title;text.textContent=item.text;grid.innerHTML=item.cards.map(c=>`<article><span>${c[0]}</span><strong>${c[1]}</strong></article>`).join('');modal.classList.add('open');modal.setAttribute('aria-hidden','false');document.body.classList.add('site-info-open');menu.open=false;close.focus();}
+  function closePopup(){modal.classList.remove('open');modal.setAttribute('aria-hidden','true');document.body.classList.remove('site-info-open');}
+  menu.querySelectorAll('[data-site-popup]').forEach(btn=>btn.addEventListener('click',()=>openPopup(btn.dataset.sitePopup)));
+  close.addEventListener('click',closePopup);done.addEventListener('click',closePopup);modal.addEventListener('click',e=>{if(e.target===modal)closePopup();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopup();});
+  document.querySelectorAll('.hero-nav-dropdown .open-application').forEach(btn=>btn.addEventListener('click',()=>{menu.open=false;}));
+})();

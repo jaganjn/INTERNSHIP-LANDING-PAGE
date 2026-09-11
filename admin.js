@@ -1125,18 +1125,20 @@ function listeners() {
     }
   });
 
-  // Daily website traffic. Read the dedicated per-day unique visitor bucket.
-  // Each browser/device has one persistent ID, so refreshes do not inflate the
-  // daily number. Historical days remain stored for traffic analysis.
-  db.ref("publicStats/dailyLandingVisitors").on("value", snapshot => {
+  // Daily website traffic. Count unique persistent visitor IDs that have
+  // recorded a visit for today's IST calendar date. This reads the existing
+  // landingPageVisitors collection, so no new Firebase rules path is required.
+  db.ref("publicStats/landingPageVisitors").on("value", snapshot => {
     const data = snapshot.val() || {};
     const today = getTodayISTKey();
     const counts = {};
 
-    Object.entries(data).forEach(([dateKey, visitors]) => {
-      counts[dateKey] = visitors && typeof visitors === "object"
-        ? Object.keys(visitors).length
-        : 0;
+    Object.values(data).forEach(visitor => {
+      if (!visitor || typeof visitor !== "object") return;
+      const days = visitor.days && typeof visitor.days === "object" ? visitor.days : {};
+      Object.keys(days).forEach(dateKey => {
+        counts[dateKey] = (counts[dateKey] || 0) + 1;
+      });
     });
 
     const todayCount = counts[today] || 0;

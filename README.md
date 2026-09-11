@@ -124,3 +124,6 @@ After replacing `Code.gs`, update the existing Web App deployment to a new versi
 
 ## Total Application Visitors
 The admin Control Hub includes a Total Application Visitors module. The public portal increments `publicStats/applicationVisitorCount` once per browser session when the application form is opened. Firebase rules permit only the safe +1 public increment; admins can read the aggregate. Historical counts begin after this version is deployed.
+
+
+VISITOR COUNTER UPDATE (2026-09-10): All application-opening paths, including Apply for this domain, call the same Firebase visitor counter. Counter uses a persistent browser ID and Firebase transaction retries. Ensure firebase-rules.json is deployed.

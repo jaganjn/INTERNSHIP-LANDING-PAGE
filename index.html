@@ -1898,21 +1898,48 @@ console.info('SkillPath guided form build: Final V11');
   const closeBtn=document.getElementById('closeApplication');
   const closeTop=document.getElementById('closeApplicationTop');
   let restoreScroll=0;
-  const APPLICATION_VISITOR_SESSION_KEY='internsforge_application_visitor_counted_v1';
-  let applicationVisitorCounted = sessionStorage.getItem(APPLICATION_VISITOR_SESSION_KEY) === '1';
-  function countApplicationVisitor(){
-    if (applicationVisitorCounted || typeof db === 'undefined') return;
-    applicationVisitorCounted = true;
-    sessionStorage.setItem(APPLICATION_VISITOR_SESSION_KEY,'1');
-    db.ref('publicStats/applicationVisitorCount').transaction(current => {
-      const n=Number(current);
-      return Number.isFinite(n) && n >= 0 ? Math.floor(n)+1 : 1;
-    }).catch(error => {
-      applicationVisitorCounted = false;
-      sessionStorage.removeItem(APPLICATION_VISITOR_SESSION_KEY);
-      console.warn('Application visitor counter update failed:', error);
-    });
+  /*
+   * Total Application Visitors
+   * Count one unique browser for this application portal.
+   * localStorage is used so refreshes and new tabs do not inflate the total.
+   * The Firebase transaction is retried if the network is temporarily unavailable.
+   */
+  const APPLICATION_VISITOR_KEY='internsforge_application_visitor_id_v2';
+  const APPLICATION_VISITOR_COUNTED_KEY='internsforge_application_visitor_counted_v2';
+  let applicationVisitorId = localStorage.getItem(APPLICATION_VISITOR_KEY);
+  if (!applicationVisitorId) {
+    applicationVisitorId = `appvisitor_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+    try { localStorage.setItem(APPLICATION_VISITOR_KEY, applicationVisitorId); } catch (_) {}
   }
+  let applicationVisitorCounted = localStorage.getItem(APPLICATION_VISITOR_COUNTED_KEY) === '1';
+
+  // Expose the counter so every application CTA/path (including domain selection)
+  // records the same visitor event before opening the application modal.
+  async function countApplicationVisitor(){
+    if (applicationVisitorCounted || typeof db === 'undefined') return;
+
+    const ref = db.ref('publicStats/applicationVisitorCount');
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const result = await ref.transaction(current => {
+          const n = Number(current);
+          return Number.isFinite(n) && n >= 0 ? Math.floor(n) + 1 : 1;
+        });
+
+        if (result && result.committed) {
+          applicationVisitorCounted = true;
+          try { localStorage.setItem(APPLICATION_VISITOR_COUNTED_KEY,'1'); } catch (_) {}
+          return;
+        }
+      } catch (error) {
+        console.warn(`Application visitor counter attempt ${attempt + 1} failed:`, error);
+        if (attempt < 2) await new Promise(resolve => setTimeout(resolve, 800 * (attempt + 1)));
+      }
+    }
+  }
+  window.__internsforgeCountApplicationVisitor = countApplicationVisitor;
+
   function openApplication(domain){
     countApplicationVisitor();
     restoreScroll=window.scrollY;
@@ -2051,6 +2078,7 @@ console.info('SkillPath guided form build: Final V11');
   });
   apply?.addEventListener('click',()=>{
     if(!selectedDomain)return;
+    window.__internsforgeCountApplicationVisitor?.();
     document.querySelector('[data-close-domain]')?.click();
     const app=document.getElementById('apply');
     document.body.classList.add('application-modal-open');

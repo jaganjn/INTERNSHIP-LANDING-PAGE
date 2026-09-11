@@ -130,3 +130,6 @@ VISITOR COUNTER UPDATE (2026-09-10): All application-opening paths, including Ap
 
 
 Traffic tracking update: Total Landing Page Visitors counts unique browsers that load the public landing page; Application Form Visitors remains a separate intent metric.
+
+
+Traffic counter behavior: one unique landing-page visitor is counted per persistent browser/device. Refreshes and repeated visits from the same stored browser ID do not increment the total.

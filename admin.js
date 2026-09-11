@@ -32,8 +32,7 @@ const E = {
   referralSearch: el("referralSearch"),
   applicationVisitorCount: el("applicationVisitorCount"),
   applicationVisitorCountMetric: el("applicationVisitorCountMetric"),
-  applicationFormVisitorCountMetric: el("applicationFormVisitorCountMetric"),
-  landingTrafficChart: el("landingTrafficChart"),
+  landingPageVisitorCountMetric: el("landingPageVisitorCountMetric")
 };
 
 let applications = [];
@@ -204,8 +203,7 @@ function sessionState(visitor = {}, now = Date.now()) {
   const explicitlyFilling = ["filling_form", "filling", "reviewing"].includes(status);
   const hasStartedFilling = visitor.hasStartedFilling === true || progress > 0;
 
-  const activePresence = String(visitor.presence || "").toLowerCase() === "active";
-  if (age <= ACTIVE_MS && activePresence && !disconnected) {
+  if (age <= ACTIVE_MS && !disconnected) {
     return (hasStartedFilling && explicitlyFilling) || progress > 0 ? "filling" : "active";
   }
   if (hasStartedFilling || explicitlyFilling) return "abandoned";
@@ -269,8 +267,6 @@ function renderVisitors() {
   );
 
   E.onlineCount.textContent = active.length;
-  // Landing Page Visitors is a DAILY unique traffic metric. It is updated
-  // by the dailyLandingVisitors listener below, not by live presence records.
   E.fillingCount.textContent = filling.length;
   E.abandonedCount.textContent = abandoned.length;
   E.submittedCount.textContent = todayApplications.length;
@@ -1108,51 +1104,17 @@ function listeners() {
     renderVisitors();
   });
 
-  // Live application-form visitors. This is based on temporary session
-  // records, so it returns to 0 when nobody has the form open.
-  db.ref("publicStats/applicationFormLive").on("value", snapshot => {
-    const sessions = snapshot.val() || {};
-    const now = Date.now();
-    const active = Object.values(sessions).filter(item => {
-      const lastSeen = Number(item?.lastSeen || 0);
-      return item?.status === "active" && lastSeen > 0 && (now - lastSeen) <= 45000;
-    }).length;
-
-    if (E.applicationFormVisitorCountMetric) {
-      E.applicationFormVisitorCountMetric.textContent =
-        active.toLocaleString("en-IN");
-    }
+  db.ref("publicStats/landingPageVisitorCount").on("value", snapshot => {
+    const count = Number(snapshot.val());
+    const displayCount = Number.isFinite(count) && count >= 0 ? Math.floor(count).toLocaleString("en-IN") : "0";
+    if (E.landingPageVisitorCountMetric) E.landingPageVisitorCountMetric.textContent = displayCount;
   });
 
-  // Daily website traffic. Count unique persistent visitor IDs that have
-  // recorded a visit for today's IST calendar date. This reads the existing
-  // landingPageVisitors collection, so no new Firebase rules path is required.
-  db.ref("publicStats/landingPageVisitors").on("value", snapshot => {
-    const data = snapshot.val() || {};
-    const today = getTodayISTKey();
-    const counts = {};
-
-    Object.values(data).forEach(visitor => {
-      if (!visitor || typeof visitor !== "object") return;
-      const days = visitor.days && typeof visitor.days === "object" ? visitor.days : {};
-      Object.keys(days).forEach(dateKey => {
-        counts[dateKey] = (counts[dateKey] || 0) + 1;
-      });
-    });
-
-    if (E.landingTrafficChart) {
-      const [ty, tm, td] = today.split("-").map(Number);
-      const days = [...Array(7)].map((_, index) => {
-        const date = new Date(Date.UTC(ty, tm - 1, td, 6, 30, 0) - ((6 - index) * 24 * 60 * 60 * 1000));
-        return { date, key: getISTDateKey(date.getTime()) };
-      });
-      const max = Math.max(1, ...days.map(item => counts[item.key] || 0));
-      E.landingTrafficChart.innerHTML = days.map(({date, key}) => {
-        const count = counts[key] || 0;
-        const label = date.toLocaleDateString("en-IN", {day:"2-digit", month:"short"});
-        return `<div class="traffic-day" title="${count} unique visitors on ${key}"><div class="traffic-day-head"><span>${label}</span><strong>${count}</strong></div><div class="traffic-track"><i style="width:${Math.max(count ? 8 : 0, (count / max) * 100)}%"></i></div></div>`;
-      }).join("");
-    }
+  db.ref("publicStats/applicationVisitorCount").on("value", snapshot => {
+    const count = Number(snapshot.val());
+    const displayCount = Number.isFinite(count) && count >= 0 ? Math.floor(count).toLocaleString("en-IN") : "0";
+    if (E.applicationVisitorCount) E.applicationVisitorCount.textContent = displayCount;
+    if (E.applicationVisitorCountMetric) E.applicationVisitorCountMetric.textContent = displayCount;
   });
 
   // Near-real-time CRM -> Google Sheets sync. This listens only for future Firebase record changes, so opening the dashboard does not re-send all existing applications.
@@ -1240,18 +1202,84 @@ function setupUI() {
   el("applicationModal")?.addEventListener("click", event => { if (event.target.id === "applicationModal") closeApplicationModal(); });
   el("saveApplicationCrm")?.addEventListener("click", saveApplicationCRM);
   el("callApplication")?.addEventListener("click", () => { const app=applications.find(a=>a.id===activeApplicationId); if(app?.phone) window.location.href=`tel:${String(app.phone).replace(/[^+\d]/g,"")}`; });
-  el("whatsappApplication")?.addEventListener("click", () => { const app=applications.find(a=>a.id===activeApplicationId); if(app?.phone) window.open(`https://wa.me/${String(app.phone).replace(/[^\d]/g,"")}`,"_blank","noopener"); });
-  el("emailApplication")?.addEventListener("click", () => { const app=applications.find(a=>a.id===activeApplicationId); if(app?.email) window.location.href=`mailto:${app.email}`; });
-  document.addEventListener("keydown", event => { if(event.key === "Escape" && el("applicationModal")?.classList.contains("show")) closeApplicationModal(); });
-  setupNotificationSettings();
+  // Personalized communication templates for SMS, WhatsApp and Email.
+  function buildInternshipMessage(app) {
+    const name = app?.name || "Student";
+    const domain = app?.domain || "your selected domain";
 
-  db.ref(".info/connected").on("value", snapshot => {
-    const live = snapshot.val() === true;
-    el("portalLiveStatus").classList.toggle("is-offline", !live);
-    el("portalLiveText").textContent = live ? "Firebase Live" : "Reconnecting";
-    el("firebaseHealthDot")?.classList.toggle("healthy", live);
-    el("firebaseHealthDot")?.classList.toggle("unhealthy", !live);
-    if (el("firebaseHealthText")) el("firebaseHealthText").textContent = live ? "Connected" : "Offline";
+    return `Hi ${name},
+
+This is InternsForge regarding your internship application.
+
+Your Chosen Domain: ${domain}
+
+We’re reaching out regarding the InternsForge Internship Program 2026, where you can gain practical experience, work on real-time projects, develop industry-relevant skills, and build your career profile.
+
+What you can explore:
+• Internship experience in your selected domain
+• Real-time / practical projects
+• Skill development & mentorship
+• Internship certification
+• Career and placement-oriented opportunities
+
+Referral Benefits:
+You can also participate in our student referral program and refer your friends/classmates.
+
+Referral options include:
+• Share your referral with friends
+• Invite classmates to the internship program
+• Track successful referrals
+• Become eligible for applicable referral benefits/rewards
+
+If you’re interested in proceeding with your ${domain} internship, please reply “INTERESTED” and our team will guide you through the next steps.
+
+InternsForge 2026
+Learn • Build • Experience • Grow`;
+  }
+
+  function normalizeIndianPhone(phone) {
+    let digits = String(phone || "").replace(/\D/g, "");
+    if (digits.length === 10) digits = "91" + digits;
+    else if (digits.length === 11 && digits.startsWith("0")) digits = "91" + digits.slice(1);
+    return digits;
+  }
+
+  el("whatsappApplication")?.addEventListener("click", () => {
+    const app = applications.find(a => a.id === activeApplicationId);
+    if (!app?.phone) return;
+
+    const digits = normalizeIndianPhone(app.phone);
+    if (digits.length < 10) {
+      alert("Please check this student's phone number before opening WhatsApp.");
+      return;
+    }
+
+    const message = encodeURIComponent(buildInternshipMessage(app));
+    window.open(`https://wa.me/${digits}?text=${message}`, "_blank", "noopener,noreferrer");
+  });
+  el("smsApplication")?.addEventListener("click", () => {
+    const app = applications.find(a => a.id === activeApplicationId);
+    if (!app?.phone) return;
+
+    const digits = normalizeIndianPhone(app.phone);
+    if (digits.length < 10) {
+      alert("Please check this student's phone number before sending SMS.");
+      return;
+    }
+
+    const body = encodeURIComponent(buildInternshipMessage(app));
+    window.location.href = `sms:+${digits}?body=${body}`;
+  });
+  el("emailApplication")?.addEventListener("click", () => {
+    const app = applications.find(a => a.id === activeApplicationId);
+    if (!app?.email) return;
+
+    const name = app.name || "Student";
+    const domain = app.domain || "your selected domain";
+    const subject = encodeURIComponent(`InternsForge Internship 2026 — ${domain}`);
+    const body = encodeURIComponent(buildInternshipMessage(app));
+
+    window.location.href = `mailto:${app.email}?subject=${subject}&body=${body}`;
   });
 }
 
@@ -1384,24 +1412,8 @@ async function del(path, message, successText) {
   }
 }
 
-async function deleteLiveVisitors() {
-  if (!confirm("Delete all live visitor tracking records?\n\nActive landing pages may create a new live record again while they remain open.")) return false;
-  const user = auth?.currentUser;
-  if (!user) {
-    showToast("Authentication required", "Please sign in again before changing dashboard data.", "error", 6000);
-    return false;
-  }
-  try {
-    await db.ref("liveVisitors").remove();
-    visitors = {};
-    renderVisitors();
-    showToast("Live tracking cleared", "All current live visitor records were deleted. Active visitors will reappear when their next heartbeat arrives.", "success", 6000);
-    return true;
-  } catch (error) {
-    console.error("Firebase live visitor delete failed:", error);
-    showToast("Delete failed", error?.message || "Firebase denied the delete operation.", "error", 8000);
-    return false;
-  }
+function deleteLiveVisitors() {
+  return del("liveVisitors", "Delete all live tracking data?", "All live visitor/session tracking data was deleted.");
 }
 
 function deleteApplications() {
@@ -1451,11 +1463,8 @@ async function resetDashboard() {
     ]);
 
     applications = [];
-    visitors = {};
-    referralProfiles = {};
-    referralJoins = {};
     renderApplications();
-    renderVisitors();
+    renderApplications();
     renderReferrals();
 
     showToast("Dashboard reset", "All dashboard data was successfully cleared.", "success", 5000);

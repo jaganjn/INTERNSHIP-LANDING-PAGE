@@ -49,7 +49,7 @@
   <article class="metric"><span class="metric-icon green">✓</span><div><p>Submitted Today</p><h3 id="submittedCount">0</h3><small>Successful applications</small></div></article>
   <article class="metric"><span class="metric-icon violet">↗</span><div><p>Conversion Rate</p><h3 id="conversionRate">0%</h3><small>Submitted ÷ sessions</small></div></article>
   <article class="metric"><span class="metric-icon rose">×</span><div><p>Abandoned</p><h3 id="abandonedCount">0</h3><small>Expired incomplete forms</small></div></article>
-  
+  <article class="metric metric-visitor-total"><span class="metric-icon cyan">◌</span><div><p>Total Landing Page Visitors</p><h3 id="landingPageVisitorCountMetric">0</h3><small>Unique landing-page visitors</small></div></article>
 </section>
 
 <section class="crm-section" id="applicationCRM">
@@ -90,7 +90,7 @@
   <article class="panel panel-wide admin-module" id="activity"><header><div><span class="eyebrow">APPLICATION FLOW</span><h2>7-Day Applications Overview</h2></div><span class="live-chip">● Live</span></header><div id="applicationsChart" class="bar-chart"></div></article>
   <article class="panel admin-module" id="analytics"><header><div><span class="eyebrow">COLLEGE INSIGHTS</span><h2>Top Colleges</h2></div></header><div id="topColleges" class="rank-list"><p class="empty">No data yet…</p></div></article>
   <article class="panel live-panel admin-module" id="liveVisitors"><header><div><span class="eyebrow">PRESENCE</span><h2>Active Visitors</h2></div><button id="refreshDashboardButton" class="icon-action refresh-action" type="button" aria-label="Refresh dashboard and clear abandoned sessions"><span>↻</span><small>Refresh</small></button></header><div id="visitorList" class="visitor-list"><p class="empty">Waiting for visitors…</p></div></article>
-  <article class="panel admin-module application-visitor-panel" id="applicationVisitors"><header><div><span class="eyebrow">WEBSITE TRAFFIC</span><h2>Daily Landing Page Traffic</h2></div><span class="live-chip">● Daily</span></header><div class="application-visitor-stat"><strong id="applicationVisitorCount">0</strong><span>Unique visitors who opened the application form</span></div><div class="application-visitor-note"><b>7-day website traffic</b><p>Landing-page visitors are stored by IST calendar day. The same browser is counted once per day, so refreshes do not inflate traffic. The main dashboard card shows today's unique visitors; the history below lets you compare daily traffic.</p></div><div id="landingTrafficChart" class="traffic-history"><p class="empty">Loading daily traffic…</p></div></article>
+  <article class="panel admin-module application-visitor-panel" id="applicationVisitors"><header><div><span class="eyebrow">APPLICATION TRAFFIC</span><h2>Landing Page Traffic</h2></div><span class="live-chip">● Tracking</span></header><div class="application-visitor-stat"><strong id="applicationVisitorCount">0</strong><span>Visitors who opened the application form</span></div><div class="application-visitor-note"><b>Traffic metrics</b><p>The main dashboard card counts unique landing-page visitors. Refreshing the same browser does not increase the count. This panel separately shows unique visitors who opened the application form, so you can compare overall traffic with application intent.</p></div></article>
   <article class="panel admin-module" id="applications"><header><div><span class="eyebrow">LATEST DATA</span><h2>Recent Applications</h2></div>
       <button id="exportApplicationsButton" class="panel-action" type="button">Export CSV</button>
     </header><div id="recentApplications" class="application-list"><p class="empty">No applications yet…</p></div></article>
@@ -166,7 +166,8 @@
         <label>Next Follow-up<input id="modalFollowUp" type="datetime-local"></label>
         <label>Assigned To<input id="modalAssignedTo" type="text" placeholder="Admin / counselor name"></label>
         <label>Remarks<textarea id="modalRemarks" rows="4" placeholder="Add call notes, next steps or remarks…"></textarea></label>
-        <div class="modal-actions"><button id="saveApplicationCrm" class="primary-action" type="button">Save Changes</button><button id="callApplication" class="panel-action" type="button">📞 Call</button><button id="whatsappApplication" class="panel-action" type="button">💬 WhatsApp</button><button id="emailApplication" class="panel-action" type="button">✉ Email</button></div>
+        <div class="modal-actions"><button id="saveApplicationCrm" class="primary-action" type="button">Save Changes</button><button id="callApplication" class="panel-action" type="button">📞 Call</button><button id="smsApplication" type="button">📱 SMS</button>
+              <button id="whatsappApplication" class="panel-action" type="button">💬 WhatsApp</button><button id="emailApplication" class="panel-action" type="button">✉ Email</button></div>
         <small id="modalSaveStatus" class="modal-save-status"></small>
       </section>
     </div>

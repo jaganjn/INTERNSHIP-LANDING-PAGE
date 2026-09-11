@@ -598,11 +598,3 @@ body.module-modal-open{overflow:hidden}
 .application-visitor-note b{font-size:10px;letter-spacing:.08em;color:#a8b9d3;text-transform:uppercase}
 .application-visitor-note p{margin:7px 0 0;color:#7f93af;font-size:10px;line-height:1.65}
 @media(max-width:600px){.application-visitor-stat{display:block}.application-visitor-stat strong{display:block;margin-bottom:8px}}
-
-/* Daily landing-page traffic history */
-.traffic-history{display:grid;gap:9px;margin-top:14px}
-.traffic-day{padding:10px 12px;border:1px solid #1b2a43;border-radius:11px;background:#0b1728}
-.traffic-day-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px;color:#8fa2bd;font-size:11px}
-.traffic-day-head strong{color:#f7f9fc;font-size:13px}
-.traffic-track{height:5px;border-radius:999px;background:#132238;overflow:hidden}
-.traffic-track i{display:block;height:100%;min-width:0;border-radius:999px;background:linear-gradient(90deg,#42a5ff,#27d7bd)}

@@ -1618,67 +1618,63 @@ async function submitApplication() {
 }
 
 // Daily landing-page traffic tracking.
-// One unique browser/device is counted once per IST calendar day.
-// The visitor ID persists across refreshes, while the daily marker changes
-// with the date, allowing the same visitor to be counted again on a new day.
+// One persistent browser/device ID is counted once per IST calendar day.
+// Each day's unique visitor marker is stored at:
+// publicStats/dailyLandingVisitors/YYYY-MM-DD/{visitorId}
 (function trackDailyLandingPageTraffic(){
-  if (typeof db === 'undefined' || typeof firebase === 'undefined') return;
-
-  const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v6';
-  let visitorId = null;
-
-  try {
-    visitorId = localStorage.getItem(VISITOR_ID_KEY);
-    if (!visitorId) {
-      visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-      localStorage.setItem(VISITOR_ID_KEY, visitorId);
+  function start(){
+    if (typeof db === 'undefined' || typeof firebase === 'undefined') {
+      console.warn('Daily traffic tracking: Firebase database is not ready.');
+      return;
     }
-  } catch (_) {
-    visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
-  }
 
-  function getISTDateKey(){
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'Asia/Kolkata',
-      year: 'numeric', month: '2-digit', day: '2-digit'
-    }).format(new Date());
-  }
-
-  async function registerToday(){
-    const dateKey = getISTDateKey();
-    // Store the daily marker inside the existing landingPageVisitors record.
-    // This keeps daily traffic compatible with Firebase rules that already
-    // allow public creation of landingPageVisitors, without requiring a
-    // separate new database rule just for dailyLandingVisitors.
-    const visitorRef = db.ref(`publicStats/landingPageVisitors/${visitorId}`);
-
+    const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v7';
+    let visitorId;
     try {
-      const result = await visitorRef.transaction(current => {
-        const now = Date.now();
-        if (current === null) {
-          return {
-            firstSeen: now,
-            daily: { [dateKey]: { firstSeen: now } }
-          };
-        }
-        const daily = current.daily && typeof current.daily === 'object' ? { ...current.daily } : {};
-        if (daily[dateKey]) return;
-        daily[dateKey] = { firstSeen: now };
-        return { ...current, daily };
-      });
-
-      if (!result?.committed) {
-        console.warn('Daily landing visitor registration was not committed.');
+      visitorId = localStorage.getItem(VISITOR_ID_KEY);
+      if (!visitorId) {
+        visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+        localStorage.setItem(VISITOR_ID_KEY, visitorId);
       }
-    } catch (error) {
-      console.warn('Daily landing visitor registration failed:', error);
+    } catch (_) {
+      visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
     }
+
+    function getISTDateKey(){
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(new Date());
+      const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+      return `${map.year}-${map.month}-${map.day}`;
+    }
+
+    async function registerToday(){
+      const dateKey = getISTDateKey();
+      const dailyRef = db.ref(`publicStats/dailyLandingVisitors/${dateKey}/${visitorId}`);
+      try {
+        const result = await dailyRef.transaction(current => current || {
+          firstSeen: firebase.database.ServerValue.TIMESTAMP
+        });
+        if (result?.committed) {
+          console.log('Daily landing visitor registered:', dateKey, visitorId);
+        }
+      } catch (error) {
+        console.warn('Daily landing visitor registration failed:', error);
+      }
+    }
+
+    registerToday();
+    // Handles a visitor who keeps the page open across midnight IST.
+    setInterval(registerToday, 60 * 1000);
   }
 
-  setTimeout(registerToday, 0);
-  // If the page remains open across midnight, register the visitor in the new
-  // IST day without requiring a refresh.
-  setInterval(registerToday, 60 * 1000);
+  // Firebase.js is loaded immediately before this script, but defer once so
+  // the tracker never races initialization on slower browsers.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
+    setTimeout(start, 0);
+  }
 })();
 
 

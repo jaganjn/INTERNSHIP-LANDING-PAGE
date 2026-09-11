@@ -1125,21 +1125,18 @@ function listeners() {
     }
   });
 
-  // Daily website traffic. Read the existing public visitor records and count
-  // visitors that have a marker for today's IST date. Each browser/device has
-  // one persistent ID, so refreshes do not inflate the daily number.
-  db.ref("publicStats/landingPageVisitors").on("value", snapshot => {
+  // Daily website traffic. Read the dedicated per-day unique visitor bucket.
+  // Each browser/device has one persistent ID, so refreshes do not inflate the
+  // daily number. Historical days remain stored for traffic analysis.
+  db.ref("publicStats/dailyLandingVisitors").on("value", snapshot => {
     const data = snapshot.val() || {};
     const today = getTodayISTKey();
     const counts = {};
 
-    Object.values(data).forEach(visitor => {
-      const daily = visitor?.daily;
-      if (daily && typeof daily === "object") {
-        Object.keys(daily).forEach(dateKey => {
-          counts[dateKey] = (counts[dateKey] || 0) + 1;
-        });
-      }
+    Object.entries(data).forEach(([dateKey, visitors]) => {
+      counts[dateKey] = visitors && typeof visitors === "object"
+        ? Object.keys(visitors).length
+        : 0;
     });
 
     const todayCount = counts[today] || 0;
@@ -1160,13 +1157,6 @@ function listeners() {
         return `<div class="traffic-day" title="${count} unique visitors on ${key}"><div class="traffic-day-head"><span>${label}</span><strong>${count}</strong></div><div class="traffic-track"><i style="width:${Math.max(count ? 8 : 0, (count / max) * 100)}%"></i></div></div>`;
       }).join("");
     }
-  });
-
-  db.ref("publicStats/applicationVisitorCount").on("value", snapshot => {
-    const count = Number(snapshot.val());
-    const displayCount = Number.isFinite(count) && count >= 0 ? Math.floor(count).toLocaleString("en-IN") : "0";
-    if (E.applicationVisitorCount) E.applicationVisitorCount.textContent = displayCount;
-    if (E.applicationVisitorCountMetric) E.applicationVisitorCountMetric.textContent = displayCount;
   });
 
   // Near-real-time CRM -> Google Sheets sync. This listens only for future Firebase record changes, so opening the dashboard does not re-send all existing applications.

@@ -32,7 +32,6 @@ const E = {
   referralSearch: el("referralSearch"),
   applicationVisitorCount: el("applicationVisitorCount"),
   applicationVisitorCountMetric: el("applicationVisitorCountMetric"),
-  landingPageVisitorCountMetric: el("landingPageVisitorCountMetric"),
   applicationFormVisitorCountMetric: el("applicationFormVisitorCountMetric"),
   landingTrafficChart: el("landingTrafficChart"),
 };
@@ -1140,11 +1139,6 @@ function listeners() {
         counts[dateKey] = (counts[dateKey] || 0) + 1;
       });
     });
-
-    const todayCount = counts[today] || 0;
-    if (E.landingPageVisitorCountMetric) {
-      E.landingPageVisitorCountMetric.textContent = todayCount.toLocaleString("en-IN");
-    }
 
     if (E.landingTrafficChart) {
       const [ty, tm, td] = today.split("-").map(Number);

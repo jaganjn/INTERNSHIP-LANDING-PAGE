@@ -10,6 +10,42 @@ const BROWSER_ALERT_STORAGE_KEY = "apexAdminBrowserAlertsV1";
 const SEEN_APPLICATIONS_KEY = "apexAdminSeenApplicationsV1";
 const PUSH_TOKEN_STORAGE_KEY = "apexAdminPushTokenV1";
 const COUNSELOR_STORAGE_KEY = "internsforgeCounselorsV1";
+const CALL_STATUSES = [
+  "Not Contacted",
+  "New",
+  "Connected",
+  "Callback",
+  "Details Shared",
+  "Follow-up",
+  "Interested",
+  "Not Interested",
+  "Not Picking",
+  "Paid / Pre-Reg",
+  "Enrolled",
+  "RNR",
+  "Invalid Number"
+];
+
+const CALL_STATUS_ALIASES = {
+  "Called": "Connected",
+  "Call Back": "Callback",
+  "CallBack": "Callback",
+  "Selected": "Paid / Pre-Reg",
+  "Joined": "Enrolled",
+  "Not Reachable": "Not Picking"
+};
+
+function normalizeCallStatus(status) {
+  const raw = String(status || "").trim();
+  if (!raw) return "Not Contacted";
+  return CALL_STATUS_ALIASES[raw] || raw;
+}
+
+function renderCallStatusOptions(selected = "") {
+  const normalized = normalizeCallStatus(selected);
+  return CALL_STATUSES.map(status => `<option value="${esc(status)}" ${status === normalized ? "selected" : ""}>${esc(status)}</option>`).join("");
+}
+
 
 const el = id => document.getElementById(id);
 const E = {
@@ -388,7 +424,7 @@ function renderApplications(newIds = new Set()) {
 }
 
 function getCallStatus(app) {
-  return String(app?.callStatus || "Not Contacted").trim() || "Not Contacted";
+  return normalizeCallStatus(app?.callStatus);
 }
 
 function getFollowUpMs(app) {
@@ -420,8 +456,15 @@ function populateCrmFilters() {
   const domainSelect = el("crmDomainFilter");
   const yearSelect = el("crmYearFilter");
   const counselorSelect = el("crmCounselorFilter");
+  const statusSelect = el("crmStatusFilter");
   if (!domainSelect || !yearSelect) return;
   loadCounselorNames();
+  if (statusSelect) {
+    const rawCurrentStatus = String(statusSelect.value || "").trim();
+    const currentStatus = rawCurrentStatus ? normalizeCallStatus(rawCurrentStatus) : "";
+    statusSelect.innerHTML = '<option value="">All call statuses</option>' + CALL_STATUSES.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
+    statusSelect.value = CALL_STATUSES.includes(currentStatus) ? currentStatus : "";
+  }
   const domains = [...new Set(applications.map(a => String(a.domain || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const years = [...new Set(applications.map(a => String(a.year || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const currentDomain = domainSelect.value, currentYear = yearSelect.value, currentCounselor = counselorSelect?.value || "";
@@ -435,7 +478,8 @@ function populateCrmFilters() {
 
 function filterCrmApplications() {
   const q = String(el("crmSearch")?.value || "").trim().toLowerCase();
-  const status = el("crmStatusFilter")?.value || "";
+  const status = normalizeCallStatus(el("crmStatusFilter")?.value || "");
+  const statusFilterActive = Boolean(el("crmStatusFilter")?.value);
   const domain = el("crmDomainFilter")?.value || "";
   const year = el("crmYearFilter")?.value || "";
   const counselor = el("crmCounselorFilter")?.value || "";
@@ -447,7 +491,7 @@ function filterCrmApplications() {
   crmFilteredApplications = applications.filter(app => {
     const hay = [app.id, app.applicationId, app.name, app.phone, app.email, app.college, app.department, app.domain].map(v=>String(v||"").toLowerCase()).join(" ");
     if (q && !hay.includes(q)) return false;
-    if (status && getCallStatus(app) !== status) return false;
+    if (statusFilterActive && getCallStatus(app) !== status) return false;
     if (domain && String(app.domain||"") !== domain) return false;
     if (year && String(app.year||"") !== year) return false;
     if (counselor && String(app.assignedTo||"") !== counselor) return false;
@@ -611,8 +655,8 @@ function renderApplicationCRM() {
     if (status === "Not Contacted") counts.not++;
     if (isFollowUpDue(app)) counts.due++;
     if (status === "Interested") counts.interested++;
-    if (status === "Selected") counts.selected++;
-    if (status === "Joined") counts.joined++;
+    if (status === "Paid / Pre-Reg") counts.selected++;
+    if (status === "Enrolled") counts.joined++;
   });
   el("crmTotal").textContent = applications.length;
   el("crmNotContacted").textContent = counts.not;
@@ -676,7 +720,11 @@ function openApplicationModal(id) {
   el("applicationAcademicDetails").innerHTML = detailRows([
     ["College", app.college], ["Department", app.department], ["Year", app.year], ["Domain", app.domain], ["Start availability", app.startAvailability], ["Application reason", app.applicationReason]
   ]);
-  el("modalCallStatus").value = getCallStatus(app);
+  const modalStatus = el("modalCallStatus");
+  if (modalStatus) {
+    modalStatus.innerHTML = renderCallStatusOptions(getCallStatus(app));
+    modalStatus.value = getCallStatus(app);
+  }
   el("modalFollowUp").value = toDateTimeLocal(getFollowUpMs(app));
   loadCounselorNames();
   const assignedSelect = el("modalAssignedTo");

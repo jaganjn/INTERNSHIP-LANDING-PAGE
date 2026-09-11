@@ -33,3 +33,10 @@ Mobile viewport: 390 x 844
 - Page runtime errors: NONE
 
 Note: Live submission also depends on internet access, the configured Firebase project, deployed Realtime Database rules and the configured Google Apps Script endpoint.
+
+CALL STATUS STANDARDIZATION UPDATE (2026-09-11)
+- Dashboard filter and application modal use the canonical status list.
+- Legacy Firebase statuses are normalized for display and filtering.
+- Dashboard metrics now represent Paid / Pre-Reg and Enrolled.
+- Included Code.gs applies the canonical Call Status dropdown to managed Google Sheets and provides standardizeAllCallStatuses().
+- Master spreadsheet is explicitly referenced to keep counselor trigger lookups on the central registry.

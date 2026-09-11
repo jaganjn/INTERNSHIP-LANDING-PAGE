@@ -65,12 +65,27 @@
     <article><span>Not Contacted</span><strong id="crmNotContacted">0</strong></article>
     <article><span>Follow-ups Due</span><strong id="crmFollowUps">0</strong></article>
     <article><span>Interested</span><strong id="crmInterested">0</strong></article>
-    <article><span>Selected</span><strong id="crmSelected">0</strong></article>
-    <article><span>Joined</span><strong id="crmJoined">0</strong></article>
+    <article><span>Paid / Pre-Reg</span><strong id="crmSelected">0</strong></article>
+    <article><span>Enrolled</span><strong id="crmJoined">0</strong></article>
   </div>
   <div class="crm-toolbar">
     <div class="crm-search"><span>⌕</span><input id="crmSearch" type="search" placeholder="Search name, phone, email, college or application ID"></div>
-    <select id="crmStatusFilter"><option value="">All call statuses</option><option>Not Contacted</option><option>Called</option><option>Call Back</option><option>Interested</option><option>Selected</option><option>Joined</option><option>Not Interested</option><option>Not Reachable</option></select>
+    <select id="crmStatusFilter">
+      <option value="">All call statuses</option>
+      <option>Not Contacted</option>
+      <option>New</option>
+      <option>Connected</option>
+      <option>Callback</option>
+      <option>Details Shared</option>
+      <option>Follow-up</option>
+      <option>Interested</option>
+      <option>Not Interested</option>
+      <option>Not Picking</option>
+      <option>Paid / Pre-Reg</option>
+      <option>Enrolled</option>
+      <option>RNR</option>
+      <option>Invalid Number</option>
+    </select>
     <select id="crmDomainFilter"><option value="">All domains</option></select>
     <select id="crmYearFilter"><option value="">All years</option></select>
     <select id="crmCounselorFilter"><option value="">All counselors</option></select>
@@ -164,7 +179,21 @@
       <section class="student-detail-card"><h3>Student</h3><div id="applicationStudentDetails"></div></section>
       <section class="student-detail-card"><h3>Academic & Internship</h3><div id="applicationAcademicDetails"></div></section>
       <section class="student-detail-card crm-edit-card"><h3>Contact & Follow-up</h3>
-        <label>Call Status<select id="modalCallStatus"><option>Not Contacted</option><option>Called</option><option>Call Back</option><option>Interested</option><option>Selected</option><option>Joined</option><option>Not Interested</option><option>Not Reachable</option></select></label>
+        <label>Call Status<select id="modalCallStatus">
+          <option>Not Contacted</option>
+          <option>New</option>
+          <option>Connected</option>
+          <option>Callback</option>
+          <option>Details Shared</option>
+          <option>Follow-up</option>
+          <option>Interested</option>
+          <option>Not Interested</option>
+          <option>Not Picking</option>
+          <option>Paid / Pre-Reg</option>
+          <option>Enrolled</option>
+          <option>RNR</option>
+          <option>Invalid Number</option>
+        </select></label>
         <label>Next Follow-up<input id="modalFollowUp" type="datetime-local"></label>
         <label>Assigned To<select id="modalAssignedTo"><option value="">Unassigned</option><option value="__new__">＋ Add new counselor…</option></select></label>
         <label>Remarks<textarea id="modalRemarks" rows="4" placeholder="Add call notes, next steps or remarks…"></textarea></label>
@@ -179,5 +208,5 @@
 <div id="refreshOverlay" class="refresh-overlay" aria-hidden="true">
   <div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Cleaning abandoned sessions and loading fresh data…</small></div>
 </div>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20260911-counselor1"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20260911-counselor2-status"></script>
 </body></html>

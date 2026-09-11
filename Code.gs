@@ -39,15 +39,72 @@ const FIREBASE_SYNC_CONFIG = {
   SERVICE_ACCOUNT_PROPERTY: "FIREBASE_SERVICE_ACCOUNT_JSON"
 };
 
+const MASTER_SPREADSHEET_ID = "1zqXBMY_Y97cgk1wdT3ZdzqW1ZH7cmyAipIsDQCB3Nfs";
+
+const CALL_STATUS_VALUES = [
+  "Not Contacted",
+  "New",
+  "Connected",
+  "Callback",
+  "Details Shared",
+  "Follow-up",
+  "Interested",
+  "Not Interested",
+  "Not Picking",
+  "Paid / Pre-Reg",
+  "Enrolled",
+  "RNR",
+  "Invalid Number"
+];
+
+const CALL_STATUS_ALIASES = {
+  "Called": "Connected",
+  "Call Back": "Callback",
+  "CallBack": "Callback",
+  "Selected": "Paid / Pre-Reg",
+  "Joined": "Enrolled",
+  "Not Reachable": "Not Picking"
+};
+
+function getMasterSpreadsheet_() {
+  return SpreadsheetApp.openById(MASTER_SPREADSHEET_ID);
+}
+
+function normalizeCallStatus_(status) {
+  const raw = value(status);
+  return raw ? (CALL_STATUS_ALIASES[raw] || raw) : "Not Contacted";
+}
+
+function applyCallStatusValidation_(sheet) {
+  const headerRow = getHeaders(sheet);
+  const col = headerRow.findIndex(h => normalizeHeader(h) === "callstatus") + 1;
+  if (!col) return;
+  const rule = SpreadsheetApp.newDataValidation()
+    .requireValueInList(CALL_STATUS_VALUES, true)
+    .setAllowInvalid(false)
+    .build();
+  const maxRows = Math.max(sheet.getMaxRows(), 2);
+  sheet.getRange(2, col, maxRows - 1, 1).setDataValidation(rule);
+}
+
 /**
- * Counselor routing. Every counselor gets a dedicated tab in the
- * same Google Spreadsheet named: Counselor - <Counselor Name>.
+ * Counselor routing. Every counselor gets a DEDICATED GOOGLE SPREADSHEET FILE.
+ * The master spreadsheet keeps only the counselor registry in `Counselors`.
+ * Each counselor spreadsheet contains one lead sheet named `<Counselor Name>\'s Leads`.
+ *
+ * FUTURE COUNSELORS: no code change is required. Add the counselor name and
+ * their separate Google Spreadsheet ID to the master `Counselors` sheet, or use
+ * the Admin Dashboard's Add Counselor flow.
  */
 const COUNSELOR_CONFIG = {
   LIST_SHEET_NAME: "Counselors",
-  LIST_HEADERS: ["Counselor Name", "Active", "Created At"],
-  SHEET_PREFIX: "Counselor - "
+  LIST_HEADERS: ["Counselor Name", "Spreadsheet ID", "Active", "Created At"],
+  LEADS_SHEET_SUFFIX: "'s Leads"
 };
+
+// Counselor spreadsheets are configured dynamically in the master `Counselors` sheet.
+// No counselor names or Spreadsheet IDs are hard-coded here.
+
 
 function createSheetToFirebaseTrigger() {
   const ss = SpreadsheetApp.getActive();
@@ -78,24 +135,26 @@ function removeSheetToFirebaseTrigger() {
 
 function sheetOnEdit(e) {
   if (!e || !e.range) return;
-
   const sheet = e.range.getSheet();
   const sheetName = sheet.getName();
-
   if (e.range.getRow() < 2) return;
-  if (e.range.getColumn() > sheet.getLastColumn()) return;
-
   try {
     if (sheetName === CONFIG.SHEET_NAME) {
       syncSheetRowToFirebase(e.range.getRow());
-      return;
-    }
-
-    if (sheetName.indexOf(COUNSELOR_CONFIG.SHEET_PREFIX) === 0) {
-      syncCounselorRowToFirebase(sheet, e.range.getRow());
     }
   } catch (error) {
     console.error("Sheet → Firebase sync failed:", error);
+  }
+}
+
+function counselorSpreadsheetOnEdit(e) {
+  if (!e || !e.range) return;
+  const sheet = e.range.getSheet();
+  if (e.range.getRow() < 2) return;
+  try {
+    syncCounselorRowToFirebase(sheet, e.range.getRow());
+  } catch (error) {
+    console.error("Counselor spreadsheet → Firebase sync failed:", error);
   }
 }
 
@@ -459,7 +518,7 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     if (data.action === "syncApplications") return jsonResponse(syncApplicationsToSheet(data.applications || [], data.updateExisting === true));
     if (data.action === "updateApplication") return jsonResponse(updateApplicationInSheet(data.application || {}));
-    if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || ""));
+    if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
     if (data.action === "health") return jsonResponse({status:"online", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
     return saveSingleApplication(data);
   } catch (error) {
@@ -582,110 +641,385 @@ function updateRowByApplicationId(sheet, headers, rowNumber, app) {
 
 /**
  * ==========================================================
- * COUNSELOR MANAGEMENT + LEAD ROUTING
+ * COUNSELOR MANAGEMENT + SEPARATE SPREADSHEET ROUTING
  * ==========================================================
+ *
+ * MASTER SPREADSHEET
+ *   ├── Sheet1
+ *   └── Counselors
+ *
+ * COUNSELOR SPREADSHEETS
+ *   ├── <Counselor A> → <Counselor A>'s Leads
+ *   ├── <Counselor B> → <Counselor B>'s Leads
+ *   └── ...
  */
 
 function normalizeCounselorName(name) {
   return value(name).replace(/\s+/g, " ").trim();
 }
 
-function counselorSheetName(name) {
+function counselorLeadsSheetName(name) {
   const clean = normalizeCounselorName(name);
   if (!clean) return "";
-
-  // Google Sheets tab names cannot contain: : \ / ? * [ ]
-  let safe = clean.replace(/[:\\/?*\[\]]/g, "-");
-  safe = safe.replace(/^'+|'+$/g, "").trim();
-  if (!safe) safe = "Counselor";
-
-  safe = (COUNSELOR_CONFIG.SHEET_PREFIX + safe).slice(0, 100);
-  return safe;
+  return (clean + COUNSELOR_CONFIG.LEADS_SHEET_SUFFIX).slice(0, 100);
 }
 
 function getCounselorConfigSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getMasterSpreadsheet_();
   let sheet = ss.getSheetByName(COUNSELOR_CONFIG.LIST_SHEET_NAME);
-
-  if (!sheet) {
-    sheet = ss.insertSheet(COUNSELOR_CONFIG.LIST_SHEET_NAME);
-  }
+  if (!sheet) sheet = ss.insertSheet(COUNSELOR_CONFIG.LIST_SHEET_NAME);
 
   const headers = getHeaders(sheet);
   if (!headers.some(Boolean)) {
     sheet.getRange(1, 1, 1, COUNSELOR_CONFIG.LIST_HEADERS.length)
       .setValues([COUNSELOR_CONFIG.LIST_HEADERS]);
-    formatHeader(sheet);
   } else {
     const existing = {};
-    headers.forEach(h => existing[normalizeHeader(h)] = true);
+    headers.forEach(h => { const n = normalizeHeader(h); if (n) existing[n] = true; });
     COUNSELOR_CONFIG.LIST_HEADERS.forEach(header => {
       if (!existing[normalizeHeader(header)]) {
         sheet.getRange(1, sheet.getLastColumn() + 1).setValue(header);
       }
     });
-    formatHeader(sheet);
   }
-
+  formatHeader(sheet);
   return sheet;
 }
 
-function registerCounselor(name) {
+function registerCounselor(name, spreadsheetId) {
   const counselorName = normalizeCounselorName(name);
-  if (!counselorName) {
-    return {status:"error", message:"Counselor name is required."};
+  if (!counselorName) return {status:"error", message:"Counselor name is required."};
+
+  let targetSpreadsheetId = value(spreadsheetId);
+  if (!targetSpreadsheetId) {
+    const existing = getCounselorRecord(counselorName);
+    targetSpreadsheetId = existing ? value(existing.spreadsheetId) : "";
   }
 
-  const sheet = getCounselorConfigSheet();
-  const headers = getHeaders(sheet);
+  if (!targetSpreadsheetId) {
+    const created = SpreadsheetApp.create("InternsForge - " + counselorName);
+    targetSpreadsheetId = created.getId();
+  }
+
+  const targetSS = SpreadsheetApp.openById(targetSpreadsheetId);
+  let leadsSheet = targetSS.getSheetByName(counselorLeadsSheetName(counselorName));
+  if (!leadsSheet) {
+    const first = targetSS.getSheets()[0];
+    if (first && first.getName() === "Sheet1" && targetSS.getSheets().length === 1) {
+      first.setName(counselorLeadsSheetName(counselorName));
+      leadsSheet = first;
+    } else {
+      leadsSheet = targetSS.insertSheet(counselorLeadsSheetName(counselorName));
+    }
+  }
+  ensureHeaders(leadsSheet);
+  leadsSheet.setFrozenRows(1);
+  formatHeader(leadsSheet);
+
+  ensureCounselorTrigger(targetSpreadsheetId);
+
+  const config = getCounselorConfigSheet();
+  const headers = getHeaders(config);
   const nameCol = headers.findIndex(h => normalizeHeader(h) === "counselorname") + 1;
+  const idCol = headers.findIndex(h => normalizeHeader(h) === "spreadsheetid") + 1;
   const activeCol = headers.findIndex(h => normalizeHeader(h) === "active") + 1;
   const createdCol = headers.findIndex(h => normalizeHeader(h) === "createdat") + 1;
 
-  let existingRow = 0;
-  if (nameCol && sheet.getLastRow() >= 2) {
-    const values = sheet.getRange(2, nameCol, sheet.getLastRow() - 1, 1).getValues();
-    for (let i = 0; i < values.length; i++) {
-      if (normalizeCounselorName(values[i][0]).toLowerCase() === counselorName.toLowerCase()) {
-        existingRow = i + 2;
+  let rowNumber = 0;
+  if (config.getLastRow() >= 2 && nameCol) {
+    const vals = config.getRange(2, nameCol, config.getLastRow() - 1, 1).getValues();
+    for (let i = 0; i < vals.length; i++) {
+      if (normalizeCounselorName(vals[i][0]).toLowerCase() === counselorName.toLowerCase()) {
+        rowNumber = i + 2;
         break;
       }
     }
   }
 
-  if (!existingRow) {
+  if (!rowNumber) {
     const row = new Array(headers.length).fill("");
     row[nameCol - 1] = counselorName;
+    if (idCol) row[idCol - 1] = targetSpreadsheetId;
     if (activeCol) row[activeCol - 1] = "Yes";
     if (createdCol) row[createdCol - 1] = nowString();
-    sheet.appendRow(row);
-  } else if (activeCol) {
-    sheet.getRange(existingRow, activeCol).setValue("Yes");
+    config.appendRow(row);
+  } else {
+    if (idCol) config.getRange(rowNumber, idCol).setValue(targetSpreadsheetId);
+    if (activeCol) config.getRange(rowNumber, activeCol).setValue("Yes");
   }
-
-  const counselorSheet = getOrCreateCounselorSheet(counselorName);
 
   return {
     status:"success",
     counselorName:counselorName,
-    sheetName:counselorSheet.getName()
+    spreadsheetId:targetSpreadsheetId,
+    sheetName:leadsSheet.getName()
   };
 }
 
-function getOrCreateCounselorSheet(name) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetName = counselorSheetName(name);
-  if (!sheetName) throw new Error("Invalid counselor name.");
 
-  let sheet = ss.getSheetByName(sheetName);
-  if (!sheet) {
-    sheet = ss.insertSheet(sheetName);
+/**
+ * Manual helper for adding any future counselor.
+ * Enter the counselor name and, when they already have a separate spreadsheet,
+ * paste its Spreadsheet ID. Leave the ID blank only if you want Apps Script to
+ * create the counselor's separate spreadsheet automatically.
+ */
+function addNewCounselor() {
+  const ui = SpreadsheetApp.getUi();
+  const nameResponse = ui.prompt(
+    "Add Academic Counselor",
+    "Enter the counselor name:",
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (nameResponse.getSelectedButton() !== ui.Button.OK) return "Cancelled";
+
+  const name = normalizeCounselorName(nameResponse.getResponseText());
+  if (!name) {
+    ui.alert("Counselor name is required.");
+    return "No counselor name entered.";
   }
 
-  // Counselor tabs always use the same CRM columns as the master Sheet1.
+  const idResponse = ui.prompt(
+    "Counselor Spreadsheet (Optional)",
+    "If this counselor already has a separate Google Spreadsheet, paste its Spreadsheet ID.\n\nLeave blank to create a new spreadsheet automatically.",
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (idResponse.getSelectedButton() === ui.Button.CANCEL) return "Cancelled";
+
+  const spreadsheetId = value(idResponse.getResponseText()).trim();
+  const result = registerCounselor(name, spreadsheetId);
+
+  if (result.status === "success") {
+    ui.alert(
+      "Counselor Ready",
+      name + " is now configured.\n\nSpreadsheet ID: " + result.spreadsheetId + "\nLead sheet: " + result.sheetName,
+      ui.ButtonSet.OK
+    );
+  } else {
+    ui.alert("Could not add counselor", result.message || "Unknown error", ui.ButtonSet.OK);
+  }
+
+  return result;
+}
+
+
+/**
+ * Test one counselor's separate spreadsheet connection.
+ * Run this from the master spreadsheet Apps Script editor.
+ * It does not hard-code any counselor names or Spreadsheet IDs.
+ */
+function testCounselorConnection() {
+  const ui = SpreadsheetApp.getUi();
+  const response = ui.prompt(
+    "Test Counselor Connection",
+    "Enter the counselor name exactly as it appears in the Counselors sheet:",
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (response.getSelectedButton() !== ui.Button.OK) return "Cancelled";
+
+  const name = normalizeCounselorName(response.getResponseText());
+  if (!name) {
+    ui.alert("Counselor name is required.");
+    return "No counselor name entered.";
+  }
+
+  const record = getCounselorRecord(name);
+  if (!record) {
+    ui.alert("Counselor Not Found", "No matching counselor was found in the Counselors sheet.", ui.ButtonSet.OK);
+    return {status:"error", message:"Counselor not found."};
+  }
+  if (!record.spreadsheetId) {
+    ui.alert("Spreadsheet ID Missing", "Add the counselor's separate Spreadsheet ID in the Counselors sheet.", ui.ButtonSet.OK);
+    return {status:"error", message:"Spreadsheet ID missing."};
+  }
+
+  try {
+    const ss = SpreadsheetApp.openById(record.spreadsheetId);
+    const sheetName = counselorLeadsSheetName(name);
+    let sheet = ss.getSheetByName(sheetName);
+    if (!sheet) sheet = ss.insertSheet(sheetName);
+    ensureHeaders(sheet);
+    sheet.setFrozenRows(1);
+    formatHeader(sheet);
+    ensureCounselorTrigger(record.spreadsheetId);
+
+    const message =
+      "Connection successful.\n\n" +
+      "Counselor: " + name + "\n" +
+      "Spreadsheet: " + ss.getName() + "\n" +
+      "Lead sheet: " + sheetName + "\n\n" +
+      "The counselor spreadsheet is ready for lead routing.";
+    ui.alert("Counselor Connection OK", message, ui.ButtonSet.OK);
+    return {status:"success", counselorName:name, spreadsheetId:record.spreadsheetId, spreadsheetName:ss.getName(), sheetName:sheetName};
+  } catch (error) {
+    ui.alert(
+      "Connection Failed",
+      "Apps Script could not open the counselor spreadsheet.\n\nCheck the Spreadsheet ID and make sure the Apps Script account has Editor access.\n\nError: " + error.message,
+      ui.ButtonSet.OK
+    );
+    return {status:"error", message:error.message};
+  }
+}
+
+/**
+ * Convenience alias for future counselor setup.
+ * Uses the same dynamic Counselors registry; no code changes are required
+ * when additional counselors are added.
+ */
+function addCounselor() {
+  return addNewCounselor();
+}
+
+function getCounselors() {
+  const sheet = getCounselorConfigSheet();
+  const headers = getHeaders(sheet);
+  const nameCol = headers.findIndex(h => normalizeHeader(h) === "counselorname");
+  const idCol = headers.findIndex(h => normalizeHeader(h) === "spreadsheetid");
+  const activeCol = headers.findIndex(h => normalizeHeader(h) === "active");
+  if (nameCol < 0 || sheet.getLastRow() < 2) return [];
+
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, headers.length).getValues();
+  return rows.map(row => ({
+    name: value(row[nameCol]),
+    spreadsheetId: idCol >= 0 ? value(row[idCol]) : "",
+    active: activeCol >= 0 ? value(row[activeCol]) : "Yes"
+  })).filter(item => item.name);
+}
+
+function getCounselorRecord(name) {
+  const counselorName = normalizeCounselorName(name);
+  if (!counselorName) return null;
+  const sheet = getCounselorConfigSheet();
+  const headers = getHeaders(sheet);
+  const nameCol = headers.findIndex(h => normalizeHeader(h) === "counselorname") + 1;
+  const idCol = headers.findIndex(h => normalizeHeader(h) === "spreadsheetid") + 1;
+  const activeCol = headers.findIndex(h => normalizeHeader(h) === "active") + 1;
+  if (!nameCol || sheet.getLastRow() < 2) return null;
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, headers.length).getValues();
+  for (let i = 0; i < rows.length; i++) {
+    if (normalizeCounselorName(rows[i][nameCol - 1]).toLowerCase() === counselorName.toLowerCase()) {
+      return {
+        row: i + 2,
+        name: value(rows[i][nameCol - 1]),
+        spreadsheetId: idCol ? value(rows[i][idCol - 1]) : "",
+        active: activeCol ? value(rows[i][activeCol - 1]) : "Yes"
+      };
+    }
+  }
+  return null;
+}
+
+function ensureCounselorTrigger(spreadsheetId) {
+  const id = value(spreadsheetId);
+  if (!id) return;
+  const triggers = ScriptApp.getProjectTriggers();
+  const exists = triggers.some(t =>
+    t.getHandlerFunction() === "counselorSpreadsheetOnEdit" &&
+    t.getTriggerSourceId && t.getTriggerSourceId() === id
+  );
+  if (!exists) {
+    ScriptApp.newTrigger("counselorSpreadsheetOnEdit")
+      .forSpreadsheet(id)
+      .onEdit()
+      .create();
+  }
+}
+
+function syncApplicationToCounselorSheet(app, previousAssignedTo) {
+  const newAssignedTo = normalizeCounselorName(app["Assigned To"]);
+  const oldAssignedTo = normalizeCounselorName(previousAssignedTo);
+  const applicationId = value(app["Application ID"]);
+  if (!applicationId) return;
+
+  if (oldAssignedTo && oldAssignedTo.toLowerCase() !== newAssignedTo.toLowerCase()) {
+    removeApplicationFromCounselorSpreadsheet(oldAssignedTo, applicationId);
+  }
+  if (!newAssignedTo) return;
+
+  const finalRecord = getCounselorRecord(newAssignedTo);
+  if (!finalRecord || !finalRecord.spreadsheetId) {
+    throw new Error(
+      "Counselor \"" + newAssignedTo + "\" is not configured. Add the counselor and their Spreadsheet ID in the master Counselors sheet first."
+    );
+  }
+
+  const ss = SpreadsheetApp.openById(finalRecord.spreadsheetId);
+  const sheetName = counselorLeadsSheetName(newAssignedTo);
+  let sheet = ss.getSheetByName(sheetName);
+  if (!sheet) sheet = ss.insertSheet(sheetName);
   ensureHeaders(sheet);
-  sheet.setFrozenRows(1);
-  return sheet;
+  const headers = getHeaders(sheet);
+  const row = buildRow(headers, app);
+  const rowNumber = findApplicationId(sheet, headers, applicationId);
+
+  if (rowNumber > 0) {
+    const current = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+    const next = current.slice();
+    headers.forEach((header, index) => {
+      const incoming = row[index];
+      if (String(incoming ?? "").trim() !== "" || ["Call Status", "Next Follow-up", "Assigned To", "Remarks"].includes(header)) {
+        next[index] = incoming ?? current[index];
+      }
+    });
+    sheet.getRange(rowNumber, 1, 1, headers.length).setValues([next]);
+  } else {
+    sheet.appendRow(row);
+  }
+  formatHeader(sheet);
+}
+
+function removeApplicationFromCounselorSpreadsheet(counselorName, applicationId) {
+  const record = getCounselorRecord(counselorName);
+  if (!record || !record.spreadsheetId) return;
+  try {
+    const ss = SpreadsheetApp.openById(record.spreadsheetId);
+    const sheet = ss.getSheetByName(counselorLeadsSheetName(counselorName));
+    if (!sheet) return;
+    const rowNumber = findApplicationId(sheet, getHeaders(sheet), applicationId);
+    if (rowNumber > 0) sheet.deleteRow(rowNumber);
+  } catch (error) {
+    console.error("Could not remove application from counselor spreadsheet:", error);
+  }
+}
+
+function syncCounselorRowToFirebase(counselorSheet, rowNumber) {
+  const headers = getHeaders(counselorSheet);
+  const row = counselorSheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+  const raw = {};
+  headers.forEach((header, index) => raw[header] = row[index]);
+  const applicationId = value(raw["Application ID"] || raw.applicationId || raw.id);
+  if (!applicationId) return {status:"skipped", reason:"Missing Application ID"};
+
+  const app = buildApplicationObject(raw, applicationId);
+  const master = getSheet();
+  const masterHeaders = getHeaders(master);
+  const masterRow = findApplicationId(master, masterHeaders, applicationId);
+  let previousAssignedTo = "";
+
+  if (masterRow > 0) {
+    const current = master.getRange(masterRow, 1, 1, masterHeaders.length).getValues()[0];
+    previousAssignedTo = getAssignedToFromRow(masterHeaders, current);
+    updateRowByApplicationId(master, masterHeaders, masterRow, app);
+  } else {
+    master.appendRow(buildRow(masterHeaders, app));
+  }
+  SpreadsheetApp.flush();
+  syncApplicationToCounselorSheet(app, previousAssignedTo);
+
+  const updates = {
+    callStatus: value(app["Call Status"]),
+    nextFollowUpAt: sheetDateToIso(app["Next Follow-up"]),
+    assignedTo: value(app["Assigned To"]),
+    remarks: value(app["Remarks"])
+  };
+  const editable = {
+    name:value(app["Name"]), phone:value(app["Phone"]), email:value(app["Email"]), college:value(app["College"]),
+    department:value(app["Department"]), year:value(app["Year"]), domain:value(app["Domain"]), state:value(app["State"]),
+    communicationLanguage:value(app["Communication Language"]), startAvailability:value(app["Start Availability"]), applicationReason:value(app["Application Reason"])
+  };
+  Object.keys(editable).forEach(key => { if (editable[key] !== "") updates[key] = editable[key]; });
+  firebaseRestPatch("/submittedApplications/" + encodeURIComponent(applicationId), updates);
+  return {status:"success", applicationId:applicationId, counselorSheet:counselorSheet.getName()};
 }
 
 function getAssignedToFromRow(headers, row) {
@@ -695,69 +1029,12 @@ function getAssignedToFromRow(headers, row) {
 
 function rowValuesToApplicationObject(headers, row) {
   const raw = {};
-  headers.forEach((header, index) => {
-    raw[header] = row[index];
-  });
+  headers.forEach((header, index) => raw[header] = row[index]);
   return buildApplicationObject(raw, value(raw["Application ID"] || raw.applicationId));
 }
 
 function findApplicationRowInSheet(sheet, applicationId) {
-  const headers = getHeaders(sheet);
-  return findApplicationId(sheet, headers, applicationId);
-}
-
-function syncApplicationToCounselorSheet(app, previousAssignedTo) {
-  const newAssignedTo = normalizeCounselorName(app["Assigned To"]);
-  const oldAssignedTo = normalizeCounselorName(previousAssignedTo);
-  const applicationId = value(app["Application ID"]);
-
-  if (!applicationId) return;
-
-  // Reassignment: remove the lead from the previous counselor tab.
-  if (oldAssignedTo && oldAssignedTo.toLowerCase() !== newAssignedTo.toLowerCase()) {
-    removeApplicationFromCounselorSheet(oldAssignedTo, applicationId);
-  }
-
-  // Unassigned: nothing more to route.
-  if (!newAssignedTo) return;
-
-  registerCounselor(newAssignedTo);
-  const counselorSheet = getOrCreateCounselorSheet(newAssignedTo);
-  const headers = getHeaders(counselorSheet);
-  const rowNumber = findApplicationId(counselorSheet, headers, applicationId);
-  const row = buildRow(headers, app);
-
-  if (rowNumber > 0) {
-    const current = counselorSheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
-    const next = current.slice();
-    headers.forEach((header, index) => {
-      const incoming = row[index];
-      if (String(incoming ?? "").trim() !== "" || [
-        "Call Status", "Next Follow-up", "Assigned To", "Remarks"
-      ].includes(header)) {
-        next[index] = incoming ?? current[index];
-      }
-    });
-    counselorSheet.getRange(rowNumber, 1, 1, headers.length).setValues([next]);
-  } else {
-    counselorSheet.appendRow(row);
-  }
-
-  formatHeader(counselorSheet);
-}
-
-function removeApplicationFromCounselorSheet(counselorName, applicationId) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheetName = counselorSheetName(counselorName);
-  if (!sheetName) return;
-
-  const sheet = ss.getSheetByName(sheetName);
-  if (!sheet) return;
-
-  const rowNumber = findApplicationRowInSheet(sheet, applicationId);
-  if (rowNumber > 0) {
-    sheet.deleteRow(rowNumber);
-  }
+  return findApplicationId(sheet, getHeaders(sheet), applicationId);
 }
 
 function buildApplicationObject(data, applicationId) {
@@ -775,7 +1052,7 @@ function buildApplicationObject(data, applicationId) {
     "Communication Language": value(data.communicationLanguage || data.language || data.languages || data["Communication Language"]),
     "Start Availability": value(data.startAvailability || data.availability || data.whenAreYouAvailableToStart || data["Start Availability"]),
     "Application Reason": value(data.applicationReason || data.reason || data.whyAreYouApplying || data.interest || data["Application Reason"]),
-    "Call Status": value(data.callStatus || data["Call Status"]),
+    "Call Status": normalizeCallStatus_(data.callStatus || data["Call Status"]),
     "Next Follow-up": formatRecoveryTimestamp(data.nextFollowUpAt || data.nextFollowUp || data.followUpAt || data["Next Follow-up"], true),
     "Assigned To": value(data.assignedTo || data["Assigned To"]),
     "Remarks": value(data.remarks || data.remark || data.Remarks)
@@ -800,7 +1077,7 @@ function buildRow(headers, app) {
 }
 
 function getSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getMasterSpreadsheet_();
   let sheet = ss.getSheetByName(CONFIG.SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(CONFIG.SHEET_NAME);
   ensureHeaders(sheet);
@@ -814,6 +1091,7 @@ function ensureHeaders(sheet) {
   if (lastColumn === 0) {
     sheet.getRange(1, 1, 1, required.length).setValues([required]);
     formatHeader(sheet);
+    applyCallStatusValidation_(sheet);
     return;
   }
 
@@ -822,17 +1100,9 @@ function ensureHeaders(sheet) {
   if (!headers.some(Boolean)) {
     sheet.getRange(1, 1, 1, required.length).setValues([required]);
     formatHeader(sheet);
+    applyCallStatusValidation_(sheet);
     return;
   }
-
-  // Last Contacted is no longer part of the InternsForge CRM sheet.
-  // Remove the legacy column automatically if it still exists.
-  const obsoleteColumns = [];
-  headers.forEach((header, index) => {
-    if (normalizeHeader(header) === "lastcontacted") obsoleteColumns.push(index + 1);
-  });
-  obsoleteColumns.sort((a, b) => b - a).forEach(column => sheet.deleteColumn(column));
-  if (obsoleteColumns.length) headers = getHeaders(sheet);
 
   /*
    * IMPORTANT:
@@ -898,6 +1168,15 @@ function ensureHeaders(sheet) {
 
   headers = getHeaders(sheet);
 
+  // Remove the retired Last Contacted column from all managed sheets.
+  headers = getHeaders(sheet);
+  const obsolete = [];
+  headers.forEach((header, index) => {
+    if (normalizeHeader(header) === "lastcontacted") obsolete.push(index + 1);
+  });
+  obsolete.sort((a,b) => b-a).forEach(column => sheet.deleteColumn(column));
+  headers = getHeaders(sheet);
+
   // Now add only genuinely missing required headers.
   const existing = {};
   headers.forEach(header => {
@@ -918,6 +1197,37 @@ function ensureHeaders(sheet) {
   });
 
   formatHeader(sheet);
+  applyCallStatusValidation_(sheet);
+}
+
+function standardizeAllCallStatuses() {
+  const master = getMasterSpreadsheet_();
+  const managedSheets = [getSheet(), ...getCounselors().map(c => {
+    try {
+      return SpreadsheetApp.openById(c.spreadsheetId).getSheetByName(counselorLeadsSheetName(c.name));
+    } catch (_) { return null; }
+  }).filter(Boolean)];
+
+  let changed = 0;
+  managedSheets.forEach(sheet => {
+    const headers = getHeaders(sheet);
+    const col = headers.findIndex(h => normalizeHeader(h) === "callstatus") + 1;
+    if (!col || sheet.getLastRow() < 2) {
+      applyCallStatusValidation_(sheet);
+      return;
+    }
+    const range = sheet.getRange(2, col, sheet.getLastRow() - 1, 1);
+    const values = range.getValues();
+    let dirty = false;
+    values.forEach(row => {
+      const next = normalizeCallStatus_(row[0]);
+      if (String(row[0] ?? "").trim() !== next) { row[0] = next; dirty = true; changed++; }
+    });
+    if (dirty) range.setValues(values);
+    applyCallStatusValidation_(sheet);
+  });
+  SpreadsheetApp.flush();
+  return {status:"success", changed, sheets:managedSheets.length, message:"Call Status values standardized."};
 }
 
 function getHeaders(sheet) {

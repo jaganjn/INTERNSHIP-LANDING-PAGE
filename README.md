@@ -127,3 +127,6 @@ The admin Control Hub includes a Total Application Visitors module. The public p
 
 
 VISITOR COUNTER UPDATE (2026-09-10): All application-opening paths, including Apply for this domain, call the same Firebase visitor counter. Counter uses a persistent browser ID and Firebase transaction retries. Ensure firebase-rules.json is deployed.
+
+
+Traffic tracking update: Total Landing Page Visitors counts unique browsers that load the public landing page; Application Form Visitors remains a separate intent metric.

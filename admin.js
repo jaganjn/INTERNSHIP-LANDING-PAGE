@@ -31,7 +31,8 @@ const E = {
   referralFriendsBody: el("referralFriendsBody"),
   referralSearch: el("referralSearch"),
   applicationVisitorCount: el("applicationVisitorCount"),
-  applicationVisitorCountMetric: el("applicationVisitorCountMetric")
+  applicationVisitorCountMetric: el("applicationVisitorCountMetric"),
+  landingPageVisitorCountMetric: el("landingPageVisitorCountMetric")
 };
 
 let applications = [];
@@ -1101,6 +1102,12 @@ function listeners() {
   visitorRoot.on("child_removed", snapshot => {
     delete visitors[snapshot.key];
     renderVisitors();
+  });
+
+  db.ref("publicStats/landingPageVisitorCount").on("value", snapshot => {
+    const count = Number(snapshot.val());
+    const displayCount = Number.isFinite(count) && count >= 0 ? Math.floor(count).toLocaleString("en-IN") : "0";
+    if (E.landingPageVisitorCountMetric) E.landingPageVisitorCountMetric.textContent = displayCount;
   });
 
   db.ref("publicStats/applicationVisitorCount").on("value", snapshot => {

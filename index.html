@@ -1617,6 +1617,42 @@ async function submitApplication() {
   }
 }
 
+// Landing-page traffic tracking. This counts unique browsers that load the public landing page.
+// It is intentionally separate from the application-form visitor counter.
+(function trackLandingPageTraffic(){
+  if (typeof db === 'undefined') return;
+  const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v1';
+  const COUNTED_KEY = 'internsforge_landing_visitor_counted_v1';
+  let id = null;
+  try { id = localStorage.getItem(VISITOR_ID_KEY); } catch (_) {}
+  if (!id) {
+    id = `landing_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+    try { localStorage.setItem(VISITOR_ID_KEY, id); } catch (_) {}
+  }
+  let counted = false;
+  try { counted = localStorage.getItem(COUNTED_KEY) === '1'; } catch (_) {}
+  if (counted) return;
+
+  const ref = db.ref('publicStats/landingPageVisitorCount');
+  (async function(){
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const result = await ref.transaction(current => {
+          const n = Number(current);
+          return Number.isFinite(n) && n >= 0 ? Math.floor(n) + 1 : 1;
+        });
+        if (result && result.committed) {
+          try { localStorage.setItem(COUNTED_KEY, '1'); } catch (_) {}
+          return;
+        }
+      } catch (error) {
+        console.warn(`Landing visitor counter attempt ${attempt + 1} failed:`, error);
+        if (attempt < 3) await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+      }
+    }
+  })();
+})();
+
 // Live visitor tracking. The admin dashboard mirrors the form fields that are
 // currently visible to the student so staff can see live filling progress.
 const visitorId = sessionStorage.getItem(VISITOR_KEY) || `visitor_${Date.now()}_${Math.floor(Math.random() * 100000)}`;

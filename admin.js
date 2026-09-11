@@ -33,6 +33,7 @@ const E = {
   applicationVisitorCount: el("applicationVisitorCount"),
   applicationVisitorCountMetric: el("applicationVisitorCountMetric"),
   landingPageVisitorCountMetric: el("landingPageVisitorCountMetric")
+    applicationFormVisitorCountMetric: document.getElementById("applicationFormVisitorCountMetric"),
 };
 
 let applications = [];
@@ -203,7 +204,8 @@ function sessionState(visitor = {}, now = Date.now()) {
   const explicitlyFilling = ["filling_form", "filling", "reviewing"].includes(status);
   const hasStartedFilling = visitor.hasStartedFilling === true || progress > 0;
 
-  if (age <= ACTIVE_MS && !disconnected) {
+  const activePresence = String(visitor.presence || "").toLowerCase() === "active";
+  if (age <= ACTIVE_MS && activePresence && !disconnected) {
     return (hasStartedFilling && explicitlyFilling) || progress > 0 ? "filling" : "active";
   }
   if (hasStartedFilling || explicitlyFilling) return "abandoned";
@@ -1104,10 +1106,31 @@ function listeners() {
     renderVisitors();
   });
 
-  db.ref("publicStats/landingPageVisitorCount").on("value", snapshot => {
-    const count = Number(snapshot.val());
-    const displayCount = Number.isFinite(count) && count >= 0 ? Math.floor(count).toLocaleString("en-IN") : "0";
-    if (E.landingPageVisitorCountMetric) E.landingPageVisitorCountMetric.textContent = displayCount;
+  // Total Landing Page Visitors is derived from the durable visitor-marker
+  // collection. This updates in real time and is not affected by page refreshes.
+  
+  // Live application-form visitors. This is based on temporary session
+  // records, so it returns to 0 when nobody has the form open.
+  db.ref("publicStats/applicationFormLive").on("value", snapshot => {
+    const sessions = snapshot.val() || {};
+    const now = Date.now();
+    const active = Object.values(sessions).filter(item => {
+      const lastSeen = Number(item?.lastSeen || 0);
+      return item?.status === "active" && lastSeen > 0 && (now - lastSeen) <= 45000;
+    }).length;
+
+    if (E.applicationFormVisitorCountMetric) {
+      E.applicationFormVisitorCountMetric.textContent =
+        active.toLocaleString("en-IN");
+    }
+  });
+
+db.ref("publicStats/landingPageVisitors").on("value", snapshot => {
+    const markers = snapshot.val() || {};
+    const count = Object.keys(markers).length;
+    if (E.landingPageVisitorCountMetric) {
+      E.landingPageVisitorCountMetric.textContent = count.toLocaleString("en-IN");
+    }
   });
 
   db.ref("publicStats/applicationVisitorCount").on("value", snapshot => {
@@ -1346,8 +1369,24 @@ async function del(path, message, successText) {
   }
 }
 
-function deleteLiveVisitors() {
-  return del("liveVisitors", "Delete all live tracking data?", "All live visitor/session tracking data was deleted.");
+async function deleteLiveVisitors() {
+  if (!confirm("Delete all live visitor tracking records?\n\nActive landing pages may create a new live record again while they remain open.")) return false;
+  const user = auth?.currentUser;
+  if (!user) {
+    showToast("Authentication required", "Please sign in again before changing dashboard data.", "error", 6000);
+    return false;
+  }
+  try {
+    await db.ref("liveVisitors").remove();
+    visitors = {};
+    renderVisitors();
+    showToast("Live tracking cleared", "All current live visitor records were deleted. Active visitors will reappear when their next heartbeat arrives.", "success", 6000);
+    return true;
+  } catch (error) {
+    console.error("Firebase live visitor delete failed:", error);
+    showToast("Delete failed", error?.message || "Firebase denied the delete operation.", "error", 8000);
+    return false;
+  }
 }
 
 function deleteApplications() {
@@ -1397,8 +1436,11 @@ async function resetDashboard() {
     ]);
 
     applications = [];
+    visitors = {};
+    referralProfiles = {};
+    referralJoins = {};
     renderApplications();
-    renderApplications();
+    renderVisitors();
     renderReferrals();
 
     showToast("Dashboard reset", "All dashboard data was successfully cleared.", "success", 5000);

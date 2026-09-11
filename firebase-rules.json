@@ -23,8 +23,20 @@
       },
       "landingPageVisitors": {
         "$visitorId": {
-          ".write": "true",
+          ".write": true,
           ".validate": "newData.val() === null || (newData.hasChildren(['firstSeen']) && newData.child('firstSeen').isNumber())"
+        }
+      },
+      "applicationFormVisitors": {
+        "$visitorId": {
+          ".write": true,
+          ".validate": "newData.val() === null || (newData.hasChildren(['firstSeen']) && newData.child('firstSeen').isNumber())"
+        }
+      },
+      "applicationFormLive": {
+        "$visitorId": {
+          ".write": true,
+          ".validate": "newData.val() === null || (newData.hasChildren(['lastSeen','status']) && newData.child('lastSeen').isNumber())"
         }
       },
       "applicationVisitorCount": {

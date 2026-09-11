@@ -1619,14 +1619,14 @@ async function submitApplication() {
 
 // Landing-page traffic tracking.
 // One unique visitor is counted once per persistent browser/device.
-// Refreshes and repeated page loads in the same browser do NOT increment
-// the total again. Firebase stores a visitor marker as the durable source
-// of truth; localStorage is only a performance optimization.
+// The Firebase visitor marker is the source of truth; the aggregate counter
+// is kept in sync for compatibility, while the admin dashboard counts the
+// marker records directly for a live, reliable total.
 (function trackLandingPageTraffic(){
   if (typeof db === 'undefined' || typeof firebase === 'undefined') return;
 
-  const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v4';
-  const COUNTED_KEY = 'internsforge_landing_visitor_counted_v4';
+  const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v5';
+  const COUNTED_KEY = 'internsforge_landing_visitor_counted_v5';
 
   let visitorId = null;
   try {
@@ -1648,11 +1648,15 @@ async function submitApplication() {
     } catch (_) {}
 
     try {
+      // Transaction guarantees that two tabs using the same visitor ID
+      // cannot both create the marker.
       const markerResult = await markerRef.transaction(current => {
         if (current === null) {
-          return { firstSeen: firebase.database.ServerValue.TIMESTAMP };
+          return {
+            firstSeen: firebase.database.ServerValue.TIMESTAMP
+          };
         }
-        return; // Existing visitor ID: do not count again.
+        return;
       });
 
       if (!markerResult || !markerResult.committed) {
@@ -1660,35 +1664,135 @@ async function submitApplication() {
         return;
       }
 
-      for (let attempt = 0; attempt < 5; attempt++) {
-        try {
-          const countResult = await countRef.transaction(current => {
-            const n = Number(current);
-            return Number.isFinite(n) && n >= 0 ? Math.floor(n) + 1 : 1;
-          });
-
-          if (countResult && countResult.committed) {
-            try { localStorage.setItem(COUNTED_KEY, '1'); } catch (_) {}
-            return;
-          }
-        } catch (error) {
-          console.warn(`Landing visitor count attempt ${attempt + 1} failed:`, error);
-        }
-
-        if (attempt < 4) {
-          await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
-        }
+      // Keep the legacy aggregate in sync. The admin dashboard does not
+      // depend on this value; it counts marker records directly.
+      try {
+        await countRef.transaction(current => {
+          const n = Number(current);
+          return Number.isFinite(n) && n >= 0 ? Math.floor(n) + 1 : 1;
+        });
+      } catch (error) {
+        console.warn('Landing visitor aggregate update failed:', error);
       }
 
-      // Don't leave a marker behind if the aggregate could not be updated.
-      await markerRef.remove().catch(() => {});
+      try { localStorage.setItem(COUNTED_KEY, '1'); } catch (_) {}
     } catch (error) {
       console.warn('Landing visitor registration failed:', error);
     }
   }
 
-  // Start after the Firebase database instance has been initialized below.
   setTimeout(registerUniqueVisitor, 0);
+})();
+
+
+// Application-form visitor tracking.
+// A form visitor is counted live only while the visitor has the application
+// form open. A persistent browser ID prevents refreshes from creating
+// duplicate stored visitor profiles. The live session is removed on disconnect.
+(function trackApplicationFormVisitors(){
+  if (typeof db === 'undefined' || typeof firebase === 'undefined') return;
+
+  const ID_KEY = 'internsforge_form_visitor_id_v2';
+  let visitorId = null;
+
+  try {
+    visitorId = localStorage.getItem(ID_KEY);
+    if (!visitorId) {
+      visitorId = `form_${Date.now()}_${Math.random().toString(36).slice(2,12)}`;
+      localStorage.setItem(ID_KEY, visitorId);
+    }
+  } catch (_) {
+    visitorId = `form_${Date.now()}_${Math.random().toString(36).slice(2,12)}`;
+  }
+
+  const profileRef = db.ref(`publicStats/applicationFormVisitors/${visitorId}`);
+  const liveRef = db.ref(`publicStats/applicationFormLive/${visitorId}`);
+
+  let formOpen = false;
+  let heartbeatTimer = null;
+
+  function startFormVisit(){
+    if (formOpen) return;
+    formOpen = true;
+
+    profileRef.transaction(current => {
+      if (current === null) {
+        return {
+          firstSeen: firebase.database.ServerValue.TIMESTAMP,
+          lastSeen: firebase.database.ServerValue.TIMESTAMP
+        };
+      }
+      return {
+        ...current,
+        lastSeen: firebase.database.ServerValue.TIMESTAMP
+      };
+    }).catch(() => {});
+
+    liveRef.set({
+      startedAt: firebase.database.ServerValue.TIMESTAMP,
+      lastSeen: firebase.database.ServerValue.TIMESTAMP,
+      status: 'active'
+    }).catch(() => {});
+
+    liveRef.onDisconnect().remove().catch(() => {});
+
+    heartbeatTimer = setInterval(() => {
+      if (!formOpen) return;
+      liveRef.update({
+        lastSeen: firebase.database.ServerValue.TIMESTAMP,
+        status: 'active'
+      }).catch(() => {});
+      profileRef.update({
+        lastSeen: firebase.database.ServerValue.TIMESTAMP
+      }).catch(() => {});
+    }, 15000);
+  }
+
+  function stopFormVisit(){
+    if (!formOpen) return;
+    formOpen = false;
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
+    liveRef.remove().catch(() => {});
+  }
+
+  // Capture any application-modal/form opener already present on the page.
+  document.addEventListener('click', event => {
+    const trigger = event.target.closest(
+      '[data-open-application], [data-apply], .apply-btn, .apply-button, ' +
+      '.hero-apply, .floating-apply, #applyBtn, #startApplicationBtn'
+    );
+    if (trigger) {
+      setTimeout(() => {
+        const modal = document.querySelector(
+          '#applicationModal, #application-modal, .application-modal, [role="dialog"]'
+        );
+        if (modal && !modal.hidden && modal.offsetParent !== null) {
+          startFormVisit();
+        }
+      }, 150);
+    }
+  }, true);
+
+  // Observe the DOM so this also works with modals opened by JS without
+  // a recognizable button class.
+  const observer = new MutationObserver(() => {
+    const modal = document.querySelector(
+      '#applicationModal, #application-modal, .application-modal, [role="dialog"]'
+    );
+    const visible = !!(modal && !modal.hidden && modal.offsetParent !== null);
+    if (visible) startFormVisit();
+    else stopFormVisit();
+  });
+  observer.observe(document.documentElement, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class','style','hidden','aria-hidden']
+  });
+
+  window.addEventListener('pagehide', stopFormVisit);
 })();
 
 // Live visitor tracking. The admin dashboard mirrors the form fields that are
@@ -1756,7 +1860,9 @@ function initialiseVisitor() {
     lastActive: firebase.database.ServerValue.TIMESTAMP,
     referredBy: referralSource || null
   }).catch(error => console.warn('Live visitor initialization failed:', error));
-  visitorRef.onDisconnect().update({ presence: 'disconnected', status: 'left', leftAt: firebase.database.ServerValue.TIMESTAMP }).catch(() => {});
+  // A live session is temporary. Remove it automatically when the browser
+  // connection closes so the admin count cannot be stuck at 1.
+  visitorRef.onDisconnect().remove().catch(() => {});
 }
 
 if (form) {
@@ -1848,7 +1954,9 @@ document.addEventListener('visibilitychange', () => {
   else updateVisitor({ presence: 'active' });
 });
 window.addEventListener('pagehide', () => {
-  if (!visitorComplete) updateVisitor({ presence: 'inactive', status: calculateProgress() ? 'abandoned' : 'left' });
+  if (!visitorComplete && visitorRef) {
+    visitorRef.remove().catch(() => {});
+  }
 });
 
 restoreDraft();

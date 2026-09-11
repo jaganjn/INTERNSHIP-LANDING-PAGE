@@ -1617,31 +1617,45 @@ async function submitApplication() {
   }
 }
 
-// Landing-page traffic tracking. Every landing-page load counts as one visit.
-// This is intentionally NOT a unique-browser counter: repeat visits/reloads are
-// counted because the admin metric is intended to measure total landing-page traffic.
+// Landing-page traffic tracking.
+// Counts EVERY successful landing-page load/visit. There is intentionally
+// no localStorage/sessionStorage gate here: refreshing or reopening the
+// landing page creates another visit, which is what the traffic metric needs.
 (function trackLandingPageTraffic(){
   if (typeof db === 'undefined') return;
 
   const ref = db.ref('publicStats/landingPageVisitorCount');
 
-  (async function(){
+  async function recordVisit(){
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        const result = await ref.transaction(current => {
+        const result = await ref.transaction(function(current){
           const n = Number(current);
           return Number.isFinite(n) && n >= 0 ? Math.floor(n) + 1 : 1;
         });
 
-        if (result && result.committed) return;
-      } catch (error) {
-        console.warn(`Landing-page visit counter attempt ${attempt + 1} failed:`, error);
-        if (attempt < 4) {
-          await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+        if (result && result.committed) {
+          return;
         }
+      } catch (error) {
+        console.warn(
+          `Landing-page visit counter attempt ${attempt + 1} failed:`,
+          error
+        );
+      }
+
+      if (attempt < 4) {
+        await new Promise(resolve =>
+          setTimeout(resolve, 500 * (attempt + 1))
+        );
       }
     }
-  })();
+  }
+
+  // Record the visit as soon as the Firebase database is ready.
+  if (typeof firebase !== 'undefined' && firebase.database) {
+    recordVisit();
+  }
 })();
 
 // Live visitor tracking. The admin dashboard mirrors the form fields that are

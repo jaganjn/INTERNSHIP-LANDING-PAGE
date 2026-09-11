@@ -133,3 +133,7 @@ Traffic tracking update: Total Landing Page Visitors counts unique browsers that
 
 
 Traffic counter behavior: one unique landing-page visitor is counted per persistent browser/device. Refreshes and repeated visits from the same stored browser ID do not increment the total.
+
+
+## Traffic tracking runtime fix
+The landing-page unique visitor registration and live visitor initialization are deferred until after Firebase database initialization, preventing the previous early-return race that left counters at 0.

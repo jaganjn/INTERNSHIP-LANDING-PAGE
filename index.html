@@ -1687,7 +1687,8 @@ async function submitApplication() {
     }
   }
 
-  registerUniqueVisitor();
+  // Start after the Firebase database instance has been initialized below.
+  setTimeout(registerUniqueVisitor, 0);
 })();
 
 // Live visitor tracking. The admin dashboard mirrors the form fields that are
@@ -1855,7 +1856,7 @@ showStep(1, false);
 updateStepPresentation();
 updateJourney();
 refreshStepAccess(false);
-initialiseVisitor();
+setTimeout(initialiseVisitor, 0);
 window.setInterval(() => {
   if (visitorComplete) return;
   const liveProgress = (applicationFormOpen && formInteractionStarted) ? calculateProgress() : 0;

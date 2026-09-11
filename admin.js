@@ -33,7 +33,6 @@ const E = {
   applicationVisitorCount: el("applicationVisitorCount"),
   applicationVisitorCountMetric: el("applicationVisitorCountMetric"),
   landingPageVisitorCountMetric: el("landingPageVisitorCountMetric")
-    applicationFormVisitorCountMetric: document.getElementById("applicationFormVisitorCountMetric"),
 };
 
 let applications = [];
@@ -1108,24 +1107,7 @@ function listeners() {
 
   // Total Landing Page Visitors is derived from the durable visitor-marker
   // collection. This updates in real time and is not affected by page refreshes.
-  
-  // Live application-form visitors. This is based on temporary session
-  // records, so it returns to 0 when nobody has the form open.
-  db.ref("publicStats/applicationFormLive").on("value", snapshot => {
-    const sessions = snapshot.val() || {};
-    const now = Date.now();
-    const active = Object.values(sessions).filter(item => {
-      const lastSeen = Number(item?.lastSeen || 0);
-      return item?.status === "active" && lastSeen > 0 && (now - lastSeen) <= 45000;
-    }).length;
-
-    if (E.applicationFormVisitorCountMetric) {
-      E.applicationFormVisitorCountMetric.textContent =
-        active.toLocaleString("en-IN");
-    }
-  });
-
-db.ref("publicStats/landingPageVisitors").on("value", snapshot => {
+  db.ref("publicStats/landingPageVisitors").on("value", snapshot => {
     const markers = snapshot.val() || {};
     const count = Object.keys(markers).length;
     if (E.landingPageVisitorCountMetric) {

@@ -1618,85 +1618,76 @@ async function submitApplication() {
 }
 
 // Landing-page traffic tracking.
-// Counts one unique landing-page visitor per persistent browser/device.
-// Refreshing, reopening, or navigating around the landing page does NOT
-// increment the total again for the same browser. A new browser/device gets
-// a new visitor ID and increments the total once.
+// One unique visitor is counted once per persistent browser/device.
+// Refreshes and repeated page loads in the same browser do NOT increment
+// the total again. Firebase stores a visitor marker as the durable source
+// of truth; localStorage is only a performance optimization.
 (function trackLandingPageTraffic(){
-  if (typeof db === 'undefined') return;
+  if (typeof db === 'undefined' || typeof firebase === 'undefined') return;
 
-  const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v3';
-  const VISITOR_COUNTED_KEY = 'internsforge_landing_visitor_counted_v3';
+  const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v4';
+  const COUNTED_KEY = 'internsforge_landing_visitor_counted_v4';
 
   let visitorId = null;
-  let alreadyCounted = false;
-
   try {
     visitorId = localStorage.getItem(VISITOR_ID_KEY);
     if (!visitorId) {
-      visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+      visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
       localStorage.setItem(VISITOR_ID_KEY, visitorId);
     }
-    alreadyCounted = localStorage.getItem(VISITOR_COUNTED_KEY) === '1';
-  } catch (error) {
-    // If storage is unavailable, fall back to counting this page load once.
-    // This is uncommon (e.g. strict private browsing).
-    visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+  } catch (_) {
+    visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
   }
 
-  if (alreadyCounted) return;
+  const markerRef = db.ref(`publicStats/landingPageVisitors/${visitorId}`);
+  const countRef = db.ref('publicStats/landingPageVisitorCount');
 
-  const ref = db.ref('publicStats/landingPageVisitorCount');
-  const visitorRef = db.ref(`publicStats/landingPageVisitors/${visitorId}`);
-
-  async function recordVisit(){
-    // First create a persistent visitor record. If it already exists,
-    // another tab/device copy of the same ID will not increment the total.
+  async function registerUniqueVisitor() {
     try {
-      let createdThisTime = false;
-      const visitorResult = await visitorRef.transaction(function(current){
+      if (localStorage.getItem(COUNTED_KEY) === '1') return;
+    } catch (_) {}
+
+    try {
+      const markerResult = await markerRef.transaction(current => {
         if (current === null) {
-          createdThisTime = true;
           return { firstSeen: firebase.database.ServerValue.TIMESTAMP };
         }
-        createdThisTime = false;
-        return current;
+        return; // Existing visitor ID: do not count again.
       });
 
-      // The browser-local flag is the primary refresh protection. The
-      // Firebase visitor record is the secondary protection.
-      if (!visitorResult || !visitorResult.committed || !createdThisTime) {
-        try { localStorage.setItem(VISITOR_COUNTED_KEY, '1'); } catch (_) {}
+      if (!markerResult || !markerResult.committed) {
+        try { localStorage.setItem(COUNTED_KEY, '1'); } catch (_) {}
         return;
       }
 
       for (let attempt = 0; attempt < 5; attempt++) {
         try {
-          const result = await ref.transaction(function(current){
+          const countResult = await countRef.transaction(current => {
             const n = Number(current);
             return Number.isFinite(n) && n >= 0 ? Math.floor(n) + 1 : 1;
           });
 
-          if (result && result.committed) {
-            try { localStorage.setItem(VISITOR_COUNTED_KEY, '1'); } catch (_) {}
+          if (countResult && countResult.committed) {
+            try { localStorage.setItem(COUNTED_KEY, '1'); } catch (_) {}
             return;
           }
         } catch (error) {
-          console.warn(`Landing visitor counter attempt ${attempt + 1} failed:`, error);
+          console.warn(`Landing visitor count attempt ${attempt + 1} failed:`, error);
         }
 
         if (attempt < 4) {
           await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
         }
       }
+
+      // Don't leave a marker behind if the aggregate could not be updated.
+      await markerRef.remove().catch(() => {});
     } catch (error) {
       console.warn('Landing visitor registration failed:', error);
     }
   }
 
-  if (typeof firebase !== 'undefined' && firebase.database) {
-    recordVisit();
-  }
+  registerUniqueVisitor();
 })();
 
 // Live visitor tracking. The admin dashboard mirrors the form fields that are

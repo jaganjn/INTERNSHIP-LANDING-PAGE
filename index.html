@@ -1617,18 +1617,16 @@ async function submitApplication() {
   }
 }
 
-// Landing-page traffic tracking.
-// One unique visitor is counted once per persistent browser/device.
-// The Firebase visitor marker is the source of truth; the aggregate counter
-// is kept in sync for compatibility, while the admin dashboard counts the
-// marker records directly for a live, reliable total.
-(function trackLandingPageTraffic(){
+// Daily landing-page traffic tracking.
+// One unique browser/device is counted once per IST calendar day.
+// The visitor ID persists across refreshes, while the daily marker changes
+// with the date, allowing the same visitor to be counted again on a new day.
+(function trackDailyLandingPageTraffic(){
   if (typeof db === 'undefined' || typeof firebase === 'undefined') return;
 
-  const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v5';
-  const COUNTED_KEY = 'internsforge_landing_visitor_counted_v5';
-
+  const VISITOR_ID_KEY = 'internsforge_landing_visitor_id_v6';
   let visitorId = null;
+
   try {
     visitorId = localStorage.getItem(VISITOR_ID_KEY);
     if (!visitorId) {
@@ -1639,49 +1637,44 @@ async function submitApplication() {
     visitorId = `landing_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
   }
 
-  const markerRef = db.ref(`publicStats/landingPageVisitors/${visitorId}`);
-  const countRef = db.ref('publicStats/landingPageVisitorCount');
+  function getISTDateKey(){
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric', month: '2-digit', day: '2-digit'
+    }).format(new Date());
+  }
 
-  async function registerUniqueVisitor() {
-    try {
-      if (localStorage.getItem(COUNTED_KEY) === '1') return;
-    } catch (_) {}
+  async function registerToday(){
+    const dateKey = getISTDateKey();
+    const markerRef = db.ref(`publicStats/dailyLandingVisitors/${dateKey}/${visitorId}`);
 
     try {
-      // Transaction guarantees that two tabs using the same visitor ID
-      // cannot both create the marker.
-      const markerResult = await markerRef.transaction(current => {
+      // The date is part of the Firebase path, so the same browser is counted
+      // once today, but can legitimately be counted once again tomorrow.
+      const result = await markerRef.transaction(current => {
         if (current === null) {
-          return {
-            firstSeen: firebase.database.ServerValue.TIMESTAMP
-          };
+          return { firstSeen: firebase.database.ServerValue.TIMESTAMP };
         }
         return;
       });
 
-      if (!markerResult || !markerResult.committed) {
-        try { localStorage.setItem(COUNTED_KEY, '1'); } catch (_) {}
-        return;
+      // Keep the legacy lifetime marker too, so existing analytics/data are
+      // not lost while the new daily traffic system becomes the source of truth.
+      if (result?.committed) {
+        db.ref(`publicStats/landingPageVisitors/${visitorId}`).transaction(current => {
+          if (current === null) return { firstSeen: firebase.database.ServerValue.TIMESTAMP };
+          return;
+        }).catch(() => {});
       }
-
-      // Keep the legacy aggregate in sync. The admin dashboard does not
-      // depend on this value; it counts marker records directly.
-      try {
-        await countRef.transaction(current => {
-          const n = Number(current);
-          return Number.isFinite(n) && n >= 0 ? Math.floor(n) + 1 : 1;
-        });
-      } catch (error) {
-        console.warn('Landing visitor aggregate update failed:', error);
-      }
-
-      try { localStorage.setItem(COUNTED_KEY, '1'); } catch (_) {}
     } catch (error) {
-      console.warn('Landing visitor registration failed:', error);
+      console.warn('Daily landing visitor registration failed:', error);
     }
   }
 
-  setTimeout(registerUniqueVisitor, 0);
+  setTimeout(registerToday, 0);
+  // If the page remains open across midnight, register the visitor in the new
+  // IST day without requiring a refresh.
+  setInterval(registerToday, 60 * 1000);
 })();
 
 

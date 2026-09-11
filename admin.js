@@ -34,6 +34,7 @@ const E = {
   applicationVisitorCountMetric: el("applicationVisitorCountMetric"),
   landingPageVisitorCountMetric: el("landingPageVisitorCountMetric"),
   applicationFormVisitorCountMetric: el("applicationFormVisitorCountMetric"),
+  landingTrafficChart: el("landingTrafficChart"),
 };
 
 let applications = [];
@@ -269,12 +270,8 @@ function renderVisitors() {
   );
 
   E.onlineCount.textContent = active.length;
-  // Landing Page Visitors is the live traffic metric. Count only active
-  // landing-page sessions and let the existing persistent visitor ID survive
-  // refreshes, so one browser remains one live visitor.
-  if (E.landingPageVisitorCountMetric) {
-    E.landingPageVisitorCountMetric.textContent = active.length.toLocaleString("en-IN");
-  }
+  // Landing Page Visitors is a DAILY unique traffic metric. It is updated
+  // by the dailyLandingVisitors listener below, not by live presence records.
   E.fillingCount.textContent = filling.length;
   E.abandonedCount.textContent = abandoned.length;
   E.submittedCount.textContent = todayApplications.length;
@@ -1125,6 +1122,38 @@ function listeners() {
     if (E.applicationFormVisitorCountMetric) {
       E.applicationFormVisitorCountMetric.textContent =
         active.toLocaleString("en-IN");
+    }
+  });
+
+  // Daily website traffic: one persistent browser ID can create at most one
+  // record under each IST date. The last 7 days are loaded as a small range.
+  const trafficToday = getTodayISTKey();
+  const [ty, tm, td] = trafficToday.split("-").map(Number);
+  const trafficStart = new Date(Date.UTC(ty, tm - 1, td, 6, 30, 0) - (6 * 24 * 60 * 60 * 1000));
+  const trafficStartKey = getISTDateKey(trafficStart.getTime());
+  db.ref("publicStats/dailyLandingVisitors").orderByKey().startAt(trafficStartKey).on("value", snapshot => {
+    const data = snapshot.val() || {};
+    const counts = {};
+    Object.entries(data).forEach(([dateKey, visitorsForDay]) => {
+      counts[dateKey] = Object.keys(visitorsForDay || {}).length;
+    });
+
+    const todayCount = counts[trafficToday] || 0;
+    if (E.landingPageVisitorCountMetric) {
+      E.landingPageVisitorCountMetric.textContent = todayCount.toLocaleString("en-IN");
+    }
+
+    if (E.landingTrafficChart) {
+      const days = [...Array(7)].map((_, index) => {
+        const date = new Date(Date.UTC(ty, tm - 1, td, 6, 30, 0) - ((6 - index) * 24 * 60 * 60 * 1000));
+        return { date, key: getISTDateKey(date.getTime()) };
+      });
+      const max = Math.max(1, ...days.map(item => counts[item.key] || 0));
+      E.landingTrafficChart.innerHTML = days.map(({date, key}) => {
+        const count = counts[key] || 0;
+        const label = date.toLocaleDateString("en-IN", {day:"2-digit", month:"short"});
+        return `<div class="traffic-day" title="${count} unique visitors on ${key}"><div class="traffic-day-head"><span>${label}</span><strong>${count}</strong></div><div class="traffic-track"><i style="width:${Math.max(count ? 8 : 0, (count / max) * 100)}%"></i></div></div>`;
+      }).join("");
     }
   });
 

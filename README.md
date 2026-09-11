@@ -137,3 +137,7 @@ Traffic counter behavior: one unique landing-page visitor is counted per persist
 
 ## Traffic tracking runtime fix
 The landing-page unique visitor registration and live visitor initialization are deferred until after Firebase database initialization, preventing the previous early-return race that left counters at 0.
+
+## Daily Landing Page Traffic
+
+Landing-page traffic is stored under `publicStats/dailyLandingVisitors/YYYY-MM-DD/{visitorId}` using the `Asia/Kolkata` calendar day. A persistent browser/device visitor ID means refreshes on the same day do not create another visitor, while the same visitor can be counted once again on a later day. The Admin Dashboard's **Total Page Visitors** card shows today's unique visitors, and the Website Traffic module shows the last 7 days.

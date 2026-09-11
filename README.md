@@ -141,3 +141,42 @@ The landing-page unique visitor registration and live visitor initialization are
 
 ## WhatsApp contact fix
 The Admin Dashboard now normalizes 10-digit Indian phone numbers to +91 before creating the WhatsApp link and includes a prefilled internship message. Existing +91 numbers remain unchanged.
+
+
+## Bidirectional Google Sheets ↔ Admin CRM Sync
+
+The Admin Dashboard already listens to Firebase `submittedApplications` in real time.
+This update adds the reverse direction:
+
+**Google Sheet edit → Apps Script installable onEdit trigger → Firebase → Admin Dashboard**
+
+### One-time secure setup
+
+1. In Firebase Console:
+   - Project settings → Service accounts
+   - Generate a new private key for the Firebase Admin SDK service account.
+   - Keep the downloaded JSON private. Do not commit it to GitHub or paste it into website code.
+
+2. In Google Apps Script:
+   - Open Project Settings.
+   - Under **Script properties**, add:
+     - Property: `FIREBASE_SERVICE_ACCOUNT_JSON`
+     - Value: the complete contents of the downloaded service-account JSON file.
+
+3. Save the Apps Script.
+
+4. Run this function once from the Apps Script editor:
+   `createSheetToFirebaseTrigger`
+
+5. Approve the Google authorization prompts.
+
+6. Optional first-time alignment:
+   Run:
+   `syncAllSheetCrmToFirebase`
+
+After that, editing a CRM cell in `Sheet1` (Call Status, Next Follow-up, Assigned To, Last Contacted, Remarks, or populated application fields) updates the matching Firebase application. The Admin Dashboard is already listening for Firebase changes, so the Application Management view updates in real time.
+
+### Important
+- The service-account JSON must remain private.
+- This does not require Firebase Blaze/Cloud Functions.
+- Programmatic writes made by the Apps Script do not fire the spreadsheet `onEdit` trigger again, so the sync does not loop.

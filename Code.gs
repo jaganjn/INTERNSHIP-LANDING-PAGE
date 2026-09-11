@@ -14,6 +14,383 @@ const CONFIG = {
   ]
 };
 
+
+/**
+ * ==========================================================
+ * GOOGLE SHEETS -> FIREBASE BIDIRECTIONAL CRM SYNC
+ * ==========================================================
+ *
+ * The Sheet remains a convenient admin editing surface.
+ * An INSTALLABLE onEdit trigger calls Firebase REST using
+ * a service-account credential stored in Script Properties.
+ *
+ * IMPORTANT:
+ * - Never paste the service-account JSON into this source file.
+ * - Store the full JSON in Script Properties under:
+ *     FIREBASE_SERVICE_ACCOUNT_JSON
+ * - Run createSheetToFirebaseTrigger() once after saving.
+ *
+ * Firebase REST service-account authentication follows the
+ * official Firebase REST authentication flow.
+ */
+
+const FIREBASE_SYNC_CONFIG = {
+  DATABASE_URL: "https://mnc-internship-live-default-rtdb.asia-southeast1.firebasedatabase.app",
+  SERVICE_ACCOUNT_PROPERTY: "FIREBASE_SERVICE_ACCOUNT_JSON"
+};
+
+function createSheetToFirebaseTrigger() {
+  const ss = SpreadsheetApp.getActive();
+
+  ScriptApp.getProjectTriggers().forEach(trigger => {
+    if (trigger.getHandlerFunction() === "sheetOnEdit") {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  ScriptApp.newTrigger("sheetOnEdit")
+    .forSpreadsheet(ss)
+    .onEdit()
+    .create();
+
+  return "Sheet → Firebase trigger created successfully.";
+}
+
+function removeSheetToFirebaseTrigger() {
+  ScriptApp.getProjectTriggers().forEach(trigger => {
+    if (trigger.getHandlerFunction() === "sheetOnEdit") {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+
+  return "Sheet → Firebase trigger removed.";
+}
+
+function sheetOnEdit(e) {
+  if (!e || !e.range) return;
+
+  const sheet = e.range.getSheet();
+
+  if (sheet.getName() !== CONFIG.SHEET_NAME) return;
+  if (e.range.getRow() < 2) return;
+
+  // Ignore edits outside the application table.
+  if (e.range.getColumn() > sheet.getLastColumn()) return;
+
+  try {
+    syncSheetRowToFirebase(e.range.getRow());
+  } catch (error) {
+    console.error("Sheet → Firebase sync failed:", error);
+  }
+}
+
+function syncSheetRowToFirebase(rowNumber) {
+  const sheet = getSheet();
+  const headers = getHeaders(sheet);
+  const row = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+
+  const record = {};
+  headers.forEach((header, index) => {
+    record[normalizeHeader(header)] = row[index];
+  });
+
+  const applicationId = value(
+    record.applicationid || record.id
+  );
+
+  if (!applicationId) {
+    console.warn("Sheet row " + rowNumber + " has no Application ID; skipping Firebase sync.");
+    return {
+      status: "skipped",
+      reason: "Missing Application ID",
+      row: rowNumber
+    };
+  }
+
+  /*
+   * Only synchronize fields represented by the CRM/application
+   * model. This prevents unrelated spreadsheet columns from
+   * being pushed into Firebase.
+   */
+  const updates = {
+    callStatus: value(record.callstatus),
+    nextFollowUpAt: sheetDateToIso(record.nextfollowup || record.followup),
+    assignedTo: value(record.assignedto),
+    lastContactedAt: sheetDateToTimestamp(record.lastcontacted),
+    remarks: value(record.remarks || record.remark)
+  };
+
+  /*
+   * Also synchronize editable application information when
+   * those columns exist. Empty values are intentionally omitted
+   * so an accidental blank cell cannot erase the Firebase record.
+   */
+  const editableFields = {
+    name: value(record.name),
+    phone: value(record.phone || record.whatsapp || record.phonenumber),
+    email: value(record.email),
+    college: value(record.college),
+    department: value(record.department || record.branch),
+    year: value(record.year),
+    domain: value(record.domain),
+    state: value(record.state),
+    communicationLanguage: value(record.communicationlanguage || record.language),
+    startAvailability: value(record.startavailability || record.availability),
+    applicationReason: value(record.applicationreason || record.reason)
+  };
+
+  Object.keys(editableFields).forEach(key => {
+    if (editableFields[key] !== "") {
+      updates[key] = editableFields[key];
+    }
+  });
+
+  const result = firebaseRestPatch(
+    "/submittedApplications/" + encodeURIComponent(applicationId),
+    updates
+  );
+
+  console.log("Sheet → Firebase synced:", applicationId, result);
+
+  return {
+    status: "success",
+    applicationId: applicationId,
+    row: rowNumber
+  };
+}
+
+function syncAllSheetCrmToFirebase() {
+  const sheet = getSheet();
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow < 2) {
+    return {
+      status: "success",
+      processed: 0,
+      message: "No application rows found."
+    };
+  }
+
+  let processed = 0;
+  let skipped = 0;
+  let failed = 0;
+
+  for (let row = 2; row <= lastRow; row++) {
+    try {
+      const result = syncSheetRowToFirebase(row);
+      if (result.status === "success") processed++;
+      else skipped++;
+    } catch (error) {
+      failed++;
+      console.error("Row " + row + " failed:", error);
+    }
+  }
+
+  return {
+    status: "success",
+    processed: processed,
+    skipped: skipped,
+    failed: failed,
+    totalRows: lastRow - 1
+  };
+}
+
+function sheetDateToIso(valueFromSheet) {
+  if (
+    valueFromSheet === null ||
+    valueFromSheet === undefined ||
+    valueFromSheet === ""
+  ) {
+    return "";
+  }
+
+  const date = valueFromSheet instanceof Date
+    ? valueFromSheet
+    : new Date(valueFromSheet);
+
+  if (isNaN(date.getTime())) return "";
+
+  return date.toISOString();
+}
+
+function sheetDateToTimestamp(valueFromSheet) {
+  if (
+    valueFromSheet === null ||
+    valueFromSheet === undefined ||
+    valueFromSheet === ""
+  ) {
+    return "";
+  }
+
+  const date = valueFromSheet instanceof Date
+    ? valueFromSheet
+    : new Date(valueFromSheet);
+
+  if (isNaN(date.getTime())) return "";
+
+  return date.getTime();
+}
+
+function getFirebaseServiceAccount_() {
+  const raw = PropertiesService
+    .getScriptProperties()
+    .getProperty(FIREBASE_SYNC_CONFIG.SERVICE_ACCOUNT_PROPERTY);
+
+  if (!raw) {
+    throw new Error(
+      "Missing Script Property FIREBASE_SERVICE_ACCOUNT_JSON. " +
+      "Add the Firebase service-account JSON to Apps Script Project Settings → Script properties."
+    );
+  }
+
+  const serviceAccount = JSON.parse(raw);
+
+  if (!serviceAccount.client_email || !serviceAccount.private_key) {
+    throw new Error(
+      "FIREBASE_SERVICE_ACCOUNT_JSON is missing client_email or private_key."
+    );
+  }
+
+  return serviceAccount;
+}
+
+function base64UrlEncode_(input) {
+  const bytes = typeof input === "string"
+    ? Utilities.newBlob(input).getBytes()
+    : input;
+
+  return Utilities
+    .base64EncodeWebSafe(bytes)
+    .replace(/=+$/g, "");
+}
+
+function getFirebaseAccessToken_() {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get("FIREBASE_REST_ACCESS_TOKEN");
+
+  if (cached) return cached;
+
+  const serviceAccount = getFirebaseServiceAccount_();
+  const now = Math.floor(Date.now() / 1000);
+
+  const header = {
+    alg: "RS256",
+    typ: "JWT"
+  };
+
+  const claim = {
+    iss: serviceAccount.client_email,
+    scope: [
+      "https://www.googleapis.com/auth/firebase.database",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ].join(" "),
+    aud: "https://oauth2.googleapis.com/token",
+    iat: now,
+    exp: now + 3600
+  };
+
+  const unsignedToken =
+    base64UrlEncode_(JSON.stringify(header)) +
+    "." +
+    base64UrlEncode_(JSON.stringify(claim));
+
+  const signature = Utilities.computeRsaSha256Signature(
+    unsignedToken,
+    serviceAccount.private_key
+  );
+
+  const assertion =
+    unsignedToken +
+    "." +
+    base64UrlEncode_(signature);
+
+  const response = UrlFetchApp.fetch(
+    "https://oauth2.googleapis.com/token",
+    {
+      method: "post",
+      payload: {
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion: assertion
+      },
+      muteHttpExceptions: true
+    }
+  );
+
+  const status = response.getResponseCode();
+  const body = response.getContentText();
+
+  if (status < 200 || status >= 300) {
+    throw new Error(
+      "Firebase OAuth token request failed (" +
+      status +
+      "): " +
+      body
+    );
+  }
+
+  const tokenData = JSON.parse(body);
+
+  if (!tokenData.access_token) {
+    throw new Error("Firebase OAuth response did not contain an access token.");
+  }
+
+  cache.put(
+    "FIREBASE_REST_ACCESS_TOKEN",
+    tokenData.access_token,
+    3300
+  );
+
+  return tokenData.access_token;
+}
+
+function firebaseRestPatch(path, payload) {
+  const token = getFirebaseAccessToken_();
+
+  const url =
+    FIREBASE_SYNC_CONFIG.DATABASE_URL +
+    path +
+    ".json?access_token=" +
+    encodeURIComponent(token);
+
+  const response = UrlFetchApp.fetch(
+    url,
+    {
+      method: "patch",
+      contentType: "application/json",
+      payload: JSON.stringify(payload),
+      muteHttpExceptions: true
+    }
+  );
+
+  const status = response.getResponseCode();
+  const body = response.getContentText();
+
+  if (status < 200 || status >= 300) {
+    throw new Error(
+      "Firebase REST PATCH failed (" +
+      status +
+      "): " +
+      body
+    );
+  }
+
+  return body ? JSON.parse(body) : {};
+}
+
+function testSheetToFirebaseSync() {
+  const sheet = getSheet();
+  const row = sheet.getActiveRange()
+    ? sheet.getActiveRange().getRow()
+    : 2;
+
+  if (row < 2) {
+    throw new Error("Select an application row first.");
+  }
+
+  return syncSheetRowToFirebase(row);
+}
+
+
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) return jsonResponse({status:"error", message:"No data received."});

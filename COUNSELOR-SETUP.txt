@@ -1,0 +1,23 @@
+INTERNSFORGE — ACADEMIC COUNSELOR LEAD ASSIGNMENT
+
+WHAT THIS VERSION DOES
+1. Application Management has a direct Assign To counselor dropdown on every lead.
+2. Select multiple leads and use Assign Selected for bulk assignment.
+3. Add Counselor lets you add counselor names without editing code.
+4. Each counselor automatically gets a Google Sheets tab named:
+   Counselor - <Counselor Name>
+5. A lead appears in the assigned counselor tab and is removed from the previous counselor tab when reassigned.
+6. The master Sheet1 remains the central source of truth.
+7. Editing CRM fields in a counselor tab syncs back to Firebase and Sheet1 through the Apps Script installable trigger.
+8. Editing Sheet1 CRM fields syncs to Firebase as before.
+
+ONE-TIME APPS SCRIPT SETUP
+- Replace Code.gs with the included Code.gs.
+- Deploy the Web App as the same existing deployment URL, Execute as Me, access Anyone.
+- For Sheet -> Firebase bidirectional sync, keep the FIREBASE_SERVICE_ACCOUNT_JSON Script Property and run createSheetToFirebaseTrigger() once.
+- The counselor tabs are created automatically when a lead is assigned. No manual sheet creation is required.
+
+IMPORTANT
+- Counselor names are saved in the browser for the dashboard dropdown and are also recorded in the spreadsheet's Counselors configuration tab when a lead is assigned.
+- If you open the dashboard on a new browser/device, existing assigned counselor names are automatically discovered from Firebase applications.
+- The feature uses Google Sheets tabs in the same spreadsheet, not separate Google Spreadsheet files.

@@ -9,6 +9,7 @@ const LEGACY_ALERT_STORAGE_KEY = "apexAdminAlertSettingsV2";
 const BROWSER_ALERT_STORAGE_KEY = "apexAdminBrowserAlertsV1";
 const SEEN_APPLICATIONS_KEY = "apexAdminSeenApplicationsV1";
 const PUSH_TOKEN_STORAGE_KEY = "apexAdminPushTokenV1";
+const COUNSELOR_STORAGE_KEY = "internsforgeCounselorsV1";
 
 const el = id => document.getElementById(id);
 const E = {
@@ -47,6 +48,8 @@ let audioContext = null;
 let refreshInProgress = false;
 let crmFilteredApplications = [];
 let activeApplicationId = null;
+let counselorNames = [];
+let selectedApplicationIds = new Set();
 
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -416,14 +419,18 @@ function followUpClass(app) {
 function populateCrmFilters() {
   const domainSelect = el("crmDomainFilter");
   const yearSelect = el("crmYearFilter");
+  const counselorSelect = el("crmCounselorFilter");
   if (!domainSelect || !yearSelect) return;
+  loadCounselorNames();
   const domains = [...new Set(applications.map(a => String(a.domain || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const years = [...new Set(applications.map(a => String(a.year || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-  const currentDomain = domainSelect.value, currentYear = yearSelect.value;
+  const currentDomain = domainSelect.value, currentYear = yearSelect.value, currentCounselor = counselorSelect?.value || "";
   domainSelect.innerHTML = '<option value="">All domains</option>' + domains.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
   yearSelect.innerHTML = '<option value="">All years</option>' + years.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
+  if (counselorSelect) counselorSelect.innerHTML = '<option value="">All counselors</option>' + counselorNames.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join("");
   domainSelect.value = domains.includes(currentDomain) ? currentDomain : "";
   yearSelect.value = years.includes(currentYear) ? currentYear : "";
+  if (counselorSelect) counselorSelect.value = counselorNames.includes(currentCounselor) ? currentCounselor : "";
 }
 
 function filterCrmApplications() {
@@ -431,6 +438,7 @@ function filterCrmApplications() {
   const status = el("crmStatusFilter")?.value || "";
   const domain = el("crmDomainFilter")?.value || "";
   const year = el("crmYearFilter")?.value || "";
+  const counselor = el("crmCounselorFilter")?.value || "";
   const follow = el("crmFollowupFilter")?.value || "";
   const now = Date.now();
   const startToday = new Date(); startToday.setHours(0,0,0,0);
@@ -442,6 +450,7 @@ function filterCrmApplications() {
     if (status && getCallStatus(app) !== status) return false;
     if (domain && String(app.domain||"") !== domain) return false;
     if (year && String(app.year||"") !== year) return false;
+    if (counselor && String(app.assignedTo||"") !== counselor) return false;
     const fu = getFollowUpMs(app);
     if (follow === "due" && !(fu && fu <= now)) return false;
     if (follow === "today" && !(fu >= startToday.getTime() && fu < endToday.getTime())) return false;
@@ -452,7 +461,150 @@ function filterCrmApplications() {
   renderCrmTable(crmFilteredApplications);
 }
 
+function loadCounselorNames() {
+  let stored = [];
+  try { stored = JSON.parse(localStorage.getItem(COUNSELOR_STORAGE_KEY) || "[]"); } catch (_) {}
+  const assigned = applications.map(app => String(app?.assignedTo || "").trim()).filter(Boolean);
+  counselorNames = [...new Set([...stored, ...assigned].map(v => String(v || "").trim()).filter(Boolean))]
+    .sort((a,b) => a.localeCompare(b));
+  try { localStorage.setItem(COUNSELOR_STORAGE_KEY, JSON.stringify(counselorNames)); } catch (_) {}
+}
+
+function rememberCounselor(name) {
+  const clean = String(name || "").replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  if (!counselorNames.some(n => n.toLowerCase() === clean.toLowerCase())) counselorNames.push(clean);
+  counselorNames.sort((a,b) => a.localeCompare(b));
+  try { localStorage.setItem(COUNSELOR_STORAGE_KEY, JSON.stringify(counselorNames)); } catch (_) {}
+  return clean;
+}
+
+function counselorOptions(selected = "", includeUnassigned = true) {
+  const current = String(selected || "").trim();
+  const names = [...counselorNames];
+  if (current && !names.some(n => n.toLowerCase() === current.toLowerCase())) names.push(current);
+  names.sort((a,b) => a.localeCompare(b));
+  return `${includeUnassigned ? '<option value="">Unassigned</option>' : ''}${names.map(name => `<option value="${esc(name)}" ${name.toLowerCase() === current.toLowerCase() ? 'selected' : ''}>${esc(name)}</option>`).join("")}<option value="__new__">＋ Add new counselor…</option>`;
+}
+
+function promptForCounselor() {
+  const name = window.prompt("Enter the academic counselor name. A dedicated Google Sheets tab will be created automatically when a lead is assigned.");
+  if (name === null) return "";
+  const clean = rememberCounselor(name);
+  if (!clean) {
+    showToast("Counselor name required", "Please enter a valid counselor name.", "error", 3500);
+    return "";
+  }
+  showToast("Counselor added", `${clean} is now available for lead assignment.`, "success", 3500);
+  renderApplicationCRM();
+  return clean;
+}
+
+function handleCounselorSelect(select, onValue) {
+  const value = select.value;
+  if (value === "__new__") {
+    const clean = promptForCounselor();
+    select.value = clean || "";
+    if (clean && onValue) onValue(clean);
+    return clean;
+  }
+  if (onValue) onValue(value);
+  return value;
+}
+
+async function assignApplicationToCounselor(appId, counselor, source = "row") {
+  const app = applications.find(item => item.id === appId);
+  if (!app) return false;
+  const clean = String(counselor || "").trim();
+  if (clean) rememberCounselor(clean);
+  const old = String(app.assignedTo || "").trim();
+  if (old === clean) return true;
+
+  const statusEl = el("crmSyncStatus");
+  if (statusEl) { statusEl.textContent = `● Assigning ${app.name || "lead"} to ${clean || "Unassigned"}…`; statusEl.className = "crm-syncing"; }
+  try {
+    await db.ref(`submittedApplications/${appId}`).update({ assignedTo: clean, lastContactedAt: Date.now() });
+    app.assignedTo = clean;
+    app.lastContactedAt = Date.now();
+    if (statusEl) { statusEl.textContent = `● Lead assigned • ${clean || "Unassigned"}`; statusEl.className = "crm-synced"; }
+    renderApplicationCRM();
+    showToast("Lead assigned", `${app.name || "Student"} → ${clean || "Unassigned"}. The counselor sheet will update automatically.`, "success", 4500);
+    return true;
+  } catch (error) {
+    console.error("Lead assignment failed:", error);
+    if (statusEl) { statusEl.textContent = "● Assignment failed."; statusEl.className = "crm-sync-error"; }
+    showToast("Assignment failed", error?.message || "Firebase denied the assignment.", "error", 6000);
+    return false;
+  }
+}
+
+function selectedCrmIds() {
+  return [...selectedApplicationIds].filter(id => applications.some(app => app.id === id));
+}
+
+function updateCrmSelectionUI() {
+  const ids = selectedCrmIds();
+  const count = el("crmSelectedCount");
+  if (count) count.textContent = `${ids.length} selected`;
+  const selectAll = el("crmSelectAll");
+  const visibleIds = crmFilteredApplications.slice(0, 100).map(a => a.id);
+  if (selectAll) {
+    const selectedVisible = visibleIds.filter(id => selectedApplicationIds.has(id)).length;
+    selectAll.checked = visibleIds.length > 0 && selectedVisible === visibleIds.length;
+    selectAll.indeterminate = selectedVisible > 0 && selectedVisible < visibleIds.length;
+  }
+}
+
+function toggleCrmSelection(id, checked) {
+  if (checked) selectedApplicationIds.add(id); else selectedApplicationIds.delete(id);
+  updateCrmSelectionUI();
+}
+
+function toggleAllCrmSelection(checked) {
+  crmFilteredApplications.slice(0, 100).forEach(app => {
+    if (checked) selectedApplicationIds.add(app.id); else selectedApplicationIds.delete(app.id);
+  });
+  renderCrmTable(crmFilteredApplications);
+}
+
+async function bulkAssignSelected() {
+  const ids = selectedCrmIds();
+  if (!ids.length) {
+    showToast("No leads selected", "Select one or more leads first.", "info", 3000);
+    return;
+  }
+  const select = el("crmBulkCounselor");
+  const counselor = handleCounselorSelect(select);
+  if (counselor === "__new__") return;
+  if (!confirm(`Assign ${ids.length} selected lead${ids.length === 1 ? "" : "s"} to ${counselor || "Unassigned"}?\n\nEach counselor gets a dedicated sheet tab automatically.`)) return;
+  const btn = el("crmBulkAssignBtn");
+  if (btn) btn.disabled = true;
+  try {
+    let ok = 0;
+    for (const id of ids) if (await assignApplicationToCounselor(id, counselor, "bulk")) ok++;
+    selectedApplicationIds.clear();
+    renderApplicationCRM();
+    showToast("Bulk assignment complete", `${ok} lead${ok === 1 ? "" : "s"} assigned to ${counselor || "Unassigned"}.`, "success", 5000);
+  } finally { if (btn) btn.disabled = false; }
+}
+
+function addCounselorFromCRM() {
+  promptForCounselor();
+  populateCrmCounselorControls();
+}
+
+function populateCrmCounselorControls() {
+  loadCounselorNames();
+  const bulk = el("crmBulkCounselor");
+  if (bulk) {
+    const current = bulk.value;
+    bulk.innerHTML = counselorOptions(current);
+    if ([...bulk.options].some(o => o.value === current)) bulk.value = current;
+  }
+}
+
 function renderApplicationCRM() {
+  loadCounselorNames();
   populateCrmFilters();
   const counts = {not:0, due:0, interested:0, selected:0, joined:0};
   applications.forEach(app => {
@@ -480,21 +632,30 @@ function renderCrmTable(rows) {
   const body = el("crmTableBody");
   if (!body) return;
   el("crmResultCount").textContent = `${rows.length} application${rows.length === 1 ? "" : "s"}`;
+  populateCrmCounselorControls();
   body.innerHTML = rows.slice(0, 100).map(app => {
     const status = getCallStatus(app);
     const followClass = followUpClass(app);
+    const assigned = String(app.assignedTo || "").trim();
     return `<tr>
+      <td><input class="crm-row-check" type="checkbox" data-app-id="${esc(app.id)}" ${selectedApplicationIds.has(app.id) ? "checked" : ""} aria-label="Select ${esc(app.name || "lead")}"></td>
       <td><div class="crm-student"><span class="crm-avatar">${esc((app.name||"A").trim().charAt(0).toUpperCase())}</span><div><strong>${esc(app.name||"Unknown")}</strong><small>${esc(app.email||"—")}<br>${esc(app.phone||"—")}</small></div></div></td>
       <td><strong>${esc(app.college||"—")}</strong><small>${esc(app.department||"—")} • Year ${esc(app.year||"—")}</small></td>
       <td><span class="domain-pill">${esc(app.domain||"—")}</span></td>
       <td><small>${esc(fmt(app.submittedAtMs||app.submittedAt||app.timestamp))}</small></td>
       <td><span class="crm-status ${statusClass(status)}">${esc(status)}</span></td>
       <td><span class="follow-pill ${followClass}">${isFollowUpDue(app) ? "⚠ " : ""}${esc(formatFollowUp(app))}</span></td>
-      <td><small>${esc(app.assignedTo||"Unassigned")}</small></td>
+      <td><select class="crm-assign-select" data-app-id="${esc(app.id)}" aria-label="Assign ${esc(app.name || "lead")}">${counselorOptions(assigned)}</select></td>
       <td><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button></td>
     </tr>`;
-  }).join("") || '<tr><td colspan="8" class="empty">No applications match your filters.</td></tr>';
+  }).join("") || '<tr><td colspan="9" class="empty">No applications match your filters.</td></tr>';
+
   body.querySelectorAll(".crm-open-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
+  body.querySelectorAll(".crm-row-check").forEach(box => box.addEventListener("change", () => toggleCrmSelection(box.dataset.appId, box.checked)));
+  body.querySelectorAll(".crm-assign-select").forEach(select => select.addEventListener("change", () => {
+    handleCounselorSelect(select, value => assignApplicationToCounselor(select.dataset.appId, value, "row"));
+  }));
+  updateCrmSelectionUI();
 }
 
 function toDateTimeLocal(ms) {
@@ -518,7 +679,9 @@ function openApplicationModal(id) {
   ]);
   el("modalCallStatus").value = getCallStatus(app);
   el("modalFollowUp").value = toDateTimeLocal(getFollowUpMs(app));
-  el("modalAssignedTo").value = app.assignedTo || "";
+  loadCounselorNames();
+  const assignedSelect = el("modalAssignedTo");
+  if (assignedSelect) { assignedSelect.innerHTML = counselorOptions(app.assignedTo || ""); assignedSelect.value = app.assignedTo || ""; }
   el("modalRemarks").value = app.remarks || "";
   el("modalSaveStatus").textContent = "";
   el("applicationModal").classList.add("show");
@@ -557,6 +720,7 @@ async function saveApplicationCRM() {
     statusEl.textContent = "Saving…";
     await db.ref(`submittedApplications/${activeApplicationId}`).update(updates);
     Object.assign(app, updates);
+    if (updates.assignedTo) rememberCounselor(updates.assignedTo);
     statusEl.textContent = "✓ Saved to Firebase • Sheets sync sent.";
     showToast("Application updated", `${app.name || "Student"}'s CRM details were saved.`, "success", 3500);
     renderApplications();
@@ -1242,8 +1406,12 @@ function setupUI() {
   el("exportApplicationsButton")?.addEventListener("click", exportApplicationsCsv);
   el("exportCrmButton")?.addEventListener("click", exportCrmCsv);
   el("syncCrmSheetsBtn")?.addEventListener("click", syncCrmToSheets);
-  ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmFollowupFilter"].forEach(id => el(id)?.addEventListener("input", filterCrmApplications));
-  el("crmClearFilters")?.addEventListener("click", () => { el("crmSearch").value=""; el("crmStatusFilter").value=""; el("crmDomainFilter").value=""; el("crmYearFilter").value=""; el("crmFollowupFilter").value=""; filterCrmApplications(); });
+  el("crmSelectAll")?.addEventListener("change", event => toggleAllCrmSelection(event.target.checked));
+  el("crmBulkAssignBtn")?.addEventListener("click", bulkAssignSelected);
+  el("crmAddCounselorBtn")?.addEventListener("click", addCounselorFromCRM);
+  el("modalAssignedTo")?.addEventListener("change", event => { if (event.target.value === "__new__") { const name = promptForCounselor(); event.target.innerHTML = counselorOptions(name); event.target.value = name || ""; } });
+  ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmCounselorFilter","crmFollowupFilter"].forEach(id => el(id)?.addEventListener("input", filterCrmApplications));
+  el("crmClearFilters")?.addEventListener("click", () => { el("crmSearch").value=""; el("crmStatusFilter").value=""; el("crmDomainFilter").value=""; el("crmYearFilter").value=""; el("crmCounselorFilter").value=""; el("crmFollowupFilter").value=""; filterCrmApplications(); });
   el("closeApplicationModal")?.addEventListener("click", closeApplicationModal);
   el("applicationModal")?.addEventListener("click", event => { if (event.target.id === "applicationModal") closeApplicationModal(); });
   el("saveApplicationCrm")?.addEventListener("click", saveApplicationCRM);

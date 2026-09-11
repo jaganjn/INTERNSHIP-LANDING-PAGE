@@ -55,6 +55,7 @@
   <div class="section-head crm-head">
     <div><span class="eyebrow">APPLICATION CRM <b class="crm-live-badge">● LIVE SYNC</b></span><h2>Application Management</h2><p>Search, filter, contact, assign and follow up without leaving the dashboard.</p></div>
     <div class="crm-head-actions">
+      <button id="crmAddCounselorBtn" class="panel-action" type="button">＋ Add Counselor</button>
       <button id="syncCrmSheetsBtn" class="panel-action" type="button">☁ Sync CRM to Sheets</button>
       <button id="exportCrmButton" class="panel-action" type="button">Export CRM CSV</button>
     </div>
@@ -72,13 +73,15 @@
     <select id="crmStatusFilter"><option value="">All call statuses</option><option>Not Contacted</option><option>Called</option><option>Call Back</option><option>Interested</option><option>Selected</option><option>Joined</option><option>Not Interested</option><option>Not Reachable</option></select>
     <select id="crmDomainFilter"><option value="">All domains</option></select>
     <select id="crmYearFilter"><option value="">All years</option></select>
+    <select id="crmCounselorFilter"><option value="">All counselors</option></select>
     <select id="crmFollowupFilter"><option value="">All follow-ups</option><option value="due">Due / overdue</option><option value="today">Today</option><option value="upcoming">Upcoming</option><option value="none">No follow-up</option></select>
     <button id="crmClearFilters" class="panel-action secondary" type="button">Clear</button>
   </div>
+  <div class="crm-assignment-toolbar"><div><strong>Lead Assignment</strong><small id="crmSelectedCount">0 selected</small></div><select id="crmBulkCounselor"><option value="">Unassigned</option><option value="__new__">＋ Add new counselor…</option></select><button id="crmBulkAssignBtn" class="primary-action" type="button">Assign Selected</button><span class="crm-assignment-note">Each counselor automatically gets a dedicated Google Sheets tab.</span></div>
   <div class="crm-table-wrap">
     <table class="crm-table">
-      <thead><tr><th>Student</th><th>College / Academic</th><th>Domain</th><th>Submitted</th><th>Call Status</th><th>Follow-up</th><th>Assigned To</th><th>Action</th></tr></thead>
-      <tbody id="crmTableBody"><tr><td colspan="8" class="empty">Loading applications…</td></tr></tbody>
+      <thead><tr><th class="crm-check-col"><input id="crmSelectAll" type="checkbox" aria-label="Select all visible leads"></th><th>Student</th><th>College / Academic</th><th>Domain</th><th>Submitted</th><th>Call Status</th><th>Follow-up</th><th>Assigned To</th><th>Action</th></tr></thead>
+      <tbody id="crmTableBody"><tr><td colspan="9" class="empty">Loading applications…</td></tr></tbody>
     </table>
   </div>
   <div class="crm-footer"><span id="crmResultCount">0 applications</span><small id="crmSyncStatus">● Firebase live • CRM edits are pushed to Google Sheets automatically. Bulk sync is available above.</small></div>
@@ -163,7 +166,7 @@
       <section class="student-detail-card crm-edit-card"><h3>Contact & Follow-up</h3>
         <label>Call Status<select id="modalCallStatus"><option>Not Contacted</option><option>Called</option><option>Call Back</option><option>Interested</option><option>Selected</option><option>Joined</option><option>Not Interested</option><option>Not Reachable</option></select></label>
         <label>Next Follow-up<input id="modalFollowUp" type="datetime-local"></label>
-        <label>Assigned To<input id="modalAssignedTo" type="text" placeholder="Admin / counselor name"></label>
+        <label>Assigned To<select id="modalAssignedTo"><option value="">Unassigned</option><option value="__new__">＋ Add new counselor…</option></select></label>
         <label>Remarks<textarea id="modalRemarks" rows="4" placeholder="Add call notes, next steps or remarks…"></textarea></label>
         <div class="modal-actions"><button id="saveApplicationCrm" class="primary-action" type="button">Save Changes</button><button id="callApplication" class="panel-action" type="button">📞 Call</button><button id="smsApplication" type="button">📱 SMS</button>
               <button id="whatsappApplication" class="panel-action" type="button">💬 WhatsApp</button><button id="emailApplication" class="panel-action" type="button">✉ Email</button></div>
@@ -176,5 +179,5 @@
 <div id="refreshOverlay" class="refresh-overlay" aria-hidden="true">
   <div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Cleaning abandoned sessions and loading fresh data…</small></div>
 </div>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20260911-fix2"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20260911-counselor1"></script>
 </body></html>

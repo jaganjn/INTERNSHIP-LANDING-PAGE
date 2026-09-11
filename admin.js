@@ -32,7 +32,8 @@ const E = {
   referralSearch: el("referralSearch"),
   applicationVisitorCount: el("applicationVisitorCount"),
   applicationVisitorCountMetric: el("applicationVisitorCountMetric"),
-  landingPageVisitorCountMetric: el("landingPageVisitorCountMetric")
+  landingPageVisitorCountMetric: el("landingPageVisitorCountMetric"),
+  applicationFormVisitorCountMetric: el("applicationFormVisitorCountMetric"),
 };
 
 let applications = [];
@@ -268,6 +269,12 @@ function renderVisitors() {
   );
 
   E.onlineCount.textContent = active.length;
+  // Landing Page Visitors is the live traffic metric. Count only active
+  // landing-page sessions and let the existing persistent visitor ID survive
+  // refreshes, so one browser remains one live visitor.
+  if (E.landingPageVisitorCountMetric) {
+    E.landingPageVisitorCountMetric.textContent = active.length.toLocaleString("en-IN");
+  }
   E.fillingCount.textContent = filling.length;
   E.abandonedCount.textContent = abandoned.length;
   E.submittedCount.textContent = todayApplications.length;
@@ -1105,13 +1112,19 @@ function listeners() {
     renderVisitors();
   });
 
-  // Total Landing Page Visitors is derived from the durable visitor-marker
-  // collection. This updates in real time and is not affected by page refreshes.
-  db.ref("publicStats/landingPageVisitors").on("value", snapshot => {
-    const markers = snapshot.val() || {};
-    const count = Object.keys(markers).length;
-    if (E.landingPageVisitorCountMetric) {
-      E.landingPageVisitorCountMetric.textContent = count.toLocaleString("en-IN");
+  // Live application-form visitors. This is based on temporary session
+  // records, so it returns to 0 when nobody has the form open.
+  db.ref("publicStats/applicationFormLive").on("value", snapshot => {
+    const sessions = snapshot.val() || {};
+    const now = Date.now();
+    const active = Object.values(sessions).filter(item => {
+      const lastSeen = Number(item?.lastSeen || 0);
+      return item?.status === "active" && lastSeen > 0 && (now - lastSeen) <= 45000;
+    }).length;
+
+    if (E.applicationFormVisitorCountMetric) {
+      E.applicationFormVisitorCountMetric.textContent =
+        active.toLocaleString("en-IN");
     }
   });
 

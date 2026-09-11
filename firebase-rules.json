@@ -27,6 +27,18 @@
           ".validate": "newData.val() === null || (newData.hasChildren(['firstSeen']) && newData.child('firstSeen').isNumber())"
         }
       },
+      "applicationFormVisitors": {
+        "$visitorId": {
+          ".write": true,
+          ".validate": "newData.val() === null || (newData.hasChildren(['firstSeen']) && newData.child('firstSeen').isNumber())"
+        }
+      },
+      "applicationFormLive": {
+        "$visitorId": {
+          ".write": true,
+          ".validate": "newData.val() === null || (newData.hasChildren(['lastSeen','status']) && newData.child('lastSeen').isNumber())"
+        }
+      },
       "applicationVisitorCount": {
         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() == newData.val()",
         ".write": "auth != null || (!data.exists() && newData.val() === 1) || (data.exists() && data.val() is number && newData.val() === data.val() + 1)"

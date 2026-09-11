@@ -1684,6 +1684,117 @@ async function submitApplication() {
   setTimeout(registerUniqueVisitor, 0);
 })();
 
+
+// Application-form visitor tracking.
+// A form visitor is counted live only while the visitor has the application
+// form open. A persistent browser ID prevents refreshes from creating
+// duplicate stored visitor profiles. The live session is removed on disconnect.
+(function trackApplicationFormVisitors(){
+  if (typeof db === 'undefined' || typeof firebase === 'undefined') return;
+
+  const ID_KEY = 'internsforge_form_visitor_id_v2';
+  let visitorId = null;
+
+  try {
+    visitorId = localStorage.getItem(ID_KEY);
+    if (!visitorId) {
+      visitorId = `form_${Date.now()}_${Math.random().toString(36).slice(2,12)}`;
+      localStorage.setItem(ID_KEY, visitorId);
+    }
+  } catch (_) {
+    visitorId = `form_${Date.now()}_${Math.random().toString(36).slice(2,12)}`;
+  }
+
+  const profileRef = db.ref(`publicStats/applicationFormVisitors/${visitorId}`);
+  const liveRef = db.ref(`publicStats/applicationFormLive/${visitorId}`);
+
+  let formOpen = false;
+  let heartbeatTimer = null;
+
+  function startFormVisit(){
+    if (formOpen) return;
+    formOpen = true;
+
+    profileRef.transaction(current => {
+      if (current === null) {
+        return {
+          firstSeen: firebase.database.ServerValue.TIMESTAMP,
+          lastSeen: firebase.database.ServerValue.TIMESTAMP
+        };
+      }
+      return {
+        ...current,
+        lastSeen: firebase.database.ServerValue.TIMESTAMP
+      };
+    }).catch(() => {});
+
+    liveRef.set({
+      startedAt: firebase.database.ServerValue.TIMESTAMP,
+      lastSeen: firebase.database.ServerValue.TIMESTAMP,
+      status: 'active'
+    }).catch(() => {});
+
+    liveRef.onDisconnect().remove().catch(() => {});
+
+    heartbeatTimer = setInterval(() => {
+      if (!formOpen) return;
+      liveRef.update({
+        lastSeen: firebase.database.ServerValue.TIMESTAMP,
+        status: 'active'
+      }).catch(() => {});
+      profileRef.update({
+        lastSeen: firebase.database.ServerValue.TIMESTAMP
+      }).catch(() => {});
+    }, 15000);
+  }
+
+  function stopFormVisit(){
+    if (!formOpen) return;
+    formOpen = false;
+    if (heartbeatTimer) {
+      clearInterval(heartbeatTimer);
+      heartbeatTimer = null;
+    }
+    liveRef.remove().catch(() => {});
+  }
+
+  // Capture any application-modal/form opener already present on the page.
+  document.addEventListener('click', event => {
+    const trigger = event.target.closest(
+      '[data-open-application], [data-apply], .apply-btn, .apply-button, ' +
+      '.hero-apply, .floating-apply, #applyBtn, #startApplicationBtn'
+    );
+    if (trigger) {
+      setTimeout(() => {
+        const modal = document.querySelector(
+          '#applicationModal, #application-modal, .application-modal, [role="dialog"]'
+        );
+        if (modal && !modal.hidden && modal.offsetParent !== null) {
+          startFormVisit();
+        }
+      }, 150);
+    }
+  }, true);
+
+  // Observe the DOM so this also works with modals opened by JS without
+  // a recognizable button class.
+  const observer = new MutationObserver(() => {
+    const modal = document.querySelector(
+      '#applicationModal, #application-modal, .application-modal, [role="dialog"]'
+    );
+    const visible = !!(modal && !modal.hidden && modal.offsetParent !== null);
+    if (visible) startFormVisit();
+    else stopFormVisit();
+  });
+  observer.observe(document.documentElement, {
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class','style','hidden','aria-hidden']
+  });
+
+  window.addEventListener('pagehide', stopFormVisit);
+})();
+
 // Live visitor tracking. The admin dashboard mirrors the form fields that are
 // currently visible to the student so staff can see live filling progress.
 const visitorId = sessionStorage.getItem(VISITOR_KEY) || `visitor_${Date.now()}_${Math.floor(Math.random() * 100000)}`;

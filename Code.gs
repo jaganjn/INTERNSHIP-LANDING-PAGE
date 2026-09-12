@@ -1016,6 +1016,7 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     if (data.action === "syncApplications") return jsonResponse(syncApplicationsToSheet(data.applications || [], data.updateExisting === true));
     if (data.action === "updateApplication") return jsonResponse(updateApplicationInSheet(data.application || {}));
+    if (data.action === "deleteApplication") return jsonResponse(deleteApplicationFromSheets(data.application || data));
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
     if (data.action === "health") return jsonResponse({status:"online", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
     return saveSingleApplication(data);
@@ -1023,6 +1024,82 @@ function doPost(e) {
     console.error("POST ERROR", error);
     return jsonResponse({status:"error", message:error.message || String(error)});
   }
+}
+
+/**
+ * Delete ONE application everywhere it is managed by InternsForge.
+ * Firebase is intentionally handled by the dashboard after this request;
+ * this endpoint removes the corresponding Master row and every counselor
+ * copy so stale lead records cannot remain in Google Sheets.
+ */
+function deleteApplicationFromSheets(raw) {
+  raw = raw || {};
+  const applicationId = value(raw.applicationId || raw.applicationID || raw.id || raw.key);
+  if (!applicationId) {
+    return {status:"error", message:"Application ID is required."};
+  }
+
+  const result = {
+    status:"success",
+    applicationId:applicationId,
+    masterDeleted:0,
+    counselorDeleted:0,
+    counselorsChecked:0,
+    errors:[]
+  };
+
+  // 1) Delete the canonical Master Sheet row.
+  try {
+    const master = getMasterSpreadsheet_();
+    const sheet = master.getSheetByName(CONFIG.SHEET_NAME);
+    if (sheet) {
+      const headers = getHeaders(sheet);
+      const rowNumber = findApplicationId(sheet, headers, applicationId);
+      if (rowNumber > 0) {
+        sheet.deleteRow(rowNumber);
+        SpreadsheetApp.flush();
+        result.masterDeleted = 1;
+        result.masterRow = rowNumber;
+      }
+    }
+  } catch (error) {
+    result.errors.push("Master: " + error.message);
+  }
+
+  // 2) Delete every counselor copy, not just the currently assigned one.
+  //    This also cleans up duplicates created by older routing versions.
+  try {
+    const counselors = getCounselors();
+    counselors.forEach(function(counselor) {
+      const name = normalizeCounselorName(counselor.name);
+      const spreadsheetId = value(counselor.spreadsheetId);
+      if (!name || !spreadsheetId) return;
+      result.counselorsChecked++;
+      try {
+        const ss = SpreadsheetApp.openById(spreadsheetId);
+        const leadSheet = findCounselorLeadSheet_(ss, name, false);
+        if (!leadSheet) return;
+        const headers = getHeaders(leadSheet);
+        let rowNumber = findApplicationId(leadSheet, headers, applicationId);
+        // A duplicate is possible in an old sheet. Remove all matching rows.
+        while (rowNumber > 0) {
+          leadSheet.deleteRow(rowNumber);
+          result.counselorDeleted++;
+          rowNumber = findApplicationId(leadSheet, headers, applicationId);
+        }
+      } catch (error) {
+        result.errors.push(name + ": " + error.message);
+      }
+    });
+  } catch (error) {
+    result.errors.push("Counselors: " + error.message);
+  }
+
+  if (result.errors.length) result.status = "completed_with_errors";
+  result.message = result.masterDeleted || result.counselorDeleted
+    ? "Application deleted from Google Sheets."
+    : "Application ID was not found in Google Sheets.";
+  return result;
 }
 
 function saveSingleApplication(data) {
@@ -2063,7 +2140,191 @@ function getSheet() {
   return sheet;
 }
 
+/**
+ * Repair Google Sheets Table column names without writing directly into typed
+ * table cells. Google Sheets Tables keep their column names in the Table
+ * metadata; writing A1 headers with Range.setValues() can fail on typed columns.
+ * This uses the Sheets API over UrlFetchApp so no Advanced Sheets service is
+ * required.
+ */
+function updateManagedTableHeaders_(sheet) {
+  if (!sheet) return false;
+
+  const sheetName = sheet.getName();
+  let required = null;
+
+  if (sheetName === CONFIG.SHEET_NAME) {
+    required = CONFIG.HEADERS.slice();
+  } else if (
+    typeof COUNSELOR_CONFIG !== "undefined" &&
+    (
+      sheetName.endsWith(COUNSELOR_CONFIG.LEADS_SHEET_SUFFIX) ||
+      sheetName === "LeadsTable" ||
+      sheetName === "LeadApplications"
+    )
+  ) {
+    required = COUNSELOR_CONFIG.LEADS_HEADERS.slice();
+  }
+
+  if (!required) return false;
+
+  try {
+    const spreadsheetId = sheet.getParent().getId();
+    const url =
+      "https://sheets.googleapis.com/v4/spreadsheets/" +
+      encodeURIComponent(spreadsheetId) +
+      "?fields=sheets(properties(sheetId,title),tables(tableId,name,columnProperties))";
+
+    const response = UrlFetchApp.fetch(url, {
+      method: "get",
+      headers: {
+        Authorization: "Bearer " + ScriptApp.getOAuthToken()
+      },
+      muteHttpExceptions: true
+    });
+
+    const code = response.getResponseCode();
+    if (code < 200 || code >= 300) {
+      console.log("Table metadata read skipped: HTTP " + code + " " + response.getContentText());
+      return false;
+    }
+
+    const data = JSON.parse(response.getContentText() || "{}");
+    const apiSheet = (data.sheets || []).find(function(item) {
+      return item.properties && item.properties.sheetId === sheet.getSheetId();
+    });
+
+    const tables = apiSheet && apiSheet.tables ? apiSheet.tables : [];
+    if (!tables.length) return false;
+
+    // Prefer the table whose width matches the managed schema.
+    const table = tables.find(function(t) {
+      return Array.isArray(t.columnProperties) &&
+        t.columnProperties.length === required.length;
+    }) || tables[0];
+
+    if (!table || !Array.isArray(table.columnProperties)) return false;
+
+    const columns = table.columnProperties.map(function(column, index) {
+      return Object.assign({}, column, {
+        columnIndex: index,
+        columnName: required[index] || column.columnName || ("Column " + (index + 1))
+      });
+    });
+
+    const same = table.columnProperties.length === columns.length &&
+      columns.every(function(column, index) {
+        return String(table.columnProperties[index].columnName || "") ===
+          String(column.columnName || "");
+      });
+
+    if (same) return false;
+
+    const updateUrl =
+      "https://sheets.googleapis.com/v4/spreadsheets/" +
+      encodeURIComponent(spreadsheetId) + ":batchUpdate";
+
+    const updateBody = {
+      requests: [{
+        updateTable: {
+          table: {
+            tableId: table.tableId,
+            columnProperties: columns
+          },
+          fields: "columnProperties"
+        }
+      }]
+    };
+
+    const updateResponse = UrlFetchApp.fetch(updateUrl, {
+      method: "post",
+      contentType: "application/json",
+      headers: {
+        Authorization: "Bearer " + ScriptApp.getOAuthToken()
+      },
+      payload: JSON.stringify(updateBody),
+      muteHttpExceptions: true
+    });
+
+    const updateCode = updateResponse.getResponseCode();
+    if (updateCode < 200 || updateCode >= 300) {
+      console.log("Table header repair failed: HTTP " + updateCode + " " + updateResponse.getContentText());
+      return false;
+    }
+
+    console.log(
+      "Table headers repaired for " + sheet.getName() +
+      ": " + required.join(" | ")
+    );
+    return true;
+  } catch (error) {
+    console.log(
+      "Table header repair skipped for " +
+      sheet.getName() + ": " + error.message
+    );
+    return false;
+  }
+}
+
+/**
+ * One-time/manual repair for all managed sheets.
+ * Run this after replacing Code.gs if an existing Google Sheets Table still
+ * displays Column 1, Column 2, etc.
+ */
+function repairAllManagedTableHeaders() {
+  const repaired = [];
+
+  const master = getMasterSpreadsheet_();
+  const masterSheet = master.getSheetByName(CONFIG.SHEET_NAME);
+  if (masterSheet && updateManagedTableHeaders_(masterSheet)) {
+    repaired.push(master.getName() + " / " + masterSheet.getName());
+  }
+
+  const config = master.getSheetByName(COUNSELOR_CONFIG.LIST_SHEET_NAME);
+  if (config) {
+    const headers = COUNSELOR_CONFIG.LIST_HEADERS.slice();
+    let rows = [];
+    try {
+      if (config.getLastRow() > 1) {
+        rows = config.getRange(2, 1, config.getLastRow() - 1, headers.length).getDisplayValues();
+      }
+    } catch (error) {
+      console.log("Counselor registry read skipped: " + error.message);
+    }
+
+    rows.forEach(function(row) {
+      const counselorName = value(row[0]);
+      const spreadsheetId = value(row[1]);
+      if (!counselorName || !spreadsheetId) return;
+
+      try {
+        const ss = SpreadsheetApp.openById(spreadsheetId);
+        const leadSheet = findCounselorLeadSheet_(ss, counselorName, false);
+        if (leadSheet && updateManagedTableHeaders_(leadSheet)) {
+          repaired.push(ss.getName() + " / " + leadSheet.getName());
+        }
+      } catch (error) {
+        console.log(
+          "Counselor table header repair skipped for " + counselorName +
+          ": " + error.message
+        );
+      }
+    });
+  }
+
+  Logger.log(
+    repaired.length
+      ? "Repaired table headers: " + repaired.join(", ")
+      : "No table headers required repair."
+  );
+
+  return repaired;
+}
+
 function ensureHeaders(sheet) {
+  // Repair native Google Sheets Table metadata first; this is safe for typed columns.
+  updateManagedTableHeaders_(sheet);
+
   const required = CONFIG.HEADERS.slice();
   const lastColumn = sheet.getLastColumn();
 

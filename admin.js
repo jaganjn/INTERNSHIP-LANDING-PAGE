@@ -689,16 +689,81 @@ function renderCrmTable(rows) {
       <td><span class="crm-status ${statusClass(status)}">${esc(status)}</span></td>
       <td><span class="follow-pill ${followClass}">${isFollowUpDue(app) ? "⚠ " : ""}${esc(formatFollowUp(app))}</span></td>
       <td><select class="crm-assign-select" data-app-id="${esc(app.id)}" aria-label="Assign ${esc(app.name || "lead")}">${counselorOptions(assigned)}</select></td>
-      <td><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button></td>
+      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button><button class="crm-delete-btn" type="button" data-app-id="${esc(app.id)}" aria-label="Delete ${esc(app.name || "lead")}">Delete</button></div></td>
     </tr>`;
   }).join("") || '<tr><td colspan="9" class="empty">No applications match your filters.</td></tr>';
 
   body.querySelectorAll(".crm-open-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
+  body.querySelectorAll(".crm-delete-btn").forEach(btn => btn.addEventListener("click", () => deleteSingleApplication(btn.dataset.appId)));
   body.querySelectorAll(".crm-row-check").forEach(box => box.addEventListener("change", () => toggleCrmSelection(box.dataset.appId, box.checked)));
   body.querySelectorAll(".crm-assign-select").forEach(select => select.addEventListener("change", () => {
     handleCounselorSelect(select, value => assignApplicationToCounselor(select.dataset.appId, value, "row"));
   }));
   updateCrmSelectionUI();
+}
+
+async function sendApplicationDeleteToSheets(app) {
+  const payload = {
+    id: app?.id || app?.applicationId || "",
+    applicationId: app?.applicationId || app?.id || "",
+    name: app?.name || ""
+  };
+  if (!payload.applicationId) throw new Error("Application ID is missing.");
+  return fetch(SHEETS_RECOVERY_ENDPOINT, {
+    method:"POST",
+    mode:"no-cors",
+    headers:{"Content-Type":"text/plain;charset=utf-8"},
+    body:JSON.stringify({action:"deleteApplication", application:payload})
+  });
+}
+
+async function deleteSingleApplication(id, options = {}) {
+  const app = applications.find(item => item.id === id);
+  if (!app) return false;
+
+  const name = String(app.name || "this student").trim();
+  const applicationId = String(app.applicationId || app.id || "").trim();
+  if (!applicationId) {
+    showToast("Delete failed", "This lead has no Application ID.", "error", 5000);
+    return false;
+  }
+
+  const confirmed = options.skipConfirm || confirm(
+    `Delete ${name}?\n\nApplication ID: ${applicationId}\n\nThis will remove the lead from Firebase, the Master Sheet, and the assigned counselor sheet. This action cannot be undone.`
+  );
+  if (!confirmed) return false;
+
+  const statusEl = el("crmSyncStatus");
+  if (statusEl) {
+    statusEl.textContent = `● Deleting ${name}…`;
+    statusEl.className = "crm-syncing";
+  }
+
+  try {
+    // Sheets first: once Firebase is removed, the dashboard can no longer
+    // recover the record automatically. The no-cors request is awaited so
+    // the browser has handed the deletion to Apps Script before Firebase is removed.
+    await sendApplicationDeleteToSheets(app);
+    await db.ref(`submittedApplications/${id}`).remove();
+
+    selectedApplicationIds.delete(id);
+    if (activeApplicationId === id) closeApplicationModal();
+
+    if (statusEl) {
+      statusEl.textContent = `● Lead deleted • ${name}`;
+      statusEl.className = "crm-synced";
+    }
+    showToast("Lead deleted", `${name} was removed from Firebase, Master Sheet and counselor sheets.`, "success", 5500);
+    return true;
+  } catch (error) {
+    console.error("Application delete failed:", error);
+    if (statusEl) {
+      statusEl.textContent = "● Delete failed.";
+      statusEl.className = "crm-sync-error";
+    }
+    showToast("Delete failed", error?.message || "Unable to delete this lead.", "error", 7000);
+    return false;
+  }
 }
 
 function toDateTimeLocal(ms) {
@@ -1461,6 +1526,9 @@ function setupUI() {
   el("closeApplicationModal")?.addEventListener("click", closeApplicationModal);
   el("applicationModal")?.addEventListener("click", event => { if (event.target.id === "applicationModal") closeApplicationModal(); });
   el("saveApplicationCrm")?.addEventListener("click", saveApplicationCRM);
+  el("deleteApplicationCrm")?.addEventListener("click", () => {
+    if (activeApplicationId) deleteSingleApplication(activeApplicationId);
+  });
   el("callApplication")?.addEventListener("click", async () => {
     const app=applications.find(a=>a.id===activeApplicationId);
     if(app?.phone) {

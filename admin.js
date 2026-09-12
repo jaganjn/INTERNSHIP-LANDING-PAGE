@@ -1520,6 +1520,7 @@ function setupUI() {
   el("crmSelectAll")?.addEventListener("change", event => toggleAllCrmSelection(event.target.checked));
   el("crmBulkAssignBtn")?.addEventListener("click", bulkAssignSelected);
   el("crmAddCounselorBtn")?.addEventListener("click", addCounselorFromCRM);
+  el("adminLogoutButton")?.addEventListener("click", logout);
   el("modalAssignedTo")?.addEventListener("change", event => { if (event.target.value === "__new__") { const name = promptForCounselor(); event.target.innerHTML = counselorOptions(name); event.target.value = name || ""; } });
   ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmCounselorFilter","crmFollowupFilter"].forEach(id => el(id)?.addEventListener("input", filterCrmApplications));
   el("crmClearFilters")?.addEventListener("click", () => { el("crmSearch").value=""; el("crmStatusFilter").value=""; el("crmDomainFilter").value=""; el("crmYearFilter").value=""; el("crmCounselorFilter").value=""; el("crmFollowupFilter").value=""; filterCrmApplications(); });

@@ -636,6 +636,63 @@ function addCounselorFromCRM() {
   populateCrmCounselorControls();
 }
 
+async function removeCounselorFromCRM() {
+  loadCounselorNames();
+  if (!counselorNames.length) {
+    showToast("No counselors", "There are no counselors available to remove.", "info", 3000);
+    return;
+  }
+
+  const list = counselorNames.map((name, i) => `${i + 1}. ${name}`).join("\n");
+  const answer = window.prompt(`Remove which counselor? Enter the number:\n\n${list}`);
+  if (answer === null) return;
+  const index = Number(answer) - 1;
+  if (!Number.isInteger(index) || index < 0 || index >= counselorNames.length) {
+    showToast("Invalid counselor", "Please enter a valid counselor number.", "error", 3500);
+    return;
+  }
+
+  const counselor = counselorNames[index];
+  const assignedApps = applications.filter(app =>
+    String(app?.assignedTo || "").trim().toLowerCase() === counselor.toLowerCase()
+  );
+
+  const warning = assignedApps.length
+    ? `Remove counselor "${counselor}"?\n\n${assignedApps.length} lead${assignedApps.length === 1 ? " is" : "s are"} currently assigned to this counselor. They will be moved to Unassigned first.\n\nThe counselor will be removed from the dashboard assignment list. Their separate Google Spreadsheet will NOT be deleted.`
+    : `Remove counselor "${counselor}"?\n\nThe counselor will be removed from the dashboard assignment list. Their separate Google Spreadsheet will NOT be deleted.`;
+
+  if (!confirm(warning)) return;
+
+  const btn = el("crmRemoveCounselorBtn");
+  if (btn) btn.disabled = true;
+  try {
+    // Unassign active leads first so Firebase -> Sheets synchronization can
+    // clear the old assignment while the counselor registry still exists.
+    for (const app of assignedApps) {
+      await db.ref(`submittedApplications/${app.id}`).update({ assignedTo: "" });
+      app.assignedTo = "";
+    }
+
+    const response = await fetch(SHEETS_RECOVERY_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({ action: "removeCounselor", counselorName: counselor })
+    });
+
+    counselorNames = counselorNames.filter(n => n.toLowerCase() !== counselor.toLowerCase());
+    try { localStorage.setItem(COUNSELOR_STORAGE_KEY, JSON.stringify(counselorNames)); } catch (_) {}
+    populateCrmCounselorControls();
+    renderApplicationCRM();
+    showToast("Counselor removed", `${counselor} was removed from the dashboard assignment list.`, "success", 5000);
+  } catch (error) {
+    console.error("Counselor removal failed:", error);
+    showToast("Removal failed", error?.message || "Could not remove the counselor.", "error", 6000);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
 function populateCrmCounselorControls() {
   loadCounselorNames();
   const bulk = el("crmBulkCounselor");
@@ -1520,7 +1577,7 @@ function setupUI() {
   el("crmSelectAll")?.addEventListener("change", event => toggleAllCrmSelection(event.target.checked));
   el("crmBulkAssignBtn")?.addEventListener("click", bulkAssignSelected);
   el("crmAddCounselorBtn")?.addEventListener("click", addCounselorFromCRM);
-  el("adminLogoutButton")?.addEventListener("click", logout);
+  el("crmRemoveCounselorBtn")?.addEventListener("click", removeCounselorFromCRM);
   el("modalAssignedTo")?.addEventListener("change", event => { if (event.target.value === "__new__") { const name = promptForCounselor(); event.target.innerHTML = counselorOptions(name); event.target.value = name || ""; } });
   ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmCounselorFilter","crmFollowupFilter"].forEach(id => el(id)?.addEventListener("input", filterCrmApplications));
   el("crmClearFilters")?.addEventListener("click", () => { el("crmSearch").value=""; el("crmStatusFilter").value=""; el("crmDomainFilter").value=""; el("crmYearFilter").value=""; el("crmCounselorFilter").value=""; el("crmFollowupFilter").value=""; filterCrmApplications(); });

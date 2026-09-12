@@ -1018,6 +1018,7 @@ function doPost(e) {
     if (data.action === "updateApplication") return jsonResponse(updateApplicationInSheet(data.application || {}));
     if (data.action === "deleteApplication") return jsonResponse(deleteApplicationFromSheets(data.application || data));
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
+    if (data.action === "removeCounselor") return jsonResponse(removeCounselor(data.counselorName || data.name || ""));
     if (data.action === "health") return jsonResponse({status:"online", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
     return saveSingleApplication(data);
   } catch (error) {
@@ -1288,6 +1289,49 @@ function getCounselorConfigSheet() {
   return sheet;
 }
 
+function removeCounselor(name) {
+  const counselorName = normalizeCounselorName(name);
+  if (!counselorName) return {status:"error", message:"Counselor name is required."};
+
+  const config = getCounselorConfigSheet();
+  const headers = getHeaders(config);
+  const nameCol = headers.findIndex(h => normalizeHeader(h) === "counselorname") + 1;
+  const activeCol = headers.findIndex(h => normalizeHeader(h) === "active") + 1;
+
+  if (!nameCol) return {status:"error", message:"Counselor registry is missing the Counselor Name column."};
+
+  let rowNumber = 0;
+  if (config.getLastRow() >= 2) {
+    const vals = config.getRange(2, nameCol, config.getLastRow() - 1, 1).getDisplayValues();
+    for (let i = 0; i < vals.length; i++) {
+      if (normalizeCounselorName(vals[i][0]).toLowerCase() === counselorName.toLowerCase()) {
+        rowNumber = i + 2;
+        break;
+      }
+    }
+  }
+
+  if (!rowNumber) {
+    return {status:"success", counselorName:counselorName, removed:false, message:"Counselor was not present in the registry."};
+  }
+
+  // Keep the counselor spreadsheet intact. Mark the registry entry inactive
+  // rather than deleting the external spreadsheet or its historical records.
+  if (activeCol) {
+    config.getRange(rowNumber, activeCol).setValue("No");
+  } else {
+    config.deleteRow(rowNumber);
+  }
+  SpreadsheetApp.flush();
+
+  return {
+    status:"success",
+    counselorName:counselorName,
+    removed:true,
+    message:"Counselor removed from the active dashboard registry. The separate counselor spreadsheet was not deleted."
+  };
+}
+
 function registerCounselor(name, spreadsheetId) {
   const counselorName = normalizeCounselorName(name);
   if (!counselorName) return {status:"error", message:"Counselor name is required."};
@@ -1489,7 +1533,7 @@ function getCounselors() {
     name: value(row[nameCol]),
     spreadsheetId: idCol >= 0 ? value(row[idCol]) : "",
     active: activeCol >= 0 ? value(row[activeCol]) : "Yes"
-  })).filter(item => item.name);
+  })).filter(item => item.name && String(item.active || "Yes").trim().toLowerCase() !== "no" && String(item.active || "Yes").trim().toLowerCase() !== "false");
 }
 
 function getCounselorRecord(name) {

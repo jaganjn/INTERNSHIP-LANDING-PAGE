@@ -7,10 +7,23 @@ const CONFIG = {
   SHEET_NAME: "Sheet1",
   TIMEZONE: "Asia/Kolkata",
   HEADERS: [
-    "Timestamp", "Application ID", "Name", "Phone", "Email", "College",
-    "Department", "Year", "Domain", "State", "Communication Language",
-    "Start Availability", "Application Reason", "Call Status", "Next Follow-up",
-    "Assigned To", "Remarks"
+    "Timestamp",
+    "Name",
+    "Phone",
+    "Email",
+    "College",
+    "Department",
+    "Year",
+    "Domain",
+    "State",
+    "Communication Language",
+    "Start Availability",
+    "Application Reason",
+    "Call Status",
+    "Remarks",
+    "Application ID",
+    "Next Follow-up",
+    "Assigned To"
   ]
 };
 
@@ -34,14 +47,15 @@ const CONFIG = {
  * official Firebase REST authentication flow.
  */
 
-const FIREBASE_SYNC_CONFIG = {
-  DATABASE_URL: "https://mnc-internship-live-default-rtdb.asia-southeast1.firebasedatabase.app",
-  SERVICE_ACCOUNT_PROPERTY: "FIREBASE_SERVICE_ACCOUNT_JSON"
-};
-
 const MASTER_SPREADSHEET_ID = "1zqXBMY_Y97cgk1wdT3ZdzqW1ZH7cmyAipIsDQCB3Nfs";
 
-const CALL_STATUS_VALUES = [
+/**
+ * ==========================================================
+ * CANONICAL CALL STATUS CONFIGURATION
+ * ==========================================================
+ */
+
+const CALL_STATUS_OPTIONS = [
   "Not Contacted",
   "New",
   "Connected",
@@ -57,35 +71,77 @@ const CALL_STATUS_VALUES = [
   "Invalid Number"
 ];
 
-const CALL_STATUS_ALIASES = {
+const CALL_STATUS_MIGRATION = {
   "Called": "Connected",
   "Call Back": "Callback",
-  "CallBack": "Callback",
+  "Follow Up": "Follow-up",
   "Selected": "Paid / Pre-Reg",
   "Joined": "Enrolled",
   "Not Reachable": "Not Picking"
 };
 
+/**
+ * Convert legacy Call Status values to the canonical list.
+ */
+function standardizeCallStatus_(rawStatus) {
+  const status = value(rawStatus);
+  if (!status) return "";
+
+  const migrationKey = Object.keys(CALL_STATUS_MIGRATION).find(
+    key => key.toLowerCase() === status.toLowerCase()
+  );
+
+  return migrationKey
+    ? CALL_STATUS_MIGRATION[migrationKey]
+    : status;
+}
+
+/**
+ * Apply the canonical Call Status dropdown to a managed sheet.
+ */
+function ensureCallStatusDropdown_(sheet) {
+  if (!sheet) return;
+
+  try {
+    const headers = getHeaders(sheet);
+    const statusCol =
+      headers.findIndex(
+        h => normalizeHeader(h) === "callstatus"
+      ) + 1;
+
+    if (!statusCol) return;
+
+    const rows = Math.max(sheet.getMaxRows() - 1, 1);
+
+    const rule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(CALL_STATUS_OPTIONS, true)
+      .setAllowInvalid(false)
+      .build();
+
+    sheet
+      .getRange(2, statusCol, rows, 1)
+      .setDataValidation(rule);
+  } catch (error) {
+    // Dropdown formatting is optional. Never let a typed-column restriction
+    // break counselor registration or Firebase synchronization.
+    console.log(
+      "Call Status dropdown skipped for " +
+      sheet.getName() +
+      ": " +
+      error.message
+    );
+  }
+}
+
+
 function getMasterSpreadsheet_() {
   return SpreadsheetApp.openById(MASTER_SPREADSHEET_ID);
 }
 
-function normalizeCallStatus_(status) {
-  const raw = value(status);
-  return raw ? (CALL_STATUS_ALIASES[raw] || raw) : "Not Contacted";
-}
-
-function applyCallStatusValidation_(sheet) {
-  const headerRow = getHeaders(sheet);
-  const col = headerRow.findIndex(h => normalizeHeader(h) === "callstatus") + 1;
-  if (!col) return;
-  const rule = SpreadsheetApp.newDataValidation()
-    .requireValueInList(CALL_STATUS_VALUES, true)
-    .setAllowInvalid(false)
-    .build();
-  const maxRows = Math.max(sheet.getMaxRows(), 2);
-  sheet.getRange(2, col, maxRows - 1, 1).setDataValidation(rule);
-}
+const FIREBASE_SYNC_CONFIG = {
+  DATABASE_URL: "https://mnc-internship-live-default-rtdb.asia-southeast1.firebasedatabase.app",
+  SERVICE_ACCOUNT_PROPERTY: "FIREBASE_SERVICE_ACCOUNT_JSON"
+};
 
 /**
  * Counselor routing. Every counselor gets a DEDICATED GOOGLE SPREADSHEET FILE.
@@ -99,7 +155,29 @@ function applyCallStatusValidation_(sheet) {
 const COUNSELOR_CONFIG = {
   LIST_SHEET_NAME: "Counselors",
   LIST_HEADERS: ["Counselor Name", "Spreadsheet ID", "Active", "Created At"],
-  LEADS_SHEET_SUFFIX: "'s Leads"
+  LEADS_SHEET_SUFFIX: "'s Leads",
+
+  // Existing counselor files use this physical order (as shown in the
+  // counselor LeadsTable screenshot). Keep this separate from Master Sheet1.
+  LEADS_HEADERS: [
+    "Timestamp",
+    "Application ID",
+    "Name",
+    "Phone",
+    "Email",
+    "College",
+    "Department",
+    "Year",
+    "Domain",
+    "State",
+    "Communication Language",
+    "Start Availability",
+    "Application Reason",
+    "Call Status",
+    "Next Follow-up",
+    "Assigned To",
+    "Remarks"
+  ]
 };
 
 // Counselor spreadsheets are configured dynamically in the master `Counselors` sheet.
@@ -135,15 +213,75 @@ function removeSheetToFirebaseTrigger() {
 
 function sheetOnEdit(e) {
   if (!e || !e.range) return;
+
   const sheet = e.range.getSheet();
-  const sheetName = sheet.getName();
+
+  // Only Master Sheet1 is handled here.
+  // Counselor spreadsheets use counselorSpreadsheetOnEdit().
+  if (sheet.getName() !== CONFIG.SHEET_NAME) return;
   if (e.range.getRow() < 2) return;
+
   try {
-    if (sheetName === CONFIG.SHEET_NAME) {
-      syncSheetRowToFirebase(e.range.getRow());
-    }
+    const headers = getHeaders(sheet);
+    const assignedToCol =
+      headers.findIndex(h => normalizeHeader(h) === "assignedto") + 1;
+
+    // oldValue is only useful when the edited cell is Assigned To.
+    // For Call Status / Remarks / Next Follow-up edits the current
+    // assignment is already the correct counselor, so no old counselor
+    // lookup is necessary.
+    const previousAssignedTo =
+      assignedToCol &&
+      e.range.getNumRows() === 1 &&
+      e.range.getNumColumns() === 1 &&
+      e.range.getColumn() === assignedToCol
+        ? value(e.oldValue)
+        : "";
+
+    const result = syncSheetRowToFirebase(
+      e.range.getRow(),
+      previousAssignedTo
+    );
+
+    console.log(
+      "MASTER EDIT → FIREBASE + COUNSELOR:",
+      JSON.stringify(result)
+    );
+
   } catch (error) {
-    console.error("Sheet → Firebase sync failed:", error);
+    console.error(
+      "Master Sheet synchronization failed:",
+      error
+    );
+  }
+}
+
+function readManagedRow_(sheet, rowNumber, columnCount) {
+  if (!sheet || !rowNumber || !columnCount) return [];
+
+  // Google Sheets typed/table columns can reject bulk getValues() calls.
+  // Prefer display values for managed CRM rows; fall back to individual
+  // cell reads so one typed column cannot block the entire synchronization.
+  try {
+    return sheet.getRange(rowNumber, 1, 1, columnCount).getDisplayValues()[0];
+  } catch (displayError) {
+    const result = [];
+    for (let col = 1; col <= columnCount; col++) {
+      try {
+        result.push(sheet.getRange(rowNumber, col).getDisplayValue());
+      } catch (cellError) {
+        // Last resort: a single-cell getValue().
+        try {
+          result.push(sheet.getRange(rowNumber, col).getValue());
+        } catch (valueError) {
+          throw new Error(
+            "Cannot read " + sheet.getName() + " row " + rowNumber +
+            ", column " + col + ": " + valueError.message
+          );
+        }
+      }
+    }
+    return result;
   }
 }
 
@@ -159,59 +297,293 @@ function counselorSpreadsheetOnEdit(e) {
 }
 
 function syncCounselorRowToFirebase(counselorSheet, rowNumber) {
+  if (!counselorSheet || !rowNumber || rowNumber < 2) {
+    return {
+      status: "skipped",
+      reason: "Invalid counselor row"
+    };
+  }
+
   const headers = getHeaders(counselorSheet);
-  const row = counselorSheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+  const row = readManagedRow_(
+    counselorSheet,
+    rowNumber,
+    headers.length
+  );
+
   const raw = {};
-  headers.forEach((header, index) => raw[header] = row[index]);
+  headers.forEach((header, index) => {
+    raw[header] = row[index];
+  });
 
-  const applicationId = value(raw["Application ID"] || raw.applicationId || raw.id);
-  if (!applicationId) return {status:"skipped", reason:"Missing Application ID"};
+  const applicationId = value(
+    raw["Application ID"] ||
+    raw.applicationId ||
+    raw.id
+  );
 
-  const app = buildApplicationObject(raw, applicationId);
-  const master = getSheet();
-  const masterHeaders = getHeaders(master);
-  const masterRow = findApplicationId(master, masterHeaders, applicationId);
+  if (!applicationId) {
+    return {
+      status: "skipped",
+      reason: "Missing Application ID",
+      counselorSheet: counselorSheet.getName(),
+      row: rowNumber
+    };
+  }
+
+  const app = buildApplicationObject(
+    raw,
+    applicationId
+  );
+
+  app["Call Status"] =
+    standardizeCallStatus_(
+      app["Call Status"]
+    );
+
+  const master = getMasterSpreadsheet_()
+    .getSheetByName(CONFIG.SHEET_NAME);
+
+  if (!master) {
+    throw new Error(
+      "Master Sheet1 was not found."
+    );
+  }
+
+  const masterHeaders = CONFIG.HEADERS.slice();
+
+  const masterRow =
+    findApplicationId(
+      master,
+      masterHeaders,
+      applicationId
+    );
 
   let previousAssignedTo = "";
+
+  /*
+   * ==========================================================
+   * COUNSELOR → MASTER
+   * ==========================================================
+   *
+   * The counselor normally changes Call Status, Remarks or
+   * Next Follow-up. Do not allow a blank Assigned To in the
+   * counselor copy to unassign the lead in Master.
+   */
   if (masterRow > 0) {
-    const current = master.getRange(masterRow, 1, 1, masterHeaders.length).getValues()[0];
-    previousAssignedTo = getAssignedToFromRow(masterHeaders, current);
-    updateRowByApplicationId(master, masterHeaders, masterRow, app);
+    const masterCurrent =
+      readManagedRow_(
+        master,
+        masterRow,
+        masterHeaders.length
+      );
+
+    previousAssignedTo =
+      getAssignedToFromRow(
+        masterHeaders,
+        masterCurrent
+      );
+
+    if (!value(app["Assigned To"])) {
+      app["Assigned To"] =
+        previousAssignedTo;
+    }
+
+    /*
+     * Update only the fields represented by the counselor edit.
+     * This avoids replacing the entire typed Master row.
+     */
+    const fieldNames = [
+      "Name",
+      "Phone",
+      "Email",
+      "College",
+      "Department",
+      "Year",
+      "Domain",
+      "State",
+      "Communication Language",
+      "Start Availability",
+      "Application Reason",
+      "Call Status",
+      "Remarks",
+      "Next Follow-up",
+      "Assigned To"
+    ];
+
+    fieldNames.forEach(field => {
+      const col =
+        masterHeaders.findIndex(
+          h => normalizeHeader(h) === normalizeHeader(field)
+        ) + 1;
+
+      if (!col) return;
+
+      /*
+       * Preserve Master values for ordinary fields when the
+       * counselor copy does not contain a value.
+       *
+       * CRM control fields are allowed to update explicitly.
+       */
+      const incoming =
+        app[field];
+
+      const isControlField =
+        [
+          "Call Status",
+          "Remarks",
+          "Next Follow-up",
+          "Assigned To"
+        ].includes(field);
+
+      if (
+        isControlField ||
+        value(incoming) !== ""
+      ) {
+        try {
+          master
+            .getRange(masterRow, col)
+            .setValue(incoming || "");
+        } catch (error) {
+          throw new Error(
+            "Could not update Master " +
+            field +
+            " for application " +
+            applicationId +
+            ": " +
+            error.message
+          );
+        }
+      }
+    });
+
   } else {
-    master.appendRow(buildRow(masterHeaders, app));
+    /*
+     * Lead is not in Master yet.
+     * Append using the Master's actual column order.
+     */
+    master.appendRow(
+      buildRow(
+        masterHeaders,
+        app
+      )
+    );
   }
 
   SpreadsheetApp.flush();
 
-  // Re-route the lead if the counselor changed the assignment from inside their tab.
-  syncApplicationToCounselorSheet(app, previousAssignedTo);
+  /*
+   * ==========================================================
+   * COUNSELOR → FIREBASE / APPLICATION MANAGEMENT
+   * ==========================================================
+   */
+  const firebaseUpdates = {
+    callStatus:
+      value(app["Call Status"]),
 
-  const updates = {
-    callStatus: value(app["Call Status"]),
-    nextFollowUpAt: sheetDateToIso(app["Next Follow-up"]),
-    assignedTo: value(app["Assigned To"]),
-    remarks: value(app["Remarks"])
+    nextFollowUpAt:
+      sheetDateToIso(
+        app["Next Follow-up"]
+      ),
+
+    assignedTo:
+      value(app["Assigned To"]),
+
+    remarks:
+      value(app["Remarks"])
   };
 
   const editable = {
-    name:value(app["Name"]), phone:value(app["Phone"]), email:value(app["Email"]),
-    college:value(app["College"]), department:value(app["Department"]), year:value(app["Year"]),
-    domain:value(app["Domain"]), state:value(app["State"]),
-    communicationLanguage:value(app["Communication Language"]),
-    startAvailability:value(app["Start Availability"]), applicationReason:value(app["Application Reason"])
+    name: value(app["Name"]),
+    phone: value(app["Phone"]),
+    email: value(app["Email"]),
+    college: value(app["College"]),
+    department: value(app["Department"]),
+    year: value(app["Year"]),
+    domain: value(app["Domain"]),
+    state: value(app["State"]),
+    communicationLanguage:
+      value(app["Communication Language"]),
+    startAvailability:
+      value(app["Start Availability"]),
+    applicationReason:
+      value(app["Application Reason"])
   };
-  Object.keys(editable).forEach(key => { if (editable[key] !== "") updates[key] = editable[key]; });
 
-  firebaseRestPatch("/submittedApplications/" + encodeURIComponent(applicationId), updates);
-  return {status:"success", applicationId:applicationId, counselorSheet:counselorSheet.getName()};
+  Object.keys(editable).forEach(key => {
+    if (editable[key] !== "") {
+      firebaseUpdates[key] =
+        editable[key];
+    }
+  });
+
+  const firebaseResult =
+    firebaseRestPatch(
+      "/submittedApplications/" +
+        encodeURIComponent(applicationId),
+      firebaseUpdates
+    );
+
+  /*
+   * If Assigned To was deliberately changed in the counselor
+   * sheet, route the lead to the new counselor.
+   */
+  const newAssignedTo =
+    value(app["Assigned To"]);
+
+  if (
+    newAssignedTo &&
+    newAssignedTo.toLowerCase() !==
+      previousAssignedTo.toLowerCase()
+  ) {
+    syncApplicationToCounselorSheet(
+      app,
+      previousAssignedTo
+    );
+  }
+
+  return {
+    status: "success",
+    applicationId:
+      applicationId,
+    counselorSheet:
+      counselorSheet.getName(),
+    counselorRow:
+      rowNumber,
+    masterRow:
+      masterRow > 0
+        ? masterRow
+        : master.getLastRow(),
+    callStatus:
+      app["Call Status"] || "",
+    assignedTo:
+      app["Assigned To"] || "",
+    firebase:
+      firebaseResult
+  };
 }
 
-function syncSheetRowToFirebase(rowNumber) {
+
+function syncSheetRowToFirebase(rowNumber, previousAssignedTo) {
   const sheet = getSheet();
+
+  if (
+    !rowNumber ||
+    rowNumber < 2 ||
+    rowNumber > sheet.getLastRow()
+  ) {
+    return {
+      status: "skipped",
+      reason: "Invalid row",
+      row: rowNumber
+    };
+  }
+
   const headers = getHeaders(sheet);
-  const row = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+  const row = readManagedRow_(sheet, rowNumber, headers.length);
 
   const record = {};
+
   headers.forEach((header, index) => {
     record[normalizeHeader(header)] = row[index];
   });
@@ -221,7 +593,12 @@ function syncSheetRowToFirebase(rowNumber) {
   );
 
   if (!applicationId) {
-    console.warn("Sheet row " + rowNumber + " has no Application ID; skipping Firebase sync.");
+    console.warn(
+      "Master row " +
+      rowNumber +
+      " has no Application ID; skipping."
+    );
+
     return {
       status: "skipped",
       reason: "Missing Application ID",
@@ -230,34 +607,55 @@ function syncSheetRowToFirebase(rowNumber) {
   }
 
   /*
-   * Only synchronize fields represented by the CRM/application
-   * model. This prevents unrelated spreadsheet columns from
-   * being pushed into Firebase.
+   * Build the complete application object from the CURRENT
+   * Master Sheet row. This is important because the user may
+   * have just changed Call Status, Next Follow-up, Assigned To,
+   * Remarks, or another editable field.
    */
-  const updates = {
-    callStatus: value(record.callstatus),
-    nextFollowUpAt: sheetDateToIso(record.nextfollowup || record.followup),
-    assignedTo: value(record.assignedto),
-    remarks: value(record.remarks || record.remark)
-  };
+  const app = buildApplicationObject(
+    record,
+    applicationId
+  );
+
+  // Always store the canonical Call Status.
+  app["Call Status"] =
+    standardizeCallStatus_(app["Call Status"]);
 
   /*
-   * Also synchronize editable application information when
-   * those columns exist. Empty values are intentionally omitted
-   * so an accidental blank cell cannot erase the Firebase record.
+   * Do not write back to the Master Call Status typed column during
+   * synchronization. The selected value is synced as-is (after legacy
+   * normalization) to Firebase and the counselor sheet.
    */
+
+  /*
+   * ==========================================================
+   * 1. MASTER SHEET → FIREBASE / APPLICATION MANAGEMENT
+   * ==========================================================
+   */
+  const updates = {
+    callStatus: value(app["Call Status"]),
+    nextFollowUpAt: sheetDateToIso(
+      app["Next Follow-up"]
+    ),
+    assignedTo: value(app["Assigned To"]),
+    remarks: value(app["Remarks"])
+  };
+
   const editableFields = {
-    name: value(record.name),
-    phone: value(record.phone || record.whatsapp || record.phonenumber),
-    email: value(record.email),
-    college: value(record.college),
-    department: value(record.department || record.branch),
-    year: value(record.year),
-    domain: value(record.domain),
-    state: value(record.state),
-    communicationLanguage: value(record.communicationlanguage || record.language),
-    startAvailability: value(record.startavailability || record.availability),
-    applicationReason: value(record.applicationreason || record.reason)
+    name: value(app["Name"]),
+    phone: value(app["Phone"]),
+    email: value(app["Email"]),
+    college: value(app["College"]),
+    department: value(app["Department"]),
+    year: value(app["Year"]),
+    domain: value(app["Domain"]),
+    state: value(app["State"]),
+    communicationLanguage:
+      value(app["Communication Language"]),
+    startAvailability:
+      value(app["Start Availability"]),
+    applicationReason:
+      value(app["Application Reason"])
   };
 
   Object.keys(editableFields).forEach(key => {
@@ -266,18 +664,118 @@ function syncSheetRowToFirebase(rowNumber) {
     }
   });
 
-  const result = firebaseRestPatch(
-    "/submittedApplications/" + encodeURIComponent(applicationId),
+  const firebaseResult = firebaseRestPatch(
+    "/submittedApplications/" +
+      encodeURIComponent(applicationId),
     updates
   );
 
-  console.log("Sheet → Firebase synced:", applicationId, result);
+  /*
+   * ==========================================================
+   * 2. MASTER SHEET → ASSIGNED COUNSELOR SHEET
+   * ==========================================================
+   *
+   * This is deliberately part of the SAME live edit operation.
+   * Therefore changing Call Status in Sheet1 immediately mirrors
+   * that status into the assigned counselor's Leads sheet.
+   */
+  const counselorResult =
+    syncApplicationToCounselorSheet(
+      app,
+      value(previousAssignedTo)
+    );
+
+  SpreadsheetApp.flush();
+
+  console.log(
+    "Master → Firebase + Counselor synchronized:",
+    applicationId,
+    "status=",
+    app["Call Status"]
+  );
 
   return {
     status: "success",
     applicationId: applicationId,
-    row: rowNumber
+    row: rowNumber,
+    callStatus: app["Call Status"],
+    assignedTo: app["Assigned To"] || "",
+    firebase: firebaseResult,
+    counselor: counselorResult
   };
+}
+
+
+/**
+ * Manual diagnostic:
+ * Select any lead row in Master Sheet1 and run this function.
+ * It performs the SAME Master → Firebase → Counselor operation
+ * used by the live onEdit trigger.
+ */
+function testSelectedMasterLeadSync() {
+  const sheet = getSheet();
+  const ui = SpreadsheetApp.getUi();
+
+  const response = ui.prompt(
+    "Test Master → Firebase → Counselor Sync",
+    "Enter the row number of the lead you want to test.\n\nExample: 2, 3, 15...",
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (response.getSelectedButton() !== ui.Button.OK) {
+    return "Cancelled";
+  }
+
+  const rowNumber = parseInt(
+    value(response.getResponseText()),
+    10
+  );
+
+  if (!rowNumber || rowNumber < 2) {
+    ui.alert(
+      "Invalid Row",
+      "Enter a lead row number of 2 or greater.",
+      ui.ButtonSet.OK
+    );
+    return {
+      status: "error",
+      message: "Invalid lead row number."
+    };
+  }
+
+  if (rowNumber > sheet.getLastRow()) {
+    ui.alert(
+      "Row Not Found",
+      "Row " + rowNumber + " does not exist in Master Sheet1.",
+      ui.ButtonSet.OK
+    );
+    return {
+      status: "error",
+      message: "Row is outside the Master Sheet data range.",
+      row: rowNumber
+    };
+  }
+
+  const result = syncSheetRowToFirebase(
+    rowNumber,
+    ""
+  );
+
+  console.log(
+    "TEST RESULT:",
+    JSON.stringify(result)
+  );
+
+  ui.alert(
+    "Sync Test Complete",
+    "Application ID: " + (result.applicationId || "N/A") +
+    "\nCall Status: " + (result.callStatus || "N/A") +
+    "\nAssigned To: " + (result.assignedTo || "Unassigned") +
+    "\n\nCheck Master Sheet, Firebase, and the assigned counselor sheet.",
+    ui.ButtonSet.OK
+  );
+
+  return result;
 }
 
 function syncAllSheetCrmToFirebase() {
@@ -530,6 +1028,7 @@ function doPost(e) {
 function saveSingleApplication(data) {
   const sheet = getSheet();
   const application = buildApplicationObject(data, value(data.applicationId || data.id || data.applicationID));
+  application["Call Status"] = standardizeCallStatus_(application["Call Status"]);
   const required = ["Name","Phone","Email","College","Department","Year","Domain"];
   for (const field of required) if (!application[field]) return jsonResponse({status:"error", message:field+" is missing."});
   const headers = getHeaders(sheet);
@@ -560,12 +1059,13 @@ function syncApplicationsToSheet(applications, updateExisting) {
     if (!raw || typeof raw !== "object") { invalid++; return; }
     const id = value(raw.applicationId || raw.applicationID || raw.id || raw.key);
     const app = buildApplicationObject(raw, id);
+     app["Call Status"] = standardizeCallStatus_(app["Call Status"]);
     if (!app.Name || !app.Phone || !app.Email || !app.College || !app.Department || !app.Year || !app.Domain) { invalid++; return; }
 
     if (id && existingIds[id]) {
       if (updateExisting) {
         const rowNumber = existingIds[id];
-        const current = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+        const current = readManagedRow_(sheet, rowNumber, headers.length);
         const previousAssignedTo = getAssignedToFromRow(headers, current);
         updateRowByApplicationId(sheet, headers, rowNumber, app);
         syncApplicationToCounselorSheet(app, previousAssignedTo);
@@ -605,11 +1105,12 @@ function updateApplicationInSheet(raw) {
   const headers = getHeaders(sheet);
   const rowNumber = findApplicationId(sheet, headers, id);
   const app = buildApplicationObject(raw, id);
+  app["Call Status"] = standardizeCallStatus_(app["Call Status"]);
 
   let previousAssignedTo = "";
 
   if (rowNumber > 0) {
-    const current = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
+    const current = readManagedRow_(sheet, rowNumber, headers.length);
     previousAssignedTo = getAssignedToFromRow(headers, current);
 
     updateRowByApplicationId(sheet, headers, rowNumber, app);
@@ -629,7 +1130,7 @@ function updateApplicationInSheet(raw) {
 }
 
 function updateRowByApplicationId(sheet, headers, rowNumber, app) {
-  const current = sheet.getRange(rowNumber,1,1,headers.length).getValues()[0];
+  const current = readManagedRow_(sheet, rowNumber, headers.length);
   const next = current.slice();
   const newRow = buildRow(headers, app);
   headers.forEach((header,i) => {
@@ -658,6 +1159,31 @@ function normalizeCounselorName(name) {
   return value(name).replace(/\s+/g, " ").trim();
 }
 
+
+function findCounselorLeadSheet_(ss, counselorName, createIfMissing) {
+  if (!ss) return null;
+
+  const expected = counselorLeadsSheetName(counselorName);
+
+  // Existing installations may use LeadsTable or LeadApplications.
+  const candidates = [
+    expected,
+    "LeadsTable",
+    "LeadApplications"
+  ].filter(Boolean);
+
+  for (const name of candidates) {
+    const sheet = ss.getSheetByName(name);
+    if (sheet) return sheet;
+  }
+
+  if (createIfMissing) {
+    return ss.insertSheet(expected);
+  }
+
+  return null;
+}
+
 function counselorLeadsSheetName(name) {
   const clean = normalizeCounselorName(name);
   if (!clean) return "";
@@ -667,7 +1193,6 @@ function counselorLeadsSheetName(name) {
 function getCounselorConfigSheet() {
   const ss = getMasterSpreadsheet_();
   let sheet = ss.getSheetByName(COUNSELOR_CONFIG.LIST_SHEET_NAME);
-  if (!sheet) sheet = ss.insertSheet(COUNSELOR_CONFIG.LIST_SHEET_NAME);
 
   const headers = getHeaders(sheet);
   if (!headers.some(Boolean)) {
@@ -715,6 +1240,7 @@ function registerCounselor(name, spreadsheetId) {
   ensureHeaders(leadsSheet);
   leadsSheet.setFrozenRows(1);
   formatHeader(leadsSheet);
+  ensureCallStatusDropdown_(leadsSheet);
 
   ensureCounselorTrigger(targetSpreadsheetId);
 
@@ -835,9 +1361,12 @@ function testCounselorConnection() {
 
   try {
     const ss = SpreadsheetApp.openById(record.spreadsheetId);
-    const sheetName = counselorLeadsSheetName(name);
-    let sheet = ss.getSheetByName(sheetName);
-    if (!sheet) sheet = ss.insertSheet(sheetName);
+    const sheet = findCounselorLeadSheet_(
+      ss,
+      name,
+      true
+    );
+    const sheetName = sheet.getName();
     ensureHeaders(sheet);
     sheet.setFrozenRows(1);
     formatHeader(sheet);
@@ -925,101 +1454,514 @@ function ensureCounselorTrigger(spreadsheetId) {
   }
 }
 
-function syncApplicationToCounselorSheet(app, previousAssignedTo) {
-  const newAssignedTo = normalizeCounselorName(app["Assigned To"]);
-  const oldAssignedTo = normalizeCounselorName(previousAssignedTo);
-  const applicationId = value(app["Application ID"]);
-  if (!applicationId) return;
 
-  if (oldAssignedTo && oldAssignedTo.toLowerCase() !== newAssignedTo.toLowerCase()) {
-    removeApplicationFromCounselorSpreadsheet(oldAssignedTo, applicationId);
+/**
+ * One-time setup helper.
+ * Ensures every active counselor spreadsheet in the Counselors
+ * registry has an installable onEdit trigger.
+ */
+function ensureAllCounselorTriggers() {
+  const counselors = getCounselors();
+  let created = 0;
+  let existing = 0;
+  const errors = [];
+
+  counselors.forEach(counselor => {
+    const id = value(counselor.spreadsheetId);
+    const name = normalizeCounselorName(counselor.name);
+
+    if (!name || !id) return;
+
+    try {
+      const triggers =
+        ScriptApp.getProjectTriggers();
+
+      const alreadyExists =
+        triggers.some(trigger =>
+          trigger.getHandlerFunction() ===
+            "counselorSpreadsheetOnEdit" &&
+          trigger.getTriggerSourceId &&
+          trigger.getTriggerSourceId() === id
+        );
+
+      if (alreadyExists) {
+        existing++;
+      } else {
+        ScriptApp.newTrigger(
+          "counselorSpreadsheetOnEdit"
+        )
+          .forSpreadsheet(id)
+          .onEdit()
+          .create();
+
+        created++;
+      }
+
+    } catch (error) {
+      errors.push(
+        name + ": " + error.message
+      );
+    }
+  });
+
+  return {
+    status:
+      errors.length
+        ? "completed_with_errors"
+        : "success",
+    created: created,
+    existing: existing,
+    errors: errors
+  };
+}
+
+function removeApplicationFromAllOtherCounselors_(applicationId, keepCounselorName) {
+  const id = value(applicationId);
+  const keep = normalizeCounselorName(keepCounselorName).toLowerCase();
+  if (!id) return {checked:0, removed:0, errors:[]};
+
+  const counselors = getCounselors();
+  let checked = 0;
+  let removed = 0;
+  const errors = [];
+
+  counselors.forEach(counselor => {
+    const name = normalizeCounselorName(counselor.name);
+    const spreadsheetId = value(counselor.spreadsheetId);
+    if (!name || !spreadsheetId || name.toLowerCase() === keep) return;
+    checked++;
+    try {
+      const ss = SpreadsheetApp.openById(spreadsheetId);
+      const sheet = ss.getSheetByName(counselorLeadsSheetName(name));
+      if (!sheet) return;
+      const headers = getHeaders(sheet);
+      const rowNumber = findApplicationId(sheet, headers, id);
+      if (rowNumber > 0) {
+        sheet.deleteRow(rowNumber);
+        removed++;
+      }
+    } catch (error) {
+      errors.push(name + ': ' + error.message);
+    }
+  });
+
+  return {checked:checked, removed:removed, errors:errors};
+}
+
+
+/**
+ * Remove all counselor onEdit triggers created by this project and recreate
+ * one installable trigger for every counselor spreadsheet in the registry.
+ */
+function reinstallAllCounselorTriggers() {
+  const triggers = ScriptApp.getProjectTriggers();
+  let removed = 0;
+
+  triggers.forEach(trigger => {
+    if (trigger.getHandlerFunction() === "counselorSpreadsheetOnEdit") {
+      ScriptApp.deleteTrigger(trigger);
+      removed++;
+    }
+  });
+
+  const result = ensureAllCounselorTriggers();
+
+  return {
+    status: result.status,
+    removed: removed,
+    created: result.created,
+    existing: result.existing,
+    errors: result.errors
+  };
+}
+
+/**
+ * Directly test one counselor row without depending on the installable
+ * onEdit trigger. This is the safest way to diagnose counselor → Master.
+ */
+function testCounselorRowSync() {
+  const ui = SpreadsheetApp.getUi();
+
+  const counselorResponse = ui.prompt(
+    "Test Counselor → Master Sync",
+    "Enter the counselor name exactly as it appears in the Counselors sheet:",
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (counselorResponse.getSelectedButton() !== ui.Button.OK) {
+    return "Cancelled";
   }
-  if (!newAssignedTo) return;
 
-  const finalRecord = getCounselorRecord(newAssignedTo);
-  if (!finalRecord || !finalRecord.spreadsheetId) {
-    throw new Error(
-      "Counselor \"" + newAssignedTo + "\" is not configured. Add the counselor and their Spreadsheet ID in the master Counselors sheet first."
+  const counselorName =
+    normalizeCounselorName(
+      counselorResponse.getResponseText()
+    );
+
+  if (!counselorName) {
+    ui.alert("Counselor name is required.");
+    return {
+      status: "error",
+      message: "Counselor name is required."
+    };
+  }
+
+  const record = getCounselorRecord(counselorName);
+
+  if (!record || !record.spreadsheetId) {
+    ui.alert(
+      "Counselor Not Configured",
+      "No Spreadsheet ID was found for " + counselorName +
+      " in the Counselors sheet.",
+      ui.ButtonSet.OK
+    );
+
+    return {
+      status: "error",
+      message: "Counselor or Spreadsheet ID not found."
+    };
+  }
+
+  const ss =
+    SpreadsheetApp.openById(
+      record.spreadsheetId
+    );
+
+  const sheet =
+    findCounselorLeadSheet_(
+      ss,
+      counselorName,
+      false
+    );
+
+  if (!sheet) {
+    ui.alert(
+      "Lead Sheet Not Found",
+      "Could not find " +
+      counselorLeadsSheetName(counselorName) +
+      ", LeadsTable, or LeadApplications in the counselor spreadsheet.",
+      ui.ButtonSet.OK
+    );
+
+    return {
+      status: "error",
+      message: "Counselor lead sheet not found."
+    };
+  }
+
+  const rowResponse = ui.prompt(
+    "Test Counselor Row",
+    "Enter the lead row number in " + sheet.getName() +
+    ". Example: 2",
+    ui.ButtonSet.OK_CANCEL
+  );
+
+  if (rowResponse.getSelectedButton() !== ui.Button.OK) {
+    return "Cancelled";
+  }
+
+  const rowNumber =
+    parseInt(
+      value(rowResponse.getResponseText()),
+      10
+    );
+
+  if (!rowNumber || rowNumber < 2 || rowNumber > sheet.getLastRow()) {
+    ui.alert(
+      "Invalid Row",
+      "Enter a valid lead row between 2 and " +
+      sheet.getLastRow() + ".",
+      ui.ButtonSet.OK
+    );
+
+    return {
+      status: "error",
+      message: "Invalid counselor lead row.",
+      row: rowNumber
+    };
+  }
+
+  const result =
+    syncCounselorRowToFirebase(
+      sheet,
+      rowNumber
+    );
+
+  ui.alert(
+    "Counselor Sync Test Complete",
+    "Counselor: " + counselorName +
+    "\nSheet: " + sheet.getName() +
+    "\nRow: " + rowNumber +
+    "\nApplication ID: " + (result.applicationId || "N/A") +
+    "\nStatus: " + (result.status || "N/A") +
+    "\n\nCheck the corresponding Master row and Firebase.",
+    ui.ButtonSet.OK
+  );
+
+  console.log(
+    "COUNSELOR TEST RESULT:",
+    JSON.stringify(result)
+  );
+
+  return result;
+}
+
+
+
+function diagnoseCounselorTriggers() {
+  const counselors = getCounselors();
+  const triggers = ScriptApp.getProjectTriggers();
+
+  const result = counselors.map(counselor => {
+    const id = value(counselor.spreadsheetId);
+    const name = normalizeCounselorName(counselor.name);
+
+    const triggerExists = triggers.some(trigger =>
+      trigger.getHandlerFunction() ===
+        "counselorSpreadsheetOnEdit" &&
+      trigger.getTriggerSourceId &&
+      trigger.getTriggerSourceId() === id
+    );
+
+    let sheetName = "";
+    let sheetFound = false;
+    let error = "";
+
+    try {
+      const ss = SpreadsheetApp.openById(id);
+      const sheet =
+        findCounselorLeadSheet_(
+          ss,
+          name,
+          false
+        );
+
+      if (sheet) {
+        sheetName = sheet.getName();
+        sheetFound = true;
+      }
+    } catch (e) {
+      error = e.message;
+    }
+
+    return {
+      counselor: name,
+      spreadsheetId: id,
+      triggerExists: triggerExists,
+      leadSheet: sheetName,
+      leadSheetFound: sheetFound,
+      error: error
+    };
+  });
+
+  console.log(
+    "COUNSELOR TRIGGER DIAGNOSTIC:",
+    JSON.stringify(result)
+  );
+
+  return result;
+}
+
+
+function syncApplicationToCounselorSheet(app, previousAssignedTo) {
+  const newAssignedTo =
+    normalizeCounselorName(app["Assigned To"]);
+
+  const oldAssignedTo =
+    normalizeCounselorName(previousAssignedTo);
+
+  const applicationId =
+    value(app["Application ID"]);
+
+  if (!applicationId) {
+    return {
+      status: "skipped",
+      reason: "Missing Application ID"
+    };
+  }
+
+  /*
+   * If the admin changed Assigned To in Master Sheet1, remove
+   * the old copy from the previous counselor.
+   */
+  if (
+    oldAssignedTo &&
+    oldAssignedTo.toLowerCase() !==
+      newAssignedTo.toLowerCase()
+  ) {
+    removeApplicationFromCounselorSpreadsheet(
+      oldAssignedTo,
+      applicationId
     );
   }
 
-  const ss = SpreadsheetApp.openById(finalRecord.spreadsheetId);
-  const sheetName = counselorLeadsSheetName(newAssignedTo);
-  let sheet = ss.getSheetByName(sheetName);
-  if (!sheet) sheet = ss.insertSheet(sheetName);
+  // If the previous assignment was unavailable (for example a pasted/multi-cell
+  // edit has no e.oldValue), remove stale copies from every other counselor.
+  // This prevents duplicate leads after reassignment.
+  if (newAssignedTo && !oldAssignedTo) {
+    removeApplicationFromAllOtherCounselors_(
+      applicationId,
+      newAssignedTo
+    );
+  }
+
+  /*
+   * If the lead is intentionally unassigned, Firebase and Master
+   * remain valid and there is simply no counselor copy to maintain.
+   */
+  if (!newAssignedTo) {
+    return {
+      status: "success",
+      applicationId: applicationId,
+      assignedTo: "",
+      counselor: null
+    };
+  }
+
+  const finalRecord =
+    getCounselorRecord(newAssignedTo);
+
+  if (
+    !finalRecord ||
+    !finalRecord.spreadsheetId
+  ) {
+    throw new Error(
+      'Counselor "' +
+        newAssignedTo +
+        '" is not configured. Add the counselor and their Spreadsheet ID in the master Counselors sheet first.'
+    );
+  }
+
+  const ss =
+    SpreadsheetApp.openById(
+      finalRecord.spreadsheetId
+    );
+
+  const sheetName =
+    counselorLeadsSheetName(
+      newAssignedTo
+    );
+
+  let sheet =
+    findCounselorLeadSheet_(
+      ss,
+      newAssignedTo,
+      true
+    );
+
+  if (!sheet) {
+    throw new Error(
+      "Could not create/find the counselor lead sheet for " +
+      newAssignedTo
+    );
+  }
+
   ensureHeaders(sheet);
-  const headers = getHeaders(sheet);
-  const row = buildRow(headers, app);
-  const rowNumber = findApplicationId(sheet, headers, applicationId);
+
+  app["Call Status"] =
+    standardizeCallStatus_(
+      app["Call Status"]
+    );
+
+  const headers =
+    getHeaders(sheet);
+
+  const newRow =
+    buildRow(headers, app);
+
+  const rowNumber =
+    findApplicationId(
+      sheet,
+      headers,
+      applicationId
+    );
 
   if (rowNumber > 0) {
-    const current = sheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
-    const next = current.slice();
-    headers.forEach((header, index) => {
-      const incoming = row[index];
-      if (String(incoming ?? "").trim() !== "" || ["Call Status", "Next Follow-up", "Assigned To", "Remarks"].includes(header)) {
-        next[index] = incoming ?? current[index];
-      }
-    });
-    sheet.getRange(rowNumber, 1, 1, headers.length).setValues([next]);
-  } else {
-    sheet.appendRow(row);
-  }
-  formatHeader(sheet);
-}
 
+    const current =
+      sheet
+        .getRange(
+          rowNumber,
+          1,
+          1,
+          headers.length
+        )
+        .getValues()[0];
+
+    const next =
+      current.slice();
+
+    headers.forEach(
+      (header, index) => {
+
+        const incoming =
+          newRow[index];
+
+        /*
+         * CRM-controlled fields MUST always mirror Master.
+         * This is especially important for Call Status.
+         */
+        const forceSync =
+          [
+            "Call Status",
+            "Next Follow-up",
+            "Assigned To",
+            "Remarks"
+          ].includes(header);
+
+        if (
+          forceSync ||
+          String(incoming ?? "").trim() !== ""
+        ) {
+          next[index] =
+            incoming ??
+            current[index];
+        }
+      }
+    );
+
+    sheet
+      .getRange(
+        rowNumber,
+        1,
+        1,
+        headers.length
+      )
+      .setValues([next]);
+
+  } else {
+
+    sheet.appendRow(newRow);
+  }
+
+  SpreadsheetApp.flush();
+
+  return {
+    status: "success",
+    applicationId: applicationId,
+    counselor: newAssignedTo,
+    sheetName: sheetName,
+    row: rowNumber > 0
+      ? rowNumber
+      : sheet.getLastRow(),
+    callStatus: app["Call Status"]
+  };
+}
 function removeApplicationFromCounselorSpreadsheet(counselorName, applicationId) {
   const record = getCounselorRecord(counselorName);
   if (!record || !record.spreadsheetId) return;
   try {
     const ss = SpreadsheetApp.openById(record.spreadsheetId);
-    const sheet = ss.getSheetByName(counselorLeadsSheetName(counselorName));
+    const sheet = findCounselorLeadSheet_(
+      ss,
+      counselorName,
+      false
+    );
     if (!sheet) return;
     const rowNumber = findApplicationId(sheet, getHeaders(sheet), applicationId);
     if (rowNumber > 0) sheet.deleteRow(rowNumber);
   } catch (error) {
     console.error("Could not remove application from counselor spreadsheet:", error);
   }
-}
-
-function syncCounselorRowToFirebase(counselorSheet, rowNumber) {
-  const headers = getHeaders(counselorSheet);
-  const row = counselorSheet.getRange(rowNumber, 1, 1, headers.length).getValues()[0];
-  const raw = {};
-  headers.forEach((header, index) => raw[header] = row[index]);
-  const applicationId = value(raw["Application ID"] || raw.applicationId || raw.id);
-  if (!applicationId) return {status:"skipped", reason:"Missing Application ID"};
-
-  const app = buildApplicationObject(raw, applicationId);
-  const master = getSheet();
-  const masterHeaders = getHeaders(master);
-  const masterRow = findApplicationId(master, masterHeaders, applicationId);
-  let previousAssignedTo = "";
-
-  if (masterRow > 0) {
-    const current = master.getRange(masterRow, 1, 1, masterHeaders.length).getValues()[0];
-    previousAssignedTo = getAssignedToFromRow(masterHeaders, current);
-    updateRowByApplicationId(master, masterHeaders, masterRow, app);
-  } else {
-    master.appendRow(buildRow(masterHeaders, app));
-  }
-  SpreadsheetApp.flush();
-  syncApplicationToCounselorSheet(app, previousAssignedTo);
-
-  const updates = {
-    callStatus: value(app["Call Status"]),
-    nextFollowUpAt: sheetDateToIso(app["Next Follow-up"]),
-    assignedTo: value(app["Assigned To"]),
-    remarks: value(app["Remarks"])
-  };
-  const editable = {
-    name:value(app["Name"]), phone:value(app["Phone"]), email:value(app["Email"]), college:value(app["College"]),
-    department:value(app["Department"]), year:value(app["Year"]), domain:value(app["Domain"]), state:value(app["State"]),
-    communicationLanguage:value(app["Communication Language"]), startAvailability:value(app["Start Availability"]), applicationReason:value(app["Application Reason"])
-  };
-  Object.keys(editable).forEach(key => { if (editable[key] !== "") updates[key] = editable[key]; });
-  firebaseRestPatch("/submittedApplications/" + encodeURIComponent(applicationId), updates);
-  return {status:"success", applicationId:applicationId, counselorSheet:counselorSheet.getName()};
 }
 
 function getAssignedToFromRow(headers, row) {
@@ -1038,24 +1980,61 @@ function findApplicationRowInSheet(sheet, applicationId) {
 }
 
 function buildApplicationObject(data, applicationId) {
+  data = data || {};
+
+  /*
+   * IMPORTANT SYNC FIX
+   * -------------------
+   * Master Sheet1 is read through a normalized-header map in
+   * syncSheetRowToFirebase(). That means keys can arrive as
+   * `callstatus`, `assignedto`, `nextfollowup`, etc.
+   *
+   * The previous implementation only looked for camelCase keys
+   * such as `callStatus` and `assignedTo`. As a result, a normal
+   * Master Sheet edit could send empty Call Status / Assigned To
+   * values to Firebase. The dashboard then received those empty
+   * values and sent them back to Google Sheets, making the user's
+   * update appear to disappear.
+   *
+   * Pick values case-insensitively and without punctuation so the
+   * same builder works for Master rows, counselor rows, Firebase
+   * objects and dashboard recovery payloads.
+   */
+  const keys = Object.keys(data);
+  const normalized = {};
+  keys.forEach(key => {
+    const n = normalizeHeader(key);
+    if (n && normalized[n] === undefined) normalized[n] = data[key];
+  });
+
+  const pick = (...candidates) => {
+    for (const candidate of candidates) {
+      const n = normalizeHeader(candidate);
+      if (n && normalized[n] !== undefined && normalized[n] !== null && String(normalized[n]).trim() !== "") {
+        return normalized[n];
+      }
+    }
+    return "";
+  };
+
   return {
-    "Timestamp": formatRecoveryTimestamp(data.submittedAtMs || data.submittedAt || data.timestamp || data.createdAt || data.created_at || data.Timestamp),
-    "Application ID": value(applicationId),
-    "Name": value(data.name || data.fullName || data.studentName || data.Name),
-    "Phone": value(data.phone || data.whatsapp || data.phoneNumber || data.Phone),
-    "Email": value(data.email || data.emailAddress || data.Email),
-    "College": value(data.college || data.collegeName || data.College),
-    "Department": value(data.department || data.branch || data.Department),
-    "Year": value(data.year || data.currentYear || data.Year),
-    "Domain": value(data.domain || data.interestDomain || data.interesteddomain || data.preferredDomain || data.Domain),
-    "State": value(data.state || data.stateUT || data.stateUnionTerritory || data.State),
-    "Communication Language": value(data.communicationLanguage || data.language || data.languages || data["Communication Language"]),
-    "Start Availability": value(data.startAvailability || data.availability || data.whenAreYouAvailableToStart || data["Start Availability"]),
-    "Application Reason": value(data.applicationReason || data.reason || data.whyAreYouApplying || data.interest || data["Application Reason"]),
-    "Call Status": normalizeCallStatus_(data.callStatus || data["Call Status"]),
-    "Next Follow-up": formatRecoveryTimestamp(data.nextFollowUpAt || data.nextFollowUp || data.followUpAt || data["Next Follow-up"], true),
-    "Assigned To": value(data.assignedTo || data["Assigned To"]),
-    "Remarks": value(data.remarks || data.remark || data.Remarks)
+    "Timestamp": formatRecoveryTimestamp(pick("submittedAtMs", "submittedAt", "timestamp", "createdAt", "created_at", "Timestamp")),
+    "Application ID": value(applicationId || pick("Application ID", "applicationId", "applicationID", "id", "key")),
+    "Name": value(pick("name", "fullName", "studentName", "Name")),
+    "Phone": value(pick("phone", "whatsapp", "phoneNumber", "Phone")),
+    "Email": value(pick("email", "emailAddress", "Email")),
+    "College": value(pick("college", "collegeName", "College")),
+    "Department": value(pick("department", "branch", "Department")),
+    "Year": value(pick("year", "currentYear", "Year")),
+    "Domain": value(pick("domain", "interestDomain", "interesteddomain", "preferredDomain", "Domain")),
+    "State": value(pick("state", "stateUT", "stateUnionTerritory", "State")),
+    "Communication Language": value(pick("communicationLanguage", "language", "languages", "Communication Language")),
+    "Start Availability": value(pick("startAvailability", "availability", "whenAreYouAvailableToStart", "Start Availability")),
+    "Application Reason": value(pick("applicationReason", "reason", "whyAreYouApplying", "interest", "Application Reason")),
+    "Call Status": value(pick("callStatus", "Call Status")),
+    "Next Follow-up": formatRecoveryTimestamp(pick("nextFollowUpAt", "nextFollowUp", "followUpAt", "Next Follow-up"), true),
+    "Assigned To": value(pick("assignedTo", "Assigned To")),
+    "Remarks": value(pick("remarks", "remark", "Remarks"))
   };
 }
 
@@ -1091,7 +2070,6 @@ function ensureHeaders(sheet) {
   if (lastColumn === 0) {
     sheet.getRange(1, 1, 1, required.length).setValues([required]);
     formatHeader(sheet);
-    applyCallStatusValidation_(sheet);
     return;
   }
 
@@ -1100,7 +2078,6 @@ function ensureHeaders(sheet) {
   if (!headers.some(Boolean)) {
     sheet.getRange(1, 1, 1, required.length).setValues([required]);
     formatHeader(sheet);
-    applyCallStatusValidation_(sheet);
     return;
   }
 
@@ -1197,49 +2174,73 @@ function ensureHeaders(sheet) {
   });
 
   formatHeader(sheet);
-  applyCallStatusValidation_(sheet);
-}
-
-function standardizeAllCallStatuses() {
-  const master = getMasterSpreadsheet_();
-  const managedSheets = [getSheet(), ...getCounselors().map(c => {
-    try {
-      return SpreadsheetApp.openById(c.spreadsheetId).getSheetByName(counselorLeadsSheetName(c.name));
-    } catch (_) { return null; }
-  }).filter(Boolean)];
-
-  let changed = 0;
-  managedSheets.forEach(sheet => {
-    const headers = getHeaders(sheet);
-    const col = headers.findIndex(h => normalizeHeader(h) === "callstatus") + 1;
-    if (!col || sheet.getLastRow() < 2) {
-      applyCallStatusValidation_(sheet);
-      return;
-    }
-    const range = sheet.getRange(2, col, sheet.getLastRow() - 1, 1);
-    const values = range.getValues();
-    let dirty = false;
-    values.forEach(row => {
-      const next = normalizeCallStatus_(row[0]);
-      if (String(row[0] ?? "").trim() !== next) { row[0] = next; dirty = true; changed++; }
-    });
-    if (dirty) range.setValues(values);
-    applyCallStatusValidation_(sheet);
-  });
-  SpreadsheetApp.flush();
-  return {status:"success", changed, sheets:managedSheets.length, message:"Call Status values standardized."};
 }
 
 function getHeaders(sheet) {
+  if (!sheet) return [];
+
+  const sheetName = sheet.getName();
+
+  /*
+   * Managed CRM sheets can use Google Sheets typed columns.
+   * Reading row 1 with getDisplayValues() can throw:
+   * "This operation is not allowed on cells in typed columns."
+   *
+   * Master Sheet1 and every counselor Leads sheet are controlled by
+   * this script, so their canonical physical column order is defined
+   * centrally in CONFIG. The actual Master order is:
+   *
+   * Timestamp, Name, Phone, Email, College, Department, Year, Domain,
+   * State, Communication Language, Start Availability, Application Reason,
+   * Call Status, Remarks, Application ID, Next Follow-up, Assigned To
+   */
+  if (sheetName === CONFIG.SHEET_NAME) {
+    return CONFIG.HEADERS.slice();
+  }
+
+  if (
+    typeof COUNSELOR_CONFIG !== "undefined" &&
+    sheetName === COUNSELOR_CONFIG.LIST_SHEET_NAME
+  ) {
+    return COUNSELOR_CONFIG.LIST_HEADERS.slice();
+  }
+
+  if (
+    typeof COUNSELOR_CONFIG !== "undefined" &&
+    (
+      sheetName.endsWith(COUNSELOR_CONFIG.LEADS_SHEET_SUFFIX) ||
+      sheetName === "LeadsTable" ||
+      sheetName === "LeadApplications"
+    )
+  ) {
+    return COUNSELOR_CONFIG.LEADS_HEADERS.slice();
+  }
+
   const cols = sheet.getLastColumn();
-  if (!cols) return [];
-  return sheet.getRange(1,1,1,cols).getValues()[0].map(h => String(h).trim());
+  if (!cols || cols < 1) return [];
+
+  try {
+    return sheet
+      .getRange(1, 1, 1, cols)
+      .getDisplayValues()[0]
+      .map(function(header) {
+        return String(header || "").trim();
+      });
+  } catch (error) {
+    console.log(
+      "getHeaders skipped for " +
+      sheet.getName() +
+      ": " +
+      error.message
+    );
+    return [];
+  }
 }
 
 function findApplicationId(sheet, headers, id) {
   const col = headers.findIndex(h => ["applicationid","id"].includes(normalizeHeader(h)))+1;
   if (!col || sheet.getLastRow()<2) return 0;
-  const values = sheet.getRange(2,col,sheet.getLastRow()-1,1).getValues();
+  const values = sheet.getRange(2,col,sheet.getLastRow()-1,1).getDisplayValues();
   for (let i=0;i<values.length;i++) if (String(values[i][0]).trim()===String(id).trim()) return i+2;
   return 0;
 }
@@ -1247,7 +2248,281 @@ function findApplicationId(sheet, headers, id) {
 function getExistingApplicationIds(sheet, headers) {
   const result={}; const col=headers.findIndex(h=>["applicationid","id"].includes(normalizeHeader(h)))+1;
   if (!col || sheet.getLastRow()<2) return result;
-  sheet.getRange(2,col,sheet.getLastRow()-1,1).getValues().forEach((r,i)=>{const id=String(r[0]||"").trim();if(id)result[id]=i+2;});
+  sheet.getRange(2,col,sheet.getLastRow()-1,1).getDisplayValues().forEach((r,i)=>{const id=String(r[0]||"").trim();if(id)result[id]=i+2;});
+  return result;
+}
+function standardizeAllCallStatuses() {
+  const master = getMasterSpreadsheet_();
+  const masterSheet = master.getSheetByName(CONFIG.SHEET_NAME);
+
+  let masterChanged = 0;
+  let counselorSheets = 0;
+  let counselorChanged = 0;
+  let firebaseSynced = 0;
+  let errors = [];
+
+  // ==========================================================
+  // 1. STANDARDIZE MASTER SHEET
+  // ==========================================================
+
+  if (masterSheet) {
+
+    const headers = getHeaders(masterSheet);
+
+    const statusCol =
+      headers.findIndex(
+        h => normalizeHeader(h) === "callstatus"
+      ) + 1;
+
+    if (statusCol && masterSheet.getLastRow() >= 2) {
+
+      const range = masterSheet.getRange(
+        2,
+        statusCol,
+        masterSheet.getLastRow() - 1,
+        1
+      );
+
+      const values = range.getValues();
+
+      values.forEach(row => {
+
+        const before = value(row[0]);
+
+        const after =
+          standardizeCallStatus_(before);
+
+        if (before !== after) {
+
+          row[0] = after;
+          masterChanged++;
+
+        }
+
+      });
+
+      range.setValues(values);
+    }
+
+    // Apply canonical dropdown
+    ensureCallStatusDropdown_(masterSheet);
+  }
+
+
+  // ==========================================================
+  // 2. STANDARDIZE ALL COUNSELOR SPREADSHEETS
+  // ==========================================================
+
+  const counselors = getCounselors();
+
+  counselors.forEach(counselor => {
+
+    const counselorName =
+      value(counselor.name);
+
+    const spreadsheetId =
+      value(counselor.spreadsheetId);
+
+    const active =
+      counselor.active !== false &&
+      String(counselor.active).toLowerCase() !== "false";
+
+
+    if (!active || !spreadsheetId) {
+      return;
+    }
+
+
+    try {
+
+      const ss =
+        SpreadsheetApp.openById(
+          spreadsheetId
+        );
+
+      const sheetName =
+        counselorLeadsSheetName(
+          counselorName
+        );
+
+      const sheet =
+        ss.getSheetByName(sheetName);
+
+
+      if (!sheet) {
+
+        errors.push(
+          counselorName +
+          ": Lead sheet not found (" +
+          sheetName +
+          ")"
+        );
+
+        return;
+      }
+
+
+      counselorSheets++;
+
+
+      // --------------------------------------------------------
+      // Apply canonical dropdown
+      // --------------------------------------------------------
+
+      ensureCallStatusDropdown_(sheet);
+
+
+      const headers =
+        getHeaders(sheet);
+
+      const statusCol =
+        headers.findIndex(
+          h => normalizeHeader(h) === "callstatus"
+        ) + 1;
+
+
+      if (!statusCol || sheet.getLastRow() < 2) {
+        return;
+      }
+
+
+      // --------------------------------------------------------
+      // Convert legacy status values
+      // --------------------------------------------------------
+
+      const range =
+        sheet.getRange(
+          2,
+          statusCol,
+          sheet.getLastRow() - 1,
+          1
+        );
+
+
+      const values =
+        range.getValues();
+
+
+      const changedRows = [];
+
+
+      values.forEach((row, index) => {
+
+        const before =
+          value(row[0]);
+
+        const after =
+          standardizeCallStatus_(
+            before
+          );
+
+
+        if (before !== after) {
+
+          row[0] = after;
+
+          counselorChanged++;
+
+          changedRows.push(
+            index + 2
+          );
+
+        }
+
+      });
+
+
+      if (changedRows.length > 0) {
+
+        range.setValues(values);
+
+        SpreadsheetApp.flush();
+
+
+        // ------------------------------------------------------
+        // Sync changed counselor rows to Firebase + Master
+        // ------------------------------------------------------
+
+        changedRows.forEach(rowNumber => {
+
+          try {
+
+            const result =
+              syncCounselorRowToFirebase(
+                sheet,
+                rowNumber
+              );
+
+
+            if (
+              result &&
+              result.status === "success"
+            ) {
+              firebaseSynced++;
+            }
+
+          } catch (syncError) {
+
+            errors.push(
+              counselorName +
+              " row " +
+              rowNumber +
+              ": " +
+              syncError.message
+            );
+
+          }
+
+        });
+
+      }
+
+    } catch (error) {
+
+      errors.push(
+        counselorName +
+        ": " +
+        error.message
+      );
+
+    }
+
+  });
+
+
+  // ==========================================================
+  // 3. FINAL RESULT
+  // ==========================================================
+
+  SpreadsheetApp.flush();
+
+
+  const result = {
+    status: "success",
+
+    masterChanged:
+      masterChanged,
+
+    counselorSheets:
+      counselorSheets,
+
+    counselorChanged:
+      counselorChanged,
+
+    firebaseSynced:
+      firebaseSynced,
+
+    errors:
+      errors
+  };
+
+
+  console.log(
+    "Call Status standardization completed:",
+    JSON.stringify(result)
+  );
+
+
   return result;
 }
 
@@ -1279,5 +2554,10 @@ function formatRecoveryTimestamp(raw, blankIfMissing) {
 function normalizeHeader(header){return String(header||"").toLowerCase().replace(/[^a-z0-9]/g,"");}
 function value(input){return input===null||input===undefined?"":String(input).trim();}
 function nowString(){return Utilities.formatDate(new Date(),CONFIG.TIMEZONE,"dd-MM-yyyy hh:mm:ss a");}
-function formatHeader(sheet){const cols=sheet.getLastColumn();if(cols){sheet.getRange(1,1,1,cols).setFontWeight("bold");sheet.setFrozenRows(1);}}
+function formatHeader(sheet) {
+  // Intentionally disabled. Header formatting is optional and can fail on
+  // Google Sheets typed columns (notably the Counselors registry).
+  // CRM synchronization does not depend on header formatting.
+  return;
+}
 function jsonResponse(data){return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);}

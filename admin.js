@@ -84,6 +84,7 @@ let audioContext = null;
 let refreshInProgress = false;
 let crmFilteredApplications = [];
 let activeApplicationId = null;
+let activeActivityListenerRef = null;
 let counselorNames = [];
 let selectedApplicationIds = new Set();
 
@@ -936,46 +937,61 @@ async function logApplicationChanges(id, oldApp, newValues, action = "Field upda
   }
 }
 
-async function loadApplicationHistory(id) {
+function detachApplicationHistoryListener() {
+  if (activeActivityListenerRef) {
+    try { activeActivityListenerRef.off("value"); } catch (_) {}
+    activeActivityListenerRef = null;
+  }
+}
+
+function renderApplicationHistorySnapshot(snapshot) {
   const container = el("applicationHistory");
   if (!container) return;
-  container.innerHTML = `<div class="history-loading">Loading activity history…</div>`;
-
-  try {
-    const snapshot = await applicationActivityRef(id).orderByChild("timestampMs").limitToLast(100).once("value");
-    const rows = Object.values(snapshot.val() || {})
-      .sort((a,b) => Number(b.timestampMs || 0) - Number(a.timestampMs || 0));
-
-    if (!rows.length) {
-      container.innerHTML = `<div class="history-empty">No activity recorded for this lead yet.</div>`;
-      return;
-    }
-
-    container.innerHTML = rows.map(item => {
-      const field = item.field ? `<span class="history-field">${esc(item.field)}</span>` : "";
-      const oldText = item.field ? activityValue(item.oldValue) : "";
-      const newText = item.field ? activityValue(item.newValue) : "";
-      const change = item.field
-        ? `<div class="history-change"><span>${esc(oldText)}</span><b>→</b><span>${esc(newText)}</span></div>`
-        : `<div class="history-summary">${esc(item.summary || item.action || "Activity recorded")}</div>`;
-      return `
-        <article class="history-item">
-          <div class="history-dot"></div>
-          <div class="history-content">
-            <div class="history-top">
-              <strong>${esc(item.action || "Updated")}</strong>
-              <time>${esc(formatActivityTime(item.timestampMs))}</time>
-            </div>
-            <small>${esc(item.actor || "System")} • ${esc(item.source || "CRM")}</small>
-            ${field}
-            ${change}
-          </div>
-        </article>`;
-    }).join("");
-  } catch (error) {
-    console.warn("Activity history load failed:", error);
-    container.innerHTML = `<div class="history-empty">Activity history is unavailable. Check Firebase rules for applicationActivity.</div>`;
+  const rows = Object.values(snapshot.val() || {})
+    .sort((a,b) => Number(b.timestampMs || 0) - Number(a.timestampMs || 0));
+  if (!rows.length) {
+    container.innerHTML = `<div class="history-empty">No activity recorded for this lead yet.</div>`;
+    return;
   }
+  container.innerHTML = rows.map(item => {
+    const field = item.field ? `<span class="history-field">${esc(item.field)}</span>` : "";
+    const oldText = item.field ? activityValue(item.oldValue) : "";
+    const newText = item.field ? activityValue(item.newValue) : "";
+    const change = item.field
+      ? `<div class="history-change"><span>${esc(oldText)}</span><b>→</b><span>${esc(newText)}</span></div>`
+      : `<div class="history-summary">${esc(item.summary || item.action || "Activity recorded")}</div>`;
+    return `
+      <article class="history-item">
+        <div class="history-dot"></div>
+        <div class="history-content">
+          <div class="history-top">
+            <strong>${esc(item.action || "Updated")}</strong>
+            <time>${esc(formatActivityTime(item.timestampMs))}</time>
+          </div>
+          <small>${esc(item.actor || "System")} • ${esc(item.source || "CRM")}</small>
+          ${field}
+          ${change}
+        </div>
+      </article>`;
+  }).join("");
+}
+
+function subscribeApplicationHistory(id) {
+  detachApplicationHistoryListener();
+  if (!id) return;
+  const container = el("applicationHistory");
+  if (container) container.innerHTML = `<div class="history-loading">Live activity history…</div>`;
+  activeActivityListenerRef = applicationActivityRef(id).orderByChild("timestampMs").limitToLast(100);
+  activeActivityListenerRef.on("value", snapshot => {
+    renderApplicationHistorySnapshot(snapshot);
+  }, error => {
+    console.warn("Activity history realtime load failed:", error);
+    if (container) container.innerHTML = `<div class="history-empty">Activity history is unavailable. Check Firebase rules for applicationActivity.</div>`;
+  });
+}
+
+async function loadApplicationHistory(id) {
+  subscribeApplicationHistory(id);
 }
 
 function openApplicationModal(id) {
@@ -1011,6 +1027,7 @@ function detailRows(rows) {
 }
 
 function closeApplicationModal() {
+  detachApplicationHistoryListener();
   activeApplicationId = null;
   el("applicationModal")?.classList.remove("show");
   el("applicationModal")?.setAttribute("aria-hidden","true");

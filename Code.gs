@@ -211,57 +211,57 @@ function removeSheetToFirebaseTrigger() {
   return "Sheet → Firebase trigger removed.";
 }
 
+function getEditActor_(e, fallback) {
+  try {
+    if (e && e.user && typeof e.user.getEmail === "function") {
+      const email = value(e.user.getEmail());
+      if (email) return email;
+    }
+  } catch (_) {}
+  try {
+    const active = value(Session.getActiveUser().getEmail());
+    if (active) return active;
+  } catch (_) {}
+  return value(fallback) || "Unknown editor";
+}
+
 function sheetOnEdit(e) {
   if (!e || !e.range) return;
-
   const sheet = e.range.getSheet();
-
-  // Only Master Sheet1 is handled here.
-  // Counselor spreadsheets use counselorSpreadsheetOnEdit().
   if (sheet.getName() !== CONFIG.SHEET_NAME) return;
   if (e.range.getRow() < 2) return;
 
   try {
     const headers = getHeaders(sheet);
-    const assignedToCol =
-      headers.findIndex(h => normalizeHeader(h) === "assignedto") + 1;
+    const actor = getEditActor_(e, "Master Sheet");
+    const firstRow = Math.max(2, e.range.getRow());
+    const lastRow = Math.min(sheet.getLastRow(), firstRow + e.range.getNumRows() - 1);
+    const singleCell = e.range.getNumRows() === 1 && e.range.getNumColumns() === 1;
+    const editedHeader = singleCell ? (headers[e.range.getColumn() - 1] || "") : "";
+    const results = [];
 
-    // oldValue is only useful when the edited cell is Assigned To.
-    // For Call Status / Remarks / Next Follow-up edits the current
-    // assignment is already the correct counselor, so no old counselor
-    // lookup is necessary.
-    const previousAssignedTo =
-      assignedToCol &&
-      e.range.getNumRows() === 1 &&
-      e.range.getNumColumns() === 1 &&
-      e.range.getColumn() === assignedToCol
-        ? value(e.oldValue)
-        : "";
+    // A paste/fill can cover many rows. Process every affected Application ID
+    // instead of auditing only the first row.
+    for (let rowNumber = firstRow; rowNumber <= lastRow; rowNumber++) {
+      const result = syncSheetRowToFirebase(
+        rowNumber,
+        "",
+        {
+          source: "Master Sheet",
+          actor: actor,
+          editedColumn: editedHeader,
+          oldValue: singleCell ? e.oldValue : "",
+          newValue: singleCell ? e.value : "",
+          isBulk: !singleCell,
+          editedRange: e.range.getA1Notation()
+        }
+      );
+      results.push(result);
+    }
 
-    const editedHeader =
-      headers[e.range.getColumn() - 1] || "";
-    const result = syncSheetRowToFirebase(
-      e.range.getRow(),
-      previousAssignedTo,
-      {
-        source: "Master Sheet",
-        actor: "Master Sheet",
-        editedColumn: e.range.getNumRows() === 1 && e.range.getNumColumns() === 1 ? editedHeader : "",
-        oldValue: e.range.getNumRows() === 1 && e.range.getNumColumns() === 1 ? e.oldValue : "",
-        newValue: e.range.getNumRows() === 1 && e.range.getNumColumns() === 1 ? e.value : ""
-      }
-    );
-
-    console.log(
-      "MASTER EDIT → FIREBASE + COUNSELOR:",
-      JSON.stringify(result)
-    );
-
+    console.log("MASTER EDIT → FIREBASE + COUNSELOR:", JSON.stringify(results));
   } catch (error) {
-    console.error(
-      "Master Sheet synchronization failed:",
-      error
-    );
+    console.error("Master Sheet synchronization failed:", error);
   }
 }
 
@@ -298,18 +298,30 @@ function counselorSpreadsheetOnEdit(e) {
   if (!e || !e.range) return;
   const sheet = e.range.getSheet();
   if (e.range.getRow() < 2) return;
+
   try {
-    syncCounselorRowToFirebase(
-      sheet,
-      e.range.getRow(),
-      {
+    const headers = getHeaders(sheet);
+    const actor = getEditActor_(e, normalizeCounselorName(sheet.getName().replace(/\'s Leads$/i, "")));
+    const firstRow = Math.max(2, e.range.getRow());
+    const lastRow = Math.min(sheet.getLastRow(), firstRow + e.range.getNumRows() - 1);
+    const singleCell = e.range.getNumRows() === 1 && e.range.getNumColumns() === 1;
+    const editedHeader = singleCell ? (headers[e.range.getColumn() - 1] || "") : "";
+    const results = [];
+
+    // Handles direct edits, multi-cell paste, fill-down, and multi-row paste.
+    for (let rowNumber = firstRow; rowNumber <= lastRow; rowNumber++) {
+      results.push(syncCounselorRowToFirebase(sheet, rowNumber, {
         source: "Counselor Sheet",
-        actor: normalizeCounselorName(sheet.getName().replace(/\'s Leads$/i, "")),
-        editedColumn: getHeaders(sheet)[e.range.getColumn() - 1] || "",
-        oldValue: e.oldValue,
-        newValue: e.value
-      }
-    );
+        actor: actor,
+        editedColumn: editedHeader,
+        oldValue: singleCell ? e.oldValue : "",
+        newValue: singleCell ? e.value : "",
+        isBulk: !singleCell,
+        editedRange: e.range.getA1Notation()
+      }));
+    }
+
+    console.log("COUNSELOR EDIT → FIREBASE + MASTER + DASHBOARD:", JSON.stringify(results));
   } catch (error) {
     console.error("Counselor spreadsheet → Firebase sync failed:", error);
   }
@@ -349,6 +361,8 @@ function syncCounselorRowToFirebase(counselorSheet, rowNumber, editMeta) {
       row: rowNumber
     };
   }
+
+  const liveBefore = getLiveApplication_(applicationId);
 
   const app = buildApplicationObject(
     raw,
@@ -561,14 +575,7 @@ function syncCounselorRowToFirebase(counselorSheet, rowNumber, editMeta) {
     );
   }
 
-  logApplicationSheetEdit_(
-    applicationId,
-    value(editMeta && editMeta.source) || "Counselor Sheet",
-    value(editMeta && editMeta.actor) || normalizeCounselorName(counselorSheet.getName().replace(/\'s Leads$/i, "")),
-    value(editMeta && editMeta.editedColumn),
-    value(editMeta && editMeta.oldValue),
-    value(editMeta && editMeta.newValue)
-  );
+  auditLiveChanges_(applicationId, liveBefore, app, editMeta);
 
   return {
     status: "success",
@@ -655,6 +662,8 @@ function syncSheetRowToFirebase(rowNumber, previousAssignedTo, editMeta) {
    * normalization) to Firebase and the counselor sheet.
    */
 
+  const liveBefore = getLiveApplication_(applicationId);
+
   /*
    * ==========================================================
    * 1. MASTER SHEET → FIREBASE / APPLICATION MANAGEMENT
@@ -715,14 +724,7 @@ function syncSheetRowToFirebase(rowNumber, previousAssignedTo, editMeta) {
 
   SpreadsheetApp.flush();
 
-  logApplicationSheetEdit_(
-    applicationId,
-    value(editMeta && editMeta.source) || "Master Sheet",
-    value(editMeta && editMeta.actor) || "Master Sheet",
-    value(editMeta && editMeta.editedColumn),
-    value(editMeta && editMeta.oldValue),
-    value(editMeta && editMeta.newValue)
-  );
+  auditLiveChanges_(applicationId, liveBefore, app, editMeta);
 
   console.log(
     "Master → Firebase + Counselor synchronized:",
@@ -999,6 +1001,122 @@ function getFirebaseAccessToken_() {
   return tokenData.access_token;
 }
 
+function firebaseRestGet_(path) {
+  const token = getFirebaseAccessToken_();
+  const url = FIREBASE_SYNC_CONFIG.DATABASE_URL + path + ".json?access_token=" + encodeURIComponent(token);
+  const response = UrlFetchApp.fetch(url, {
+    method: "get",
+    muteHttpExceptions: true
+  });
+  const status = response.getResponseCode();
+  const body = response.getContentText();
+  if (status < 200 || status >= 300) {
+    throw new Error("Firebase REST GET failed (" + status + "): " + body);
+  }
+  if (!body || body === "null") return null;
+  return JSON.parse(body);
+}
+
+function getLiveApplication_(applicationId) {
+  const id = value(applicationId);
+  if (!id) return null;
+  try {
+    return firebaseRestGet_("/submittedApplications/" + encodeURIComponent(id));
+  } catch (error) {
+    console.warn("Could not read live Firebase application before audit:", error);
+    return null;
+  }
+}
+
+function auditFieldValue_(app, field) {
+  if (!app) return "";
+  const map = {
+    "Name": ["name"],
+    "Phone": ["phone"],
+    "Email": ["email"],
+    "College": ["college"],
+    "Department": ["department"],
+    "Year": ["year"],
+    "Domain": ["domain"],
+    "State": ["state"],
+    "Communication Language": ["communicationLanguage", "language"],
+    "Start Availability": ["startAvailability"],
+    "Application Reason": ["applicationReason"],
+    "Call Status": ["callStatus"],
+    "Next Follow-up": ["nextFollowUpAt", "nextFollowUp"],
+    "Assigned To": ["assignedTo"],
+    "Remarks": ["remarks"]
+  };
+  const keys = map[field] || [];
+  for (const key of keys) {
+    if (app[key] !== undefined && app[key] !== null) return value(app[key]);
+  }
+  return "";
+}
+
+function auditComparableValue_(field, raw) {
+  const text = value(raw);
+  if (!text) return "";
+  if (field === "Next Follow-up") {
+    const d = new Date(text);
+    if (!isNaN(d.getTime())) return String(d.getTime());
+    const m = text.match(/^(\d{2})-(\d{2})-(\d{4})[ T](\d{2}):(\d{2})(?::(\d{2}))?/);
+    if (m) return String(new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]), Number(m[4]), Number(m[5]), Number(m[6] || 0)).getTime());
+  }
+  return text;
+}
+
+function auditLiveChanges_(applicationId, liveBefore, appAfter, editMeta) {
+  // A missing live record means this is likely a new lead. Do not manufacture
+  // a long list of "changes" from blank values; audit the next real edit.
+  if (!liveBefore || typeof liveBefore !== "object") return [];
+
+  const fields = [
+    "Name", "Phone", "Email", "College", "Department", "Year", "Domain",
+    "State", "Communication Language", "Start Availability", "Application Reason",
+    "Call Status", "Next Follow-up", "Assigned To", "Remarks"
+  ];
+  const entries = [];
+  const singleCell = !!(editMeta && editMeta.editedColumn);
+
+  fields.forEach(field => {
+    const before = auditFieldValue_(liveBefore, field);
+    const after = value(appAfter && appAfter[field]);
+    if (auditComparableValue_(field, before) === auditComparableValue_(field, after)) return;
+
+    let oldValue = before;
+    let newValue = after;
+    if (singleCell && field === editMeta.editedColumn) {
+      oldValue = value(editMeta.oldValue);
+      newValue = value(editMeta.newValue);
+      if (auditComparableValue_(field, oldValue) === auditComparableValue_(field, newValue)) return;
+    }
+
+    entries.push({
+      source: value(editMeta && editMeta.source) || "Google Sheets",
+      actor: value(editMeta && editMeta.actor) || "Unknown editor",
+      action: editMeta && editMeta.isBulk ? "Bulk update" : "Field updated",
+      field: field,
+      oldValue: oldValue,
+      newValue: newValue,
+      summary: editMeta && editMeta.isBulk
+        ? field + " updated by paste/fill"
+        : field + " changed"
+    });
+  });
+
+  if (!entries.length && editMeta && editMeta.isBulk) {
+    return recordApplicationActivity_(applicationId, {
+      source: value(editMeta.source) || "Google Sheets",
+      actor: value(editMeta.actor) || "Unknown editor",
+      action: "Bulk edit",
+      summary: "A paste/fill operation was detected, but it produced no live-data changes."
+    });
+  }
+
+  return recordApplicationActivityBatch_(applicationId, entries);
+}
+
 function firebaseRestPatch(path, payload) {
   const token = getFirebaseAccessToken_();
 
@@ -1050,7 +1168,7 @@ function testSheetToFirebaseSync() {
 
 /**
  * ==========================================================
- * APPLICATION ACTIVITY / AUDIT TRAIL
+ * APPLICATION ACTIVITY / AUDIT TRAIL — LIVE-SYNCED V3
  * ==========================================================
  * Stores an append-only activity record in:
  * /applicationActivity/{Application ID}/{eventId}

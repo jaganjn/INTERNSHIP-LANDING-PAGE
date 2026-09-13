@@ -17,6 +17,7 @@
       <button class="sound-quick-toggle" id="soundQuickToggle" type="button" aria-pressed="false" title="Enable notification sound">🔇</button>
       <div class="clock"><strong id="liveClock">--:--</strong><small id="liveDate">--</small></div>
       <a class="portal-btn" href="index.html" aria-label="Open InternsForge landing page">Landing Page ↗</a>
+      <button id="adminLogoutButton" class="admin-logout-btn" type="button" title="Sign out">↪ <span>Logout</span></button>
     </div>
 </header>
 <main>
@@ -203,11 +204,20 @@
         <small id="modalSaveStatus" class="modal-save-status"></small>
       </section>
     </div>
+    <section class="application-history-card">
+      <div class="history-header">
+        <div><span class="eyebrow">AUDIT TRAIL</span><h3>Lead History</h3><p>Every CRM, Master Sheet and counselor update is recorded here.</p></div>
+        <span class="history-badge">● HISTORY</span>
+      </div>
+      <div id="applicationHistory" class="application-history">
+        <div class="history-loading">Open a lead to view its history…</div>
+      </div>
+    </section>
   </div>
 </div>
 <div id="adminToastRegion" class="admin-toast-region" aria-live="polite" aria-atomic="true"></div>
 <div id="refreshOverlay" class="refresh-overlay" aria-hidden="true">
   <div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Cleaning abandoned sessions and loading fresh data…</small></div>
 </div>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20260912-delete-lead"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20260913-audit-remove-counselor"></script>
 </body></html>

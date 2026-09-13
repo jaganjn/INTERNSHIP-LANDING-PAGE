@@ -568,6 +568,13 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
   if (statusEl) { statusEl.textContent = `● Assigning ${app.name || "lead"} to ${clean || "Unassigned"}…`; statusEl.className = "crm-syncing"; }
   try {
     await db.ref(`submittedApplications/${appId}`).update({ assignedTo: clean });
+    await logApplicationActivity(appId, {
+      action: "Lead reassigned",
+      field: "Assigned To",
+      oldValue: old || "",
+      newValue: clean || "",
+      summary: `Lead assignment changed from ${old || "Unassigned"} to ${clean || "Unassigned"}`
+    });
     app.assignedTo = clean;
     if (statusEl) { statusEl.textContent = `● Lead assigned • ${clean || "Unassigned"}`; statusEl.className = "crm-synced"; }
     renderApplicationCRM();
@@ -669,7 +676,15 @@ async function removeCounselorFromCRM() {
     // Unassign active leads first so Firebase -> Sheets synchronization can
     // clear the old assignment while the counselor registry still exists.
     for (const app of assignedApps) {
+      const previousCounselor = app.assignedTo || "";
       await db.ref(`submittedApplications/${app.id}`).update({ assignedTo: "" });
+      await logApplicationActivity(app.id, {
+        action: "Counselor removed",
+        field: "Assigned To",
+        oldValue: previousCounselor,
+        newValue: "",
+        summary: `${counselor} was removed and the lead was moved to Unassigned`
+      });
       app.assignedTo = "";
     }
 
@@ -746,11 +761,12 @@ function renderCrmTable(rows) {
       <td><span class="crm-status ${statusClass(status)}">${esc(status)}</span></td>
       <td><span class="follow-pill ${followClass}">${isFollowUpDue(app) ? "⚠ " : ""}${esc(formatFollowUp(app))}</span></td>
       <td><select class="crm-assign-select" data-app-id="${esc(app.id)}" aria-label="Assign ${esc(app.name || "lead")}">${counselorOptions(assigned)}</select></td>
-      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button><button class="crm-delete-btn" type="button" data-app-id="${esc(app.id)}" aria-label="Delete ${esc(app.name || "lead")}">Delete</button></div></td>
+      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button><button class="crm-history-btn" type="button" data-app-id="${esc(app.id)}" aria-label="View history for ${esc(app.name || "lead")}">History</button><button class="crm-delete-btn" type="button" data-app-id="${esc(app.id)}" aria-label="Delete ${esc(app.name || "lead")}">Delete</button></div></td>
     </tr>`;
   }).join("") || '<tr><td colspan="9" class="empty">No applications match your filters.</td></tr>';
 
   body.querySelectorAll(".crm-open-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
+  body.querySelectorAll(".crm-history-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
   body.querySelectorAll(".crm-delete-btn").forEach(btn => btn.addEventListener("click", () => deleteSingleApplication(btn.dataset.appId)));
   body.querySelectorAll(".crm-row-check").forEach(box => box.addEventListener("change", () => toggleCrmSelection(box.dataset.appId, box.checked)));
   body.querySelectorAll(".crm-assign-select").forEach(select => select.addEventListener("change", () => {
@@ -801,6 +817,10 @@ async function deleteSingleApplication(id, options = {}) {
     // recover the record automatically. The no-cors request is awaited so
     // the browser has handed the deletion to Apps Script before Firebase is removed.
     await sendApplicationDeleteToSheets(app);
+    await logApplicationActivity(id, {
+      action: "Lead deleted",
+      summary: "Lead deleted from the Application CRM"
+    });
     await db.ref(`submittedApplications/${id}`).remove();
 
     selectedApplicationIds.delete(id);
@@ -830,6 +850,134 @@ function toDateTimeLocal(ms) {
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+
+/**
+ * ==========================================================
+ * APPLICATION ACTIVITY / AUDIT TRAIL
+ * ==========================================================
+ */
+function applicationActivityRef(id) {
+  return db.ref(`applicationActivity/${id}`);
+}
+
+function formatActivityTime(value) {
+  const ms = Number(value);
+  if (!Number.isFinite(ms)) return "—";
+  return new Date(ms).toLocaleString("en-IN", {
+    day:"2-digit", month:"short", year:"numeric",
+    hour:"2-digit", minute:"2-digit"
+  });
+}
+
+function activityValue(value) {
+  const text = String(value ?? "").trim();
+  return text ? text : "—";
+}
+
+function buildActivityChanges(oldApp, newValues) {
+  const fields = [
+    ["Call Status", "callStatus", getCallStatus(oldApp), newValues.callStatus],
+    ["Next Follow-up", "nextFollowUpAt", oldApp.nextFollowUpAt || "", newValues.nextFollowUpAt || ""],
+    ["Assigned To", "assignedTo", oldApp.assignedTo || "", newValues.assignedTo || ""],
+    ["Remarks", "remarks", oldApp.remarks || "", newValues.remarks || ""]
+  ];
+  return fields
+    .filter(item => String(item[2] ?? "") !== String(item[3] ?? ""))
+    .map(item => ({
+      field: item[0],
+      oldValue: item[2],
+      newValue: item[3]
+    }));
+}
+
+async function logApplicationActivity(id, details = {}) {
+  if (!id) return;
+  try {
+    const user = auth?.currentUser;
+    const actor = user?.email || "Admin";
+    const ref = applicationActivityRef(id).push();
+    await ref.set({
+      eventId: ref.key,
+      applicationId: id,
+      timestampMs: firebase.database.ServerValue.TIMESTAMP,
+      timestamp: new Date().toISOString(),
+      source: details.source || "Admin Dashboard",
+      actor: details.actor || actor,
+      action: details.action || "Updated",
+      field: details.field || "",
+      oldValue: details.oldValue ?? "",
+      newValue: details.newValue ?? "",
+      summary: details.summary || ""
+    });
+  } catch (error) {
+    // Audit history must never prevent a CRM update.
+    console.warn("Activity log skipped:", error);
+  }
+}
+
+async function logApplicationChanges(id, oldApp, newValues, action = "Field updated") {
+  const changes = buildActivityChanges(oldApp, newValues);
+  if (!changes.length) {
+    await logApplicationActivity(id, {
+      action: action,
+      summary: "CRM record opened and saved without field changes."
+    });
+    return;
+  }
+
+  for (const change of changes) {
+    await logApplicationActivity(id, {
+      action: action,
+      field: change.field,
+      oldValue: change.oldValue,
+      newValue: change.newValue,
+      summary: `${change.field} updated`
+    });
+  }
+}
+
+async function loadApplicationHistory(id) {
+  const container = el("applicationHistory");
+  if (!container) return;
+  container.innerHTML = `<div class="history-loading">Loading activity history…</div>`;
+
+  try {
+    const snapshot = await applicationActivityRef(id).orderByChild("timestampMs").limitToLast(100).once("value");
+    const rows = Object.values(snapshot.val() || {})
+      .sort((a,b) => Number(b.timestampMs || 0) - Number(a.timestampMs || 0));
+
+    if (!rows.length) {
+      container.innerHTML = `<div class="history-empty">No activity recorded for this lead yet.</div>`;
+      return;
+    }
+
+    container.innerHTML = rows.map(item => {
+      const field = item.field ? `<span class="history-field">${esc(item.field)}</span>` : "";
+      const oldText = item.field ? activityValue(item.oldValue) : "";
+      const newText = item.field ? activityValue(item.newValue) : "";
+      const change = item.field
+        ? `<div class="history-change"><span>${esc(oldText)}</span><b>→</b><span>${esc(newText)}</span></div>`
+        : `<div class="history-summary">${esc(item.summary || item.action || "Activity recorded")}</div>`;
+      return `
+        <article class="history-item">
+          <div class="history-dot"></div>
+          <div class="history-content">
+            <div class="history-top">
+              <strong>${esc(item.action || "Updated")}</strong>
+              <time>${esc(formatActivityTime(item.timestampMs))}</time>
+            </div>
+            <small>${esc(item.actor || "System")} • ${esc(item.source || "CRM")}</small>
+            ${field}
+            ${change}
+          </div>
+        </article>`;
+    }).join("");
+  } catch (error) {
+    console.warn("Activity history load failed:", error);
+    container.innerHTML = `<div class="history-empty">Activity history is unavailable. Check Firebase rules for applicationActivity.</div>`;
+  }
+}
+
 function openApplicationModal(id) {
   const app = applications.find(item => item.id === id);
   if (!app) return;
@@ -855,6 +1003,7 @@ function openApplicationModal(id) {
   el("modalSaveStatus").textContent = "";
   el("applicationModal").classList.add("show");
   el("applicationModal").setAttribute("aria-hidden","false");
+  loadApplicationHistory(id);
 }
 
 function detailRows(rows) {
@@ -886,10 +1035,31 @@ async function saveApplicationCRM() {
   };
   try {
     statusEl.textContent = "Saving…";
+    const before = {...app};
+    const changes = buildActivityChanges(before, updates);
     await db.ref(`submittedApplications/${activeApplicationId}`).update(updates);
     Object.assign(app, updates);
     if (updates.assignedTo) rememberCounselor(updates.assignedTo);
+
+    if (changes.length) {
+      for (const change of changes) {
+        await logApplicationActivity(activeApplicationId, {
+          action: "CRM field updated",
+          field: change.field,
+          oldValue: change.oldValue,
+          newValue: change.newValue,
+          summary: `${change.field} updated from dashboard`
+        });
+      }
+    } else {
+      await logApplicationActivity(activeApplicationId, {
+        action: "CRM saved",
+        summary: "CRM record saved without field changes."
+      });
+    }
+
     statusEl.textContent = "✓ Saved to Firebase • Sheets sync sent.";
+    await loadApplicationHistory(activeApplicationId);
     showToast("Application updated", `${app.name || "Student"}'s CRM details were saved.`, "success", 3500);
     renderApplications();
   } catch (error) {
@@ -1577,6 +1747,7 @@ function setupUI() {
   el("crmSelectAll")?.addEventListener("change", event => toggleAllCrmSelection(event.target.checked));
   el("crmBulkAssignBtn")?.addEventListener("click", bulkAssignSelected);
   el("crmAddCounselorBtn")?.addEventListener("click", addCounselorFromCRM);
+  el("adminLogoutButton")?.addEventListener("click", logout);
   el("crmRemoveCounselorBtn")?.addEventListener("click", removeCounselorFromCRM);
   el("modalAssignedTo")?.addEventListener("change", event => { if (event.target.value === "__new__") { const name = promptForCounselor(); event.target.innerHTML = counselorOptions(name); event.target.value = name || ""; } });
   ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmCounselorFilter","crmFollowupFilter"].forEach(id => el(id)?.addEventListener("input", filterCrmApplications));

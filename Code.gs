@@ -238,9 +238,18 @@ function sheetOnEdit(e) {
         ? value(e.oldValue)
         : "";
 
+    const editedHeader =
+      headers[e.range.getColumn() - 1] || "";
     const result = syncSheetRowToFirebase(
       e.range.getRow(),
-      previousAssignedTo
+      previousAssignedTo,
+      {
+        source: "Master Sheet",
+        actor: "Master Sheet",
+        editedColumn: e.range.getNumRows() === 1 && e.range.getNumColumns() === 1 ? editedHeader : "",
+        oldValue: e.range.getNumRows() === 1 && e.range.getNumColumns() === 1 ? e.oldValue : "",
+        newValue: e.range.getNumRows() === 1 && e.range.getNumColumns() === 1 ? e.value : ""
+      }
     );
 
     console.log(
@@ -290,13 +299,23 @@ function counselorSpreadsheetOnEdit(e) {
   const sheet = e.range.getSheet();
   if (e.range.getRow() < 2) return;
   try {
-    syncCounselorRowToFirebase(sheet, e.range.getRow());
+    syncCounselorRowToFirebase(
+      sheet,
+      e.range.getRow(),
+      {
+        source: "Counselor Sheet",
+        actor: normalizeCounselorName(sheet.getName().replace(/\'s Leads$/i, "")),
+        editedColumn: getHeaders(sheet)[e.range.getColumn() - 1] || "",
+        oldValue: e.oldValue,
+        newValue: e.value
+      }
+    );
   } catch (error) {
     console.error("Counselor spreadsheet → Firebase sync failed:", error);
   }
 }
 
-function syncCounselorRowToFirebase(counselorSheet, rowNumber) {
+function syncCounselorRowToFirebase(counselorSheet, rowNumber, editMeta) {
   if (!counselorSheet || !rowNumber || rowNumber < 2) {
     return {
       status: "skipped",
@@ -542,6 +561,15 @@ function syncCounselorRowToFirebase(counselorSheet, rowNumber) {
     );
   }
 
+  logApplicationSheetEdit_(
+    applicationId,
+    value(editMeta && editMeta.source) || "Counselor Sheet",
+    value(editMeta && editMeta.actor) || normalizeCounselorName(counselorSheet.getName().replace(/\'s Leads$/i, "")),
+    value(editMeta && editMeta.editedColumn),
+    value(editMeta && editMeta.oldValue),
+    value(editMeta && editMeta.newValue)
+  );
+
   return {
     status: "success",
     applicationId:
@@ -564,7 +592,7 @@ function syncCounselorRowToFirebase(counselorSheet, rowNumber) {
 }
 
 
-function syncSheetRowToFirebase(rowNumber, previousAssignedTo) {
+function syncSheetRowToFirebase(rowNumber, previousAssignedTo, editMeta) {
   const sheet = getSheet();
 
   if (
@@ -686,6 +714,15 @@ function syncSheetRowToFirebase(rowNumber, previousAssignedTo) {
     );
 
   SpreadsheetApp.flush();
+
+  logApplicationSheetEdit_(
+    applicationId,
+    value(editMeta && editMeta.source) || "Master Sheet",
+    value(editMeta && editMeta.actor) || "Master Sheet",
+    value(editMeta && editMeta.editedColumn),
+    value(editMeta && editMeta.oldValue),
+    value(editMeta && editMeta.newValue)
+  );
 
   console.log(
     "Master → Firebase + Counselor synchronized:",
@@ -1009,6 +1046,84 @@ function testSheetToFirebaseSync() {
   return syncSheetRowToFirebase(row);
 }
 
+
+
+/**
+ * ==========================================================
+ * APPLICATION ACTIVITY / AUDIT TRAIL
+ * ==========================================================
+ * Stores an append-only activity record in:
+ * /applicationActivity/{Application ID}/{eventId}
+ *
+ * This is intentionally separate from the application record so the
+ * current lead state remains compact while its history remains recoverable.
+ */
+function recordApplicationActivity_(applicationId, payload) {
+  const id = value(applicationId);
+  if (!id) return {status:"skipped", reason:"Missing Application ID"};
+
+  const eventId = Utilities.getUuid();
+  const event = {
+    eventId: eventId,
+    applicationId: id,
+    timestampMs: Date.now(),
+    timestamp: nowString(),
+    source: value(payload && payload.source) || "Google Sheets",
+    actor: value(payload && payload.actor) || "System",
+    action: value(payload && payload.action) || "Updated",
+    field: value(payload && payload.field) || "",
+    oldValue: value(payload && payload.oldValue),
+    newValue: value(payload && payload.newValue),
+    summary: value(payload && payload.summary) || ""
+  };
+
+  try {
+    firebaseRestPatch(
+      "/applicationActivity/" +
+        encodeURIComponent(id) +
+        "/" +
+        encodeURIComponent(eventId),
+      event
+    );
+    return {status:"success", eventId:eventId};
+  } catch (error) {
+    console.warn("Application activity log failed:", error);
+    return {status:"error", message:error.message || String(error)};
+  }
+}
+
+function recordApplicationActivityBatch_(applicationId, entries) {
+  const results = [];
+  (entries || []).forEach(entry => {
+    results.push(recordApplicationActivity_(applicationId, entry));
+  });
+  return results;
+}
+
+function logApplicationSheetEdit_(applicationId, source, actor, editedColumn, oldValue, newValue) {
+  const column = value(editedColumn);
+  const oldText = value(oldValue);
+  const newText = value(newValue);
+
+  if (column) {
+    return recordApplicationActivity_(applicationId, {
+      source: source,
+      actor: actor,
+      action: "Field updated",
+      field: column,
+      oldValue: oldText,
+      newValue: newText,
+      summary: column + " changed" + (oldText || newText ? " from \"" + oldText + "\" to \"" + newText + "\"" : "")
+    });
+  }
+
+  return recordApplicationActivity_(applicationId, {
+    source: source,
+    actor: actor,
+    action: "Lead updated",
+    summary: "Lead record synchronized from " + source
+  });
+}
 
 function doPost(e) {
   try {

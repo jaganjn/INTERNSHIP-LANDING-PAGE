@@ -294,6 +294,84 @@ function readManagedRow_(sheet, rowNumber, columnCount) {
   }
 }
 
+
+/**
+ * Detects lead copy/paste operations in an individual counselor lead sheet.
+ *
+ * Google Apps Script's edit event does not reliably identify Ctrl+C/Ctrl+V.
+ * Instead, this compares the current Application-ID row map with the map
+ * captured after the previous counselor-sheet edit. If an existing Application
+ * ID gains a new row occurrence, that new row is treated as a copied lead.
+ *
+ * The copy itself is logged only; the existing Application ID remains the
+ * identity of the live lead, so a copy never creates a second Firebase lead.
+ */
+function auditCounselorLeadCopies_(sheet, actor, counselorName, editedRange) {
+  try {
+    if (!sheet) return;
+
+    const headers = getHeaders(sheet);
+    const idCol = headers.findIndex(h => normalizeHeader(h) === "applicationid") + 1;
+    if (!idCol || sheet.getLastRow() < 2) return;
+
+    const lastRow = sheet.getLastRow();
+    const values = sheet.getRange(2, idCol, lastRow - 1, 1).getDisplayValues();
+    const current = {};
+
+    values.forEach((r, i) => {
+      const id = value(r[0]).trim();
+      if (!id) return;
+      if (!current[id]) current[id] = [];
+      current[id].push(i + 2);
+    });
+
+    const props = PropertiesService.getScriptProperties();
+    const key = "IF_AUDIT_COUNSELOR_ID_MAP_" + sheet.getParent().getId();
+    let previous = null;
+    try {
+      previous = JSON.parse(props.getProperty(key) || "null");
+    } catch (_) {
+      previous = null;
+    }
+
+    // First observation establishes the baseline; do not invent a copy event.
+    if (previous) {
+      Object.keys(current).forEach(applicationId => {
+        const beforeRows = Array.isArray(previous[applicationId])
+          ? previous[applicationId].map(Number)
+          : [];
+        const beforeSet = new Set(beforeRows);
+        const newRows = current[applicationId].filter(row => !beforeSet.has(row));
+
+        // Only call it a copy when this Application ID already existed before.
+        if (beforeRows.length > 0 && newRows.length > 0) {
+          newRows.forEach(destinationRow => {
+            const sourceRow = beforeRows[0];
+            recordApplicationActivity_(applicationId, {
+              source: "Counselor Sheet",
+              actor: actor || counselorName || "Unknown editor",
+              action: "Lead copied",
+              field: "",
+              oldValue: "",
+              newValue: "",
+              summary:
+                "Lead copied in " + (counselorName || sheet.getName()) +
+                " from row " + sourceRow + " to row " + destinationRow +
+                (editedRange ? " (range " + editedRange.getA1Notation() + ")" : "")
+            });
+          });
+        }
+      });
+    }
+
+    // Save the post-edit row map for the next counselor edit.
+    props.setProperty(key, JSON.stringify(current));
+  } catch (error) {
+    // Audit detection must never block normal CRM synchronization.
+    console.warn("Counselor lead copy detection failed:", error);
+  }
+}
+
 function counselorSpreadsheetOnEdit(e) {
   if (!e || !e.range) return;
   const sheet = e.range.getSheet();
@@ -301,7 +379,14 @@ function counselorSpreadsheetOnEdit(e) {
 
   try {
     const headers = getHeaders(sheet);
-    const actor = getEditActor_(e, normalizeCounselorName(sheet.getName().replace(/\'s Leads$/i, "")));
+    const counselorName = normalizeCounselorName(sheet.getName().replace(/\'s Leads$/i, ""));
+    const actor = getEditActor_(e, counselorName);
+
+    // Detect a lead copied/duplicated into a new row BEFORE normal row sync.
+    // Google Sheets onEdit does not expose a reliable "copy" flag, so we
+    // detect newly-created duplicate Application IDs in the counselor lead sheet.
+    auditCounselorLeadCopies_(sheet, actor, counselorName, e.range);
+
     const firstRow = Math.max(2, e.range.getRow());
     const lastRow = Math.min(sheet.getLastRow(), firstRow + e.range.getNumRows() - 1);
     const singleCell = e.range.getNumRows() === 1 && e.range.getNumColumns() === 1;

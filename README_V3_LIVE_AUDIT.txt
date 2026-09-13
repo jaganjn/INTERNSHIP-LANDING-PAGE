@@ -70,3 +70,12 @@ Google Apps Script does not guarantee that the editor account is available
 for every trigger execution. V3 uses e.user first and Session active user as a
 fallback. If Google withholds both identities, the audit still records the
 source/counselor name rather than inventing an email address.
+
+
+V3.1 COPY/PASTE AUDIT UPDATE
+=============================
+- Individual counselor lead sheets now detect newly-created duplicate Application IDs after an edit/paste.
+- When an existing lead appears in a new row, the audit records "Lead copied" with counselor sheet, editor, source row and destination row.
+- This does not create a second Firebase application; the Application ID remains the live lead identity.
+- Google Sheets does not expose a reliable Ctrl+C/Ctrl+V flag to Apps Script, so copy detection is based on the actual duplicated lead appearing in the sheet.
+- First observation of a counselor sheet establishes a baseline and does not create false copy events.

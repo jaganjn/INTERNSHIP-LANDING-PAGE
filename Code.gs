@@ -308,64 +308,84 @@ function readManagedRow_(sheet, rowNumber, columnCount) {
  */
 function auditCounselorLeadCopies_(sheet, actor, counselorName, editedRange) {
   try {
-    if (!sheet) return;
+    if (!sheet || !editedRange) return;
 
     const headers = getHeaders(sheet);
     const idCol = headers.findIndex(h => normalizeHeader(h) === "applicationid") + 1;
     if (!idCol || sheet.getLastRow() < 2) return;
 
-    const lastRow = sheet.getLastRow();
-    const values = sheet.getRange(2, idCol, lastRow - 1, 1).getDisplayValues();
-    const current = {};
+    // Do not wait for a historical baseline. Immediately inspect the edited
+    // rows and look for the same Application ID elsewhere in this counselor
+    // sheet. This makes a row copy detectable on the FIRST test after deploy.
+    const firstEditedRow = Math.max(2, editedRange.getRow());
+    const lastEditedRow = Math.min(
+      sheet.getLastRow(),
+      firstEditedRow + Math.max(1, editedRange.getNumRows()) - 1
+    );
 
-    values.forEach((r, i) => {
-      const id = value(r[0]).trim();
-      if (!id) return;
-      if (!current[id]) current[id] = [];
-      current[id].push(i + 2);
+    const allIds = sheet
+      .getRange(2, idCol, sheet.getLastRow() - 1, 1)
+      .getDisplayValues()
+      .map(r => value(r[0]).trim());
+
+    const editedRows = [];
+    for (let row = firstEditedRow; row <= lastEditedRow; row++) {
+      const id = value(allIds[row - 2]).trim();
+      if (id) editedRows.push({ row: row, applicationId: id });
+    }
+
+    if (!editedRows.length) return;
+
+    const loggedKey = "IF_AUDIT_COPY_EVENT_" + sheet.getParent().getId();
+    const props = PropertiesService.getScriptProperties();
+    let recent = {};
+    try {
+      recent = JSON.parse(props.getProperty(loggedKey) || "{}");
+    } catch (_) {
+      recent = {};
+    }
+
+    const now = Date.now();
+    // Keep only a short dedupe window so repeated trigger delivery does not
+    // create duplicate "Lead copied" records for the same destination row.
+    Object.keys(recent).forEach(k => {
+      if (now - Number(recent[k] || 0) > 60000) delete recent[k];
     });
 
-    const props = PropertiesService.getScriptProperties();
-    const key = "IF_AUDIT_COUNSELOR_ID_MAP_" + sheet.getParent().getId();
-    let previous = null;
-    try {
-      previous = JSON.parse(props.getProperty(key) || "null");
-    } catch (_) {
-      previous = null;
-    }
-
-    // First observation establishes the baseline; do not invent a copy event.
-    if (previous) {
-      Object.keys(current).forEach(applicationId => {
-        const beforeRows = Array.isArray(previous[applicationId])
-          ? previous[applicationId].map(Number)
-          : [];
-        const beforeSet = new Set(beforeRows);
-        const newRows = current[applicationId].filter(row => !beforeSet.has(row));
-
-        // Only call it a copy when this Application ID already existed before.
-        if (beforeRows.length > 0 && newRows.length > 0) {
-          newRows.forEach(destinationRow => {
-            const sourceRow = beforeRows[0];
-            recordApplicationActivity_(applicationId, {
-              source: "Counselor Sheet",
-              actor: actor || counselorName || "Unknown editor",
-              action: "Lead copied",
-              field: "",
-              oldValue: "",
-              newValue: "",
-              summary:
-                "Lead copied in " + (counselorName || sheet.getName()) +
-                " from row " + sourceRow + " to row " + destinationRow +
-                (editedRange ? " (range " + editedRange.getA1Notation() + ")" : "")
-            });
-          });
+    editedRows.forEach(item => {
+      const sourceCandidates = [];
+      allIds.forEach((id, index) => {
+        const row = index + 2;
+        if (id === item.applicationId && row !== item.row) {
+          sourceCandidates.push(row);
         }
       });
-    }
 
-    // Save the post-edit row map for the next counselor edit.
-    props.setProperty(key, JSON.stringify(current));
+      // An Application ID that already exists on another row is the strongest
+      // observable signal that the lead row was duplicated/copied.
+      if (!sourceCandidates.length) return;
+
+      const sourceRow = sourceCandidates[0];
+      const dedupeId = item.applicationId + "|" + sourceRow + "|" + item.row;
+      if (recent[dedupeId]) return;
+      recent[dedupeId] = now;
+
+      recordApplicationActivity_(item.applicationId, {
+        source: "Counselor Sheet — " + (counselorName || sheet.getName()),
+        actor: actor || ((counselorName || "Unknown") + " / counselor account"),
+        action: "Lead copied",
+        field: "",
+        oldValue: "",
+        newValue: "",
+        summary:
+          "Lead copied from row " + sourceRow + " to row " + item.row,
+        counselor: counselorName || sheet.getName(),
+        fromRow: sourceRow,
+        toRow: item.row
+      });
+    });
+
+    props.setProperty(loggedKey, JSON.stringify(recent));
   } catch (error) {
     // Audit detection must never block normal CRM synchronization.
     console.warn("Counselor lead copy detection failed:", error);

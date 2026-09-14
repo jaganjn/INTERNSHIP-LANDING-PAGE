@@ -631,6 +631,7 @@ body.module-modal-open{overflow:hidden}
 .history-change span{background:#0a1526;border:1px solid #223653;border-radius:6px;padding:5px 7px;color:#cbd5e4;max-width:100%;overflow-wrap:anywhere}
 .history-change b{color:#6e86ff}
 .history-summary{margin-top:7px;color:#9aabc2;font-size:9px;line-height:1.5}
+.history-copy-details{margin-top:7px;color:#9aabc2;font-size:9px;line-height:1.65}.history-copy-details b{color:#fff}
 .history-loading,.history-empty{padding:18px;text-align:center;color:var(--muted);font-size:10px}
 .crm-history-btn{background:#172846;color:#b9c7dc;border:1px solid #2a4163;border-radius:7px;padding:6px 8px;font-size:9px;cursor:pointer}
 .crm-history-btn:hover{border-color:#627cff;color:#fff}

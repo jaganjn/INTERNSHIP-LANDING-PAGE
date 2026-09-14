@@ -957,9 +957,17 @@ function renderApplicationHistorySnapshot(snapshot) {
     const field = item.field ? `<span class="history-field">${esc(item.field)}</span>` : "";
     const oldText = item.field ? activityValue(item.oldValue) : "";
     const newText = item.field ? activityValue(item.newValue) : "";
+    const isLeadCopy = String(item.action || "").toLowerCase() === "lead copied";
+    const copyDetails = isLeadCopy
+      ? `<div class="history-copy-details">
+          <div><b>${esc(item.actor || "Unknown editor")}</b></div>
+          <div>${esc(item.source || (item.counselor ? "Counselor Sheet — " + item.counselor : "Counselor Sheet"))}</div>
+          <div>From row <b>${esc(item.fromRow || "—")}</b> → row <b>${esc(item.toRow || "—")}</b></div>
+        </div>`
+      : "";
     const change = item.field
       ? `<div class="history-change"><span>${esc(oldText)}</span><b>→</b><span>${esc(newText)}</span></div>`
-      : `<div class="history-summary">${esc(item.summary || item.action || "Activity recorded")}</div>`;
+      : (isLeadCopy ? copyDetails : `<div class="history-summary">${esc(item.summary || item.action || "Activity recorded")}</div>`);
     return `
       <article class="history-item">
         <div class="history-dot"></div>

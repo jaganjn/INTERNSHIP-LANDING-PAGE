@@ -2399,6 +2399,17 @@ function handleMobileOperationsAction(action) {
     });
   });
 
+  menu.querySelector('[data-admin-close-hub]')?.addEventListener('click', event => {
+    event.preventDefault();
+    menu.open = false;
+    clearHint?.();
+  });
+
+  document.addEventListener('click', event => {
+    if (!menu.open) return;
+    if (!menu.contains(event.target)) menu.open = false;
+  });
+
   closeBtn?.addEventListener('click', closeModule);
   modal.addEventListener('click', event => {
     if(event.target === modal) closeModule();

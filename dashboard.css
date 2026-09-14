@@ -1476,3 +1476,29 @@ body.module-modal-open{overflow:hidden}
   .hub-button-mark span{width:4px;height:4px;border-radius:1px;background:#8da7cc}
   .hub-button-mark:after{content:"";width:4px;height:4px;border-radius:1px;background:#587fb5}
 }
+
+/* V3.9.4 — explicit mobile Control Hub close action */
+.hero-module-close{width:100%;border:0;background:transparent;color:#7186a2;text-align:left;cursor:pointer}
+.hero-module-close span:first-child{font-size:18px;line-height:1;font-weight:400}
+@media(max-width:700px){
+  body.admin-page .hero-module-close{
+    min-height:42px;
+    margin-top:4px;
+    padding:0 13px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    border-top:1px solid rgba(86,132,196,.12);
+    color:#91a4bf;
+    font-size:8px;
+    font-weight:800;
+  }
+  body.admin-page .hero-module-close span:first-child{
+    width:22px;height:22px;display:grid;place-items:center;
+    border-radius:7px;
+    background:#13243b;
+    color:#a9b9cf;
+    font-size:17px;
+  }
+  body.admin-page .hero-module-close:active{background:rgba(77,125,192,.08)}
+}

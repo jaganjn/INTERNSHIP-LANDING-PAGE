@@ -642,3 +642,370 @@ body.module-modal-open{overflow:hidden}
   .history-top{align-items:flex-start}
   .history-top time{white-space:normal;text-align:right}
 }
+
+/* =========================================================
+   V5.50 — MOBILE ADMIN PANEL REDESIGN ONLY
+   Desktop layout intentionally untouched.
+   ========================================================= */
+@media (max-width: 700px){
+  :root{
+    --mobile-bg:#050b15;
+    --mobile-card:#0a1423;
+    --mobile-card-2:#0d192b;
+    --mobile-line:rgba(77,160,255,.16);
+    --mobile-text:#f5f8ff;
+    --mobile-muted:#8497b4;
+    --mobile-blue:#22b8ff;
+    --mobile-green:#65ef45;
+  }
+
+  html{background:var(--mobile-bg);overflow-x:hidden}
+  body.admin-page{
+    background:
+      radial-gradient(circle at 10% -5%,rgba(21,174,255,.13),transparent 32%),
+      radial-gradient(circle at 92% 12%,rgba(96,239,69,.08),transparent 25%),
+      #050b15;
+    overflow-x:hidden;
+  }
+  body.admin-page::before{opacity:.16;background-size:74px 74px,118px 118px}
+  .admin-page .app-shell{min-height:100svh}
+  .admin-page .workspace{min-height:100svh}
+
+  /* Compact app-style top bar */
+  .admin-page .topbar{
+    height:64px;
+    padding:0 12px;
+    gap:9px;
+    background:rgba(4,12,23,.90);
+    border-bottom:1px solid rgba(73,154,235,.16);
+    backdrop-filter:blur(22px) saturate(140%);
+    -webkit-backdrop-filter:blur(22px) saturate(140%);
+  }
+  .admin-page .topbar::before{
+    content:"INTERNSFORGE  •  ADMIN";
+    display:block;
+    color:#dce9fb;
+    font:800 10px/1 Inter,sans-serif;
+    letter-spacing:.11em;
+    white-space:nowrap;
+    margin-right:auto;
+  }
+  .admin-page .welcome{display:none}
+  .admin-page .topbar-tools{gap:6px;margin-left:auto}
+  .admin-page .sound-quick-toggle{
+    width:36px;height:36px;border-radius:11px;
+    background:#0b182a;border-color:rgba(92,160,234,.22);
+    box-shadow:none;font-size:15px;
+  }
+  .admin-page .admin-logout-btn{
+    width:36px;height:36px;padding:0;border-radius:11px;
+    background:#0b182a;border-color:rgba(92,160,234,.22);
+    font-size:15px;
+  }
+  .admin-page .admin-logout-btn span{display:none}
+  .admin-page .connection,.admin-page .clock,.admin-page .portal-btn{display:none}
+
+  /* Main spacing */
+  .admin-page main{padding:10px 10px 34px;max-width:none}
+
+  /* Hero becomes the mobile control header */
+  .admin-page .hero{
+    min-height:0;
+    margin:0 0 12px;
+    padding:15px;
+    border-radius:20px;
+    display:block;
+    overflow:visible;
+    background:
+      radial-gradient(circle at 100% 0,rgba(35,184,255,.14),transparent 38%),
+      linear-gradient(145deg,rgba(10,28,48,.97),rgba(5,16,29,.98));
+    border-color:rgba(62,169,255,.22);
+    box-shadow:0 18px 45px rgba(0,0,0,.20),inset 0 1px 0 rgba(255,255,255,.035);
+  }
+  .admin-page .hero>div:first-child{max-width:none}
+  .admin-page .hero .eyebrow{font-size:8px;letter-spacing:.16em;color:#63caff}
+  .admin-page .hero h2{font-size:21px;line-height:1.12;letter-spacing:-.6px;margin:7px 0 6px}
+  .admin-page .hero p{font-size:10.5px;line-height:1.55;color:#8fa3c0;max-width:330px}
+  .admin-page .hero-actions{
+    margin-top:13px;
+    min-width:0;
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr auto;
+    align-items:stretch;
+    gap:8px;
+  }
+  .admin-page .hero-health{
+    min-width:0;
+    padding:10px 11px;
+    border-radius:12px;
+    background:rgba(3,12,23,.58);
+    border-color:rgba(75,155,230,.17);
+  }
+  .admin-page .hero-health>span,.admin-page .hero-health small{font-size:8px}
+  .admin-page .hero-health strong{font-size:10px;margin:5px 0 3px}
+  .admin-page .hero-module-menu{width:auto}
+  .admin-page .hero-module-menu summary{
+    min-width:126px;height:100%;min-height:48px;
+    padding:0 10px;border-radius:12px;
+    font-size:10px;
+    box-shadow:0 10px 25px rgba(0,0,0,.20);
+  }
+  .admin-page .hero-module-menu summary .hub-button-icon{width:22px;height:22px}
+  .admin-page .hero-module-menu summary .hub-button-label{font-size:10px}
+  .admin-page .hero-module-dropdown{
+    position:fixed;
+    left:10px;right:10px;bottom:10px;top:auto;
+    width:auto!important;
+    max-height:min(72svh,560px);
+    overflow:auto;
+    padding:9px;
+    border-radius:18px;
+    grid-template-columns:1fr!important;
+    background:rgba(5,15,28,.985);
+    border:1px solid rgba(83,167,255,.25);
+    box-shadow:0 30px 90px rgba(0,0,0,.68),0 0 35px rgba(19,161,255,.10);
+    backdrop-filter:blur(24px);
+    -webkit-backdrop-filter:blur(24px);
+  }
+  .admin-page .hero-module-dropdown::before{
+    content:"CONTROL HUB";
+    display:block;
+    padding:6px 8px 8px;
+    color:#78cfff;
+    font:800 9px/1 Inter,sans-serif;
+    letter-spacing:.15em;
+  }
+  .admin-page .hero-module-dropdown button{
+    min-height:47px;
+    padding:10px 12px;
+    border-radius:11px;
+    font-size:11px;
+    background:rgba(255,255,255,.018);
+    border-color:rgba(88,156,222,.08);
+  }
+  .admin-page .hero-module-dropdown button:active{transform:scale(.985);background:rgba(39,184,255,.10)}
+
+  /* KPI area: clean 2-column app cards */
+  .admin-page .metric-grid{
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .admin-page .metric{
+    min-height:104px;
+    padding:12px;
+    border-radius:16px;
+    display:flex;
+    align-items:flex-start;
+    gap:9px;
+    background:linear-gradient(145deg,rgba(11,27,46,.98),rgba(6,17,30,.98));
+    border-color:rgba(71,151,230,.15);
+    box-shadow:0 10px 25px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.025);
+  }
+  .admin-page .metric:nth-child(5){grid-column:span 2;min-height:84px;align-items:center}
+  .admin-page .metric-icon{width:34px;height:34px;min-width:34px;border-radius:10px;font-size:13px}
+  .admin-page .metric p{font-size:9px;line-height:1.25;color:#91a4bf}
+  .admin-page .metric h3{font-size:23px;line-height:1;margin:5px 0}
+  .admin-page .metric small{font-size:8px;line-height:1.25;color:#637892}
+
+  /* CRM section */
+  .admin-page .crm-section{
+    margin-top:4px;
+    padding:13px;
+    border-radius:20px;
+    background:linear-gradient(150deg,rgba(9,24,41,.98),rgba(4,14,26,.99));
+    border:1px solid rgba(64,158,239,.18);
+    box-shadow:0 18px 48px rgba(0,0,0,.22);
+  }
+  .admin-page .crm-head{margin:0 0 11px;gap:10px}
+  .admin-page .crm-head h2{font-size:19px;letter-spacing:-.45px;margin:5px 0}
+  .admin-page .crm-head p{font-size:9.5px;line-height:1.45}
+  .admin-page .crm-live-badge{font-size:7px;padding:3px 5px;border-radius:5px}
+  .admin-page .crm-head-actions{display:grid;width:100%;grid-template-columns:1fr 1fr;gap:6px}
+  .admin-page .crm-head-actions button{min-height:38px!important;padding:7px 8px!important;font-size:9px;border-radius:10px}
+  .admin-page #syncCrmSheetsBtn{grid-column:span 2}
+
+  .admin-page .crm-metrics{
+    grid-template-columns:repeat(3,1fr);
+    gap:6px;
+    margin-bottom:9px;
+  }
+  .admin-page .crm-metrics article{
+    min-height:58px;
+    padding:8px 7px;
+    border-radius:11px;
+    background:rgba(8,20,35,.86);
+    border-color:rgba(72,149,222,.12);
+  }
+  .admin-page .crm-metrics article span{font-size:7.5px;line-height:1.15;color:#8094af}
+  .admin-page .crm-metrics article strong{font-size:16px;margin-top:4px}
+
+  /* Search/filter controls */
+  .admin-page .crm-toolbar{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    margin-bottom:9px;
+  }
+  .admin-page .crm-search{grid-column:1/-1;min-height:43px;border-radius:12px}
+  .admin-page .crm-search span{font-size:17px;width:36px}
+  .admin-page .crm-search input{font-size:11px}
+  .admin-page .crm-toolbar select{min-height:40px;border-radius:10px;font-size:9px;padding:0 8px}
+  .admin-page #crmClearFilters{min-height:40px!important;font-size:9px}
+
+  .admin-page .crm-assignment-toolbar{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    padding:9px;
+    margin-bottom:9px;
+    border-radius:13px;
+    background:rgba(16,34,56,.55);
+    border-color:rgba(74,153,226,.13);
+  }
+  .admin-page .crm-assignment-toolbar>div{grid-column:1/-1}
+  .admin-page .crm-assignment-toolbar strong{font-size:10px}
+  .admin-page .crm-assignment-toolbar small{font-size:8px}
+  .admin-page .crm-assignment-toolbar select{min-height:39px;border-radius:9px;font-size:9px}
+  .admin-page .crm-assignment-toolbar .primary-action{min-height:39px;border-radius:9px;font-size:9px}
+  .admin-page .crm-assignment-note{grid-column:1/-1;font-size:8px;line-height:1.4}
+
+  /* Transform desktop CRM table into touch-friendly lead cards */
+  .admin-page .crm-table-wrap{
+    overflow:visible;
+    border:0;
+    background:transparent;
+    box-shadow:none;
+  }
+  .admin-page .crm-table{min-width:0;width:100%;display:block}
+  .admin-page .crm-table thead{display:none}
+  .admin-page .crm-table tbody{display:grid;gap:8px}
+  .admin-page .crm-table tbody tr{
+    position:relative;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0 8px;
+    padding:11px 10px 10px;
+    border:1px solid rgba(74,151,222,.15);
+    border-radius:15px;
+    background:linear-gradient(145deg,#0c1a2c,#071321);
+    box-shadow:0 9px 22px rgba(0,0,0,.16);
+  }
+  .admin-page .crm-table tbody tr:hover{background:linear-gradient(145deg,#0c1c30,#071422)}
+  .admin-page .crm-table td{
+    display:block;
+    min-width:0;
+    padding:7px 2px;
+    border:0;
+    color:#dce7f6;
+    font-size:10px;
+  }
+  .admin-page .crm-table td::before{
+    display:block;
+    margin-bottom:3px;
+    color:#647b98;
+    font:800 7px/1 Inter,sans-serif;
+    letter-spacing:.09em;
+    text-transform:uppercase;
+  }
+  .admin-page .crm-table td:nth-child(1){position:absolute;top:10px;right:9px;padding:0;z-index:2}
+  .admin-page .crm-table td:nth-child(1)::before{display:none}
+  .admin-page .crm-table td:nth-child(2){grid-column:1/-1;padding:2px 25px 8px 0}
+  .admin-page .crm-table td:nth-child(2)::before{display:none}
+  .admin-page .crm-table td:nth-child(3)::before{content:"Academic"}
+  .admin-page .crm-table td:nth-child(4)::before{content:"Domain"}
+  .admin-page .crm-table td:nth-child(5)::before{content:"Submitted"}
+  .admin-page .crm-table td:nth-child(6)::before{content:"Call status"}
+  .admin-page .crm-table td:nth-child(7)::before{content:"Follow-up"}
+  .admin-page .crm-table td:nth-child(8)::before{content:"Assigned to"}
+  .admin-page .crm-table td:nth-child(9){grid-column:1/-1;padding-top:8px;border-top:1px solid rgba(91,153,214,.10);margin-top:3px}
+  .admin-page .crm-table td:nth-child(9)::before{display:none}
+  .admin-page .crm-student{gap:9px}
+  .admin-page .crm-avatar{width:34px;height:34px;min-width:34px;border-radius:10px;font-size:12px}
+  .admin-page .crm-student strong{font-size:11px;color:#fff;line-height:1.2}
+  .admin-page .crm-student small{font-size:8px;line-height:1.45;color:#7f93af}
+  .admin-page .crm-table td>strong{font-size:9px;line-height:1.3;overflow-wrap:anywhere}
+  .admin-page .crm-table td>small{font-size:8px;line-height:1.4;color:#7f93af}
+  .admin-page .domain-pill,.admin-page .crm-status,.admin-page .follow-pill{font-size:8px;padding:4px 6px;border-radius:7px;display:inline-block;max-width:100%;white-space:normal}
+  .admin-page .crm-assign-select{width:100%;min-height:31px;border-radius:8px;font-size:8px;padding:0 5px}
+  .admin-page .crm-row-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+  .admin-page .crm-row-actions button{min-height:34px;border-radius:9px;font-size:8px;padding:0 5px}
+  .admin-page .crm-footer{gap:5px;margin-top:9px;padding-top:9px;border-top-color:rgba(78,148,211,.12)}
+  .admin-page .crm-footer span{font-size:9px}.admin-page .crm-footer small{font-size:7.5px;line-height:1.4}
+
+  /* Focused modules / modals become full-screen mobile workspaces */
+  .admin-page .admin-module-modal{padding:0;place-items:stretch;background:rgba(1,7,14,.86);backdrop-filter:blur(8px)}
+  .admin-page .admin-module-modal-card{
+    width:100%;height:100svh;max-height:none;border-radius:0;
+    border:0;border-left:1px solid rgba(74,156,234,.12);
+    box-shadow:none;display:flex;flex-direction:column;
+  }
+  .admin-page .admin-module-modal-header{
+    position:sticky;top:0;flex:none;
+    min-height:65px;padding:12px 13px;
+    background:rgba(5,15,28,.96);
+    border-bottom-color:rgba(72,151,226,.15);
+  }
+  .admin-page .admin-module-modal-header h2{font-size:16px;line-height:1.15}
+  .admin-page .admin-module-modal-header p{font-size:8.5px;line-height:1.35}
+  .admin-page .admin-module-modal-close{width:38px;height:38px;border-radius:11px;font-size:23px;flex:none}
+  .admin-page .admin-module-modal-body{padding:10px;overflow:auto;-webkit-overflow-scrolling:touch}
+  .admin-page .admin-module-modal-body .panel,
+  .admin-page .admin-module-modal-body .crm-section,
+  .admin-page .admin-module-modal-body #settings{border-radius:16px}
+
+  /* Analytics, visitors and lists */
+  .admin-page .panel{padding:12px;border-radius:15px}
+  .admin-page .panel h2{font-size:14px}
+  .admin-page .panel header{margin-bottom:10px}
+  .admin-page .bar-chart{height:170px;gap:6px;padding:15px 2px 3px}
+  .admin-page .chart-day small{font-size:7px}
+  .admin-page .rank-list,.admin-page .application-list,.admin-page .visitor-list{max-height:none;gap:7px}
+  .admin-page .rank-item,.admin-page .application-item,.admin-page .visitor-card{padding:10px;border-radius:11px}
+  .admin-page .rank-item strong,.admin-page .application-item strong,.admin-page .visitor-card strong{font-size:10px}
+  .admin-page .visitor-meta{font-size:8px}
+
+  /* Application detail + history */
+  .admin-page .application-history-card{margin-top:9px;padding:10px;border-radius:14px}
+  .admin-page .history-header{padding-bottom:9px;gap:8px}
+  .admin-page .history-header h3{font-size:13px}
+  .admin-page .history-header p{font-size:8px}
+  .admin-page .history-badge{font-size:7px;padding:5px 7px}
+  .admin-page .application-history{max-height:none}
+  .admin-page .history-item{grid-template-columns:12px 1fr;gap:8px;padding:8px 0}
+  .admin-page .history-dot{width:10px;height:10px}
+  .admin-page .history-content{padding:9px;border-radius:10px}
+  .admin-page .history-top strong{font-size:9px}
+  .admin-page .history-top time{font-size:7px}
+  .admin-page .history-content>small,.admin-page .history-summary,.admin-page .history-copy-details{font-size:8px;line-height:1.5}
+  .admin-page .history-field{font-size:7px}
+  .admin-page .history-change{font-size:8px}
+  .admin-page .history-change span{padding:4px 5px}
+
+  /* Settings: compact action cards */
+  .admin-page .settings-grid{grid-template-columns:1fr 1fr;gap:7px}
+  .admin-page .settings-grid button{min-height:92px;padding:11px;border-radius:12px;font-size:9px}
+  .admin-page .settings-grid span{font-size:7.5px;line-height:1.35}
+
+  /* Touch and accessibility */
+  .admin-page button,.admin-page select,.admin-page input,.admin-page summary{touch-action:manipulation}
+  .admin-page button:focus-visible,.admin-page select:focus-visible,.admin-page input:focus-visible,.admin-page summary:focus-visible{outline:2px solid rgba(52,194,255,.72);outline-offset:2px}
+}
+
+@media (max-width:390px){
+  .admin-page .hero h2{font-size:19px}
+  .admin-page .hero-module-menu summary{min-width:116px}
+  .admin-page .hero-module-menu summary .hub-button-label{font-size:9px}
+  .admin-page .metric{min-height:98px;padding:10px}
+  .admin-page .metric h3{font-size:21px}
+  .admin-page .crm-section{padding:11px}
+  .admin-page .crm-head-actions button{font-size:8px}
+  .admin-page .crm-table tbody tr{padding-left:9px;padding-right:9px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  @media (max-width:700px){
+    .admin-page *,.admin-page *::before,.admin-page *::after{scroll-behavior:auto!important;transition-duration:0.01ms!important;animation-duration:0.01ms!important}
+  }
+}

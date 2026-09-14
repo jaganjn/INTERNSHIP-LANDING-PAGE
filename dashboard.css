@@ -1009,3 +1009,37 @@ body.module-modal-open{overflow:hidden}
     .admin-page *,.admin-page *::before,.admin-page *::after{scroll-behavior:auto!important;transition-duration:0.01ms!important;animation-duration:0.01ms!important}
   }
 }
+
+/* =========================================================
+   V3.5 — MOBILE ADMIN COLOR / CONTRAST FIX
+   Fixes dark KPI numbers inherited from desktop light-theme styles.
+   Mobile-only; desktop remains unchanged.
+   ========================================================= */
+@media (max-width:700px){
+  .admin-page .crm-metrics article{
+    background:linear-gradient(145deg,rgba(13,30,51,.98),rgba(7,19,33,.99)) !important;
+    border-color:rgba(72,166,239,.22) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 8px 22px rgba(0,0,0,.16) !important;
+  }
+  .admin-page .crm-metrics article span{
+    color:#9eb4d0 !important;
+    font-weight:800 !important;
+    letter-spacing:.055em !important;
+  }
+  .admin-page .crm-metrics article strong{
+    color:#f3f7ff !important;
+    -webkit-text-fill-color:#f3f7ff !important;
+    text-shadow:0 1px 10px rgba(93,160,255,.10);
+  }
+  .admin-page .crm-metrics article:nth-child(1) strong{color:#f3f7ff !important;-webkit-text-fill-color:#f3f7ff !important}
+  .admin-page .crm-metrics article:nth-child(2) strong{color:#dce8f8 !important;-webkit-text-fill-color:#dce8f8 !important}
+  .admin-page .crm-metrics article:nth-child(3) strong{color:#f5f8ff !important;-webkit-text-fill-color:#f5f8ff !important}
+  .admin-page .crm-metrics article:nth-child(4) strong{color:#62e6b0 !important;-webkit-text-fill-color:#62e6b0 !important}
+  .admin-page .crm-metrics article:nth-child(5) strong{color:#a992ff !important;-webkit-text-fill-color:#a992ff !important}
+  .admin-page .crm-metrics article:nth-child(6) strong{color:#64e4b0 !important;-webkit-text-fill-color:#64e4b0 !important}
+}
+
+@media (max-width:390px){
+  .admin-page .crm-metrics article span{font-size:7.3px !important}
+  .admin-page .crm-metrics article strong{font-size:17px !important}
+}

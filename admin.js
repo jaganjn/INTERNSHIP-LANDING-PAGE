@@ -328,6 +328,7 @@ function renderVisitors() {
 
   E.visitorList.innerHTML = activeMarkup + inactiveMarkup;
   updateStamp();
+  renderMobileOperationsCockpit();
 }
 
 async function cleanupStale({ removeAbandoned = false } = {}) {
@@ -740,6 +741,7 @@ function renderApplicationCRM() {
   el("crmSelected").textContent = counts.selected;
   el("crmJoined").textContent = counts.joined;
   filterCrmApplications();
+  renderMobileOperationsCockpit();
 }
 
 function statusClass(status) {
@@ -2130,6 +2132,169 @@ async function recoverAllFirebaseToSheets(){
   finally{btn.disabled=false;btn.style.opacity="1";}
 }
 
+
+
+/* ==========================================================
+   V3.9 — MOBILE OPERATIONS COCKPIT
+   Mobile-only analytics/control layer. Desktop is untouched.
+   ========================================================== */
+function renderMobileOperationsCockpit() {
+  const root = document.getElementById("mobileOperationsCockpit");
+  if (!root) return;
+
+  const counts = {
+    notContacted:0,new:0,connected:0,callback:0,details:0,followup:0,
+    interested:0,notInterested:0,notPicking:0,paid:0,enrolled:0,rnr:0,invalid:0,due:0
+  };
+  const counselorCounts = {};
+  const domainCounts = {};
+
+  applications.forEach(app => {
+    const status = getCallStatus(app);
+    const map = {
+      "Not Contacted":"notContacted","New":"new","Connected":"connected",
+      "Callback":"callback","Details Shared":"details","Follow-up":"followup",
+      "Interested":"interested","Not Interested":"notInterested",
+      "Not Picking":"notPicking","Paid / Pre-Reg":"paid",
+      "Enrolled":"enrolled","RNR":"rnr","Invalid Number":"invalid"
+    };
+    if (map[status]) counts[map[status]]++;
+    if (isFollowUpDue(app)) counts.due++;
+    const counselor = String(app.assignedTo || "").trim() || "Unassigned";
+    counselorCounts[counselor] = (counselorCounts[counselor] || 0) + 1;
+    const domain = String(app.domain || "").trim() || "Unspecified";
+    domainCounts[domain] = (domainCounts[domain] || 0) + 1;
+  });
+
+  const visitorRows = Object.entries(visitors || {}).map(([id,v]) => ({
+    id,...v,state:sessionState(v,Date.now())
+  }));
+  const liveVisitors = visitorRows.filter(v => v.state === "active" || v.state === "filling").length;
+  const fillingVisitors = visitorRows.filter(v => v.state === "filling").length;
+  const total = applications.length;
+  const contacted = counts.connected + counts.callback + counts.details +
+    counts.followup + counts.interested + counts.notInterested + counts.paid + counts.enrolled;
+  const contactedRate = total ? Math.round(contacted/total*100) : 0;
+  const enrolledRate = total ? Math.round(counts.enrolled/total*100) : 0;
+  const interestedRate = contacted ? Math.round(counts.interested/contacted*100) : 0;
+  const paidRate = counts.interested ? Math.round(counts.paid/counts.interested*100) : 0;
+  const pct = (n,d) => d ? Math.min(100,Math.round(n/d*100)) : 0;
+
+  const topCounselors = Object.entries(counselorCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topDomains = Object.entries(domainCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  const todayKey = getTodayISTKey();
+  const days = [...Array(7)].map((_,i)=>{
+    const [y,m,d] = todayKey.split("-").map(Number);
+    const date = new Date(Date.UTC(y,m-1,d,6,30,0)-(6-i)*86400000);
+    return {key:getISTDateKey(date.getTime()),date};
+  });
+  const daily = days.map(item=>({
+    ...item,
+    count:applications.filter(app=>getISTDateKey(asMs(app.submittedAtMs||app.submittedAt||app.timestamp))===item.key).length
+  }));
+  const maxDay = Math.max(1,...daily.map(d=>d.count));
+
+  root.innerHTML = `
+    <section class="mo-status-strip">
+      <i></i><div><strong>Operations live</strong><span>Firebase • CRM • Counselor network synced</span></div>
+      <time>${new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</time>
+    </section>
+
+    <section class="mo-hero-card">
+      <div class="mo-hero-copy">
+        <span class="mo-kicker">MOBILE OPERATIONS</span>
+        <h2>Command your pipeline.</h2>
+        <p>Priorities, conversion and team workload — without opening a full workspace.</p>
+      </div>
+      <div class="mo-hero-orbit"><span></span><b>${total}</b><small>LEADS</small></div>
+    </section>
+
+    <section class="mo-priority-grid">
+      <button class="mo-priority-card urgent" data-mo-action="due"><span>↗</span><div><small>FOLLOW-UPS DUE</small><strong>${counts.due}</strong><em>${counts.due?"Needs attention":"All clear"}</em></div></button>
+      <button class="mo-priority-card" data-mo-action="notContacted"><span>◎</span><div><small>NOT CONTACTED</small><strong>${counts.notContacted}</strong><em>${pct(counts.notContacted,total)}% of pipeline</em></div></button>
+      <button class="mo-priority-card success" data-mo-action="interested"><span>✦</span><div><small>INTERESTED</small><strong>${counts.interested}</strong><em>${interestedRate}% of contacted</em></div></button>
+      <button class="mo-priority-card violet" data-mo-action="enrolled"><span>✓</span><div><small>ENROLLED</small><strong>${counts.enrolled}</strong><em>${enrolledRate}% overall</em></div></button>
+    </section>
+
+    <section class="mo-section">
+      <div class="mo-section-head"><div><span class="mo-kicker">PIPELINE INTELLIGENCE</span><h3>Conversion funnel</h3></div><button class="mo-link-btn" data-mo-action="crm">Open CRM</button></div>
+      <div class="mo-funnel">
+        ${[
+          ["all","All leads",total,100],["contacted","Contacted",contacted,contactedRate],
+          ["interested","Interested",counts.interested,pct(counts.interested,total)],
+          ["paid","Paid / Pre-Reg",counts.paid,pct(counts.paid,total)],
+          ["enrolled","Enrolled",counts.enrolled,enrolledRate]
+        ].map(x=>`<div class="mo-funnel-row"><span><i class="mo-funnel-dot ${x[0]}"></i>${x[1]}</span><b>${x[2]}</b><em>${x[3]}%</em><div><span style="width:${x[3]}%"></span></div></div>`).join("")}
+      </div>
+      <div class="mo-insight-line"><span><b>${paidRate}%</b> interested → paid/pre-reg</span><span><b>${liveVisitors}</b> live visitors</span></div>
+    </section>
+
+    <section class="mo-section">
+      <div class="mo-section-head"><div><span class="mo-kicker">LIVE PULSE</span><h3>Today at a glance</h3></div><span class="mo-live-pill">● ${fillingVisitors} filling now</span></div>
+      <div class="mo-mini-stats">
+        <div><span>Live visitors</span><strong>${liveVisitors}</strong><small>active now</small></div>
+        <div><span>New leads</span><strong>${counts.new}</strong><small>status: New</small></div>
+        <div><span>Callbacks</span><strong>${counts.callback}</strong><small>waiting response</small></div>
+        <div><span>Not picking</span><strong>${counts.notPicking}</strong><small>retry queue</small></div>
+      </div>
+    </section>
+
+    <section class="mo-section">
+      <div class="mo-section-head"><div><span class="mo-kicker">7-DAY MOMENTUM</span><h3>Application trend</h3></div><span class="mo-trend-total">${daily.reduce((s,d)=>s+d.count,0)} this week</span></div>
+      <div class="mo-trend-chart">${daily.map(d=>`<div class="mo-trend-day"><div class="mo-trend-bar"><span style="height:${Math.max(7,Math.round(d.count/maxDay*100))}%"></span></div><strong>${d.count}</strong><small>${d.date.toLocaleDateString("en-IN",{weekday:"short"}).slice(0,3)}</small></div>`).join("")}</div>
+    </section>
+
+    <section class="mo-split-grid">
+      <article class="mo-section mo-compact-panel">
+        <div class="mo-section-head"><div><span class="mo-kicker">TEAM LOAD</span><h3>Counselors</h3></div><button class="mo-link-btn" data-mo-action="crm">Manage</button></div>
+        <div class="mo-rank-list">${topCounselors.length ? topCounselors.map(([name,count])=>`<div class="mo-rank"><span>${esc(String(name).trim().charAt(0).toUpperCase())}</span><div><strong>${esc(name)}</strong><small>${count} lead${count===1?"":"s"}</small></div><b>${pct(count,total)}%</b></div>`).join("") : '<div class="mo-empty">No assignments yet.</div>'}</div>
+      </article>
+      <article class="mo-section mo-compact-panel">
+        <div class="mo-section-head"><div><span class="mo-kicker">DEMAND MIX</span><h3>Top domains</h3></div><button class="mo-link-btn" data-mo-action="domains">View</button></div>
+        <div class="mo-domain-list">${topDomains.length ? topDomains.map(([name,count])=>`<div class="mo-domain-row"><span>${esc(name)}</span><b>${count}</b><div><i style="width:${pct(count,total)}%"></i></div></div>`).join("") : '<div class="mo-empty">No domain data yet.</div>'}</div>
+      </article>
+    </section>
+
+    <section class="mo-section mo-actions-panel">
+      <div class="mo-section-head"><div><span class="mo-kicker">ACTION DECK</span><h3>Power tools</h3></div></div>
+      <div class="mo-tool-grid">
+        <button data-mo-action="crm"><span>▤</span><b>Applications</b><small>${total} leads</small></button>
+        <button data-mo-action="due"><span>◷</span><b>Follow-ups</b><small>${counts.due} due</small></button>
+        <button data-mo-action="activity"><span>⌁</span><b>Live Activity</b><small>7-day flow</small></button>
+        <button data-mo-action="analytics"><span>◫</span><b>Analytics</b><small>College insights</small></button>
+        <button data-mo-action="export"><span>⇩</span><b>Export CRM</b><small>CSV snapshot</small></button>
+        <button data-mo-action="refresh"><span>↻</span><b>Refresh</b><small>Sync live data</small></button>
+      </div>
+    </section>
+
+    <section class="mo-bottom-health"><span><i></i> System healthy</span><small>Live dashboard • ${new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</small></section>
+  `;
+
+  root.querySelectorAll("[data-mo-action]").forEach(btn=>{
+    btn.addEventListener("click",()=>handleMobileOperationsAction(btn.dataset.moAction));
+  });
+}
+
+function handleMobileOperationsAction(action) {
+  const open = window.openAdminModule;
+  if(action==="export"){ el("exportCrmButton")?.click(); return; }
+  if(action==="refresh"){ el("refreshDashboardButton")?.click(); return; }
+  if(["crm","due","notContacted","interested","enrolled"].includes(action)){
+    const openAndFilter=()=>{
+      const status=action==="notContacted"?"Not Contacted":action==="interested"?"Interested":action==="enrolled"?"Enrolled":"";
+      const statusEl=el("crmStatusFilter"), followEl=el("crmFollowupFilter");
+      if(statusEl) statusEl.value=status;
+      if(followEl) followEl.value=action==="due"?"due":"";
+      filterCrmApplications();
+    };
+    if(typeof open==="function") open("applicationCRM");
+    window.setTimeout(openAndFilter,50);
+    return;
+  }
+  if(action==="activity" && typeof open==="function") return open("activity");
+  if((action==="analytics"||action==="domains") && typeof open==="function") return open("analytics");
+}
 
 /* === Single top-right navigation + focused popup workspace === */
 (function setupCompactAdminWorkspace(){

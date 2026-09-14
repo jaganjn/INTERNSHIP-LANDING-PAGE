@@ -234,6 +234,12 @@ function sheetOnEdit(e) {
   try {
     const headers = getHeaders(sheet);
     const actor = getEditActor_(e, "Master Sheet");
+
+    // Typed Google Sheets Date time columns must receive real Date objects,
+    // not display strings such as "13-09-2026 10:27:31".
+    normalizeEditedDateTimeCells_(sheet, e.range, headers);
+    SpreadsheetApp.flush();
+
     const firstRow = Math.max(2, e.range.getRow());
     const lastRow = Math.min(sheet.getLastRow(), firstRow + e.range.getNumRows() - 1);
     const singleCell = e.range.getNumRows() === 1 && e.range.getNumColumns() === 1;
@@ -401,6 +407,10 @@ function counselorSpreadsheetOnEdit(e) {
     const headers = getHeaders(sheet);
     const counselorName = normalizeCounselorName(sheet.getName().replace(/\'s Leads$/i, ""));
     const actor = getEditActor_(e, counselorName);
+
+    // Normalize pasted Date time text before reading/syncing the row.
+    normalizeEditedDateTimeCells_(sheet, e.range, headers);
+    SpreadsheetApp.flush();
 
     // Detect a lead copied/duplicated into a new row BEFORE normal row sync.
     // Google Sheets onEdit does not expose a reliable "copy" flag, so we
@@ -579,9 +589,14 @@ function syncCounselorRowToFirebase(counselorSheet, rowNumber, editMeta) {
         value(incoming) !== ""
       ) {
         try {
+          const valueToWrite =
+            field === "Timestamp" || field === "Next Follow-up"
+              ? toSheetDateTimeValue_(incoming, true)
+              : (incoming || "");
+
           master
             .getRange(masterRow, col)
-            .setValue(incoming || "");
+            .setValue(valueToWrite);
         } catch (error) {
           throw new Error(
             "Could not update Master " +
@@ -958,40 +973,171 @@ function syncAllSheetCrmToFirebase() {
   };
 }
 
-function sheetDateToIso(valueFromSheet) {
-  if (
-    valueFromSheet === null ||
-    valueFromSheet === undefined ||
-    valueFromSheet === ""
-  ) {
-    return "";
+/**
+ * Convert a Sheet date/time value into a real JavaScript Date.
+ *
+ * IMPORTANT:
+ * Google Sheets typed Date time columns reject text such as
+ * "13-09-2026 10:27:31". The CRM previously built those values as strings,
+ * which caused the red "This value does not match the column type date time"
+ * warning shown in the Master/typed table.
+ *
+ * This parser deliberately supports the formats used by InternsForge:
+ *   dd-MM-yyyy HH:mm:ss
+ *   dd/MM/yyyy HH:mm:ss
+ *   dd-MM-yyyy hh:mm:ss AM/PM
+ *   yyyy-MM-dd HH:mm:ss
+ * plus normal Date/ISO values.
+ */
+function parseSheetDateTime_(input) {
+  if (input === null || input === undefined || input === "") return null;
+
+  if (input instanceof Date) {
+    return isNaN(input.getTime()) ? null : new Date(input.getTime());
   }
 
-  const date = valueFromSheet instanceof Date
-    ? valueFromSheet
-    : new Date(valueFromSheet);
+  if (typeof input === "number") {
+    // Firebase/Unix milliseconds or seconds.
+    const n = Number(input);
+    if (!isFinite(n)) return null;
+    const ms = Math.abs(n) < 100000000000 ? n * 1000 : n;
+    const d = new Date(ms);
+    return isNaN(d.getTime()) ? null : d;
+  }
 
-  if (isNaN(date.getTime())) return "";
+  const s = String(input).trim();
+  if (!s) return null;
 
-  return date.toISOString();
+  // dd-MM-yyyy / dd/MM/yyyy with 24-hour time.
+  let m = s.match(
+    /^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/
+  );
+  if (m) {
+    const day = Number(m[1]);
+    const month = Number(m[2]);
+    const year = Number(m[3]);
+    const hour = Number(m[4]);
+    const minute = Number(m[5]);
+    const second = Number(m[6] || 0);
+    try {
+      const d = Utilities.parseDate(
+        String(day).padStart(2, "0") + "-" +
+          String(month).padStart(2, "0") + "-" +
+          year + " " +
+          String(hour).padStart(2, "0") + ":" +
+          String(minute).padStart(2, "0") + ":" +
+          String(second).padStart(2, "0"),
+        CONFIG.TIMEZONE,
+        "dd-MM-yyyy HH:mm:ss"
+      );
+      if (!isNaN(d.getTime())) return d;
+    } catch (_) {}
+  }
+
+  // dd-MM-yyyy / dd/MM/yyyy with 12-hour AM/PM time.
+  m = s.match(
+    /^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)$/i
+  );
+  if (m) {
+    const text =
+      String(Number(m[1])).padStart(2, "0") + "-" +
+      String(Number(m[2])).padStart(2, "0") + "-" +
+      m[3] + " " +
+      String(Number(m[4])).padStart(2, "0") + ":" +
+      m[5] + ":" +
+      String(Number(m[6] || 0)).padStart(2, "0") + " " +
+      m[7].toUpperCase();
+    try {
+      const d = Utilities.parseDate(
+        text,
+        CONFIG.TIMEZONE,
+        "dd-MM-yyyy hh:mm:ss a"
+      );
+      if (!isNaN(d.getTime())) return d;
+    } catch (_) {}
+  }
+
+  // ISO / yyyy-MM-dd and other formats Google may already understand.
+  const parsed = new Date(s);
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+/**
+ * Return a typed Date value for a Google Sheets Date time column.
+ * Invalid text is returned as an empty value instead of writing text into
+ * a typed Date time column.
+ */
+function toSheetDateTimeValue_(input, blankIfInvalid) {
+  if (input === null || input === undefined || input === "") return "";
+  const date = parseSheetDateTime_(input);
+  if (date) return date;
+  return blankIfInvalid === false ? input : "";
+}
+
+function sheetDateToIso(valueFromSheet) {
+  const date = parseSheetDateTime_(valueFromSheet);
+  return date ? date.toISOString() : "";
 }
 
 function sheetDateToTimestamp(valueFromSheet) {
-  if (
-    valueFromSheet === null ||
-    valueFromSheet === undefined ||
-    valueFromSheet === ""
-  ) {
-    return "";
-  }
+  const date = parseSheetDateTime_(valueFromSheet);
+  return date ? date.getTime() : "";
+}
 
-  const date = valueFromSheet instanceof Date
-    ? valueFromSheet
-    : new Date(valueFromSheet);
+/**
+ * Repair a Date time cell immediately after a user paste/edit.
+ * This is what clears the red typed-column warning for values such as
+ * "13-09-2026 10:27:31" by replacing the text with a real Date object.
+ */
+function normalizeEditedDateTimeCells_(sheet, editedRange, headers) {
+  if (!sheet || !editedRange || !headers || !headers.length) return;
 
-  if (isNaN(date.getTime())) return "";
+  const dateColumns = [];
+  headers.forEach(function(header, index) {
+    const key = normalizeHeader(header);
+    if (key === "timestamp" || key === "nextfollowup") {
+      dateColumns.push(index + 1);
+    }
+  });
+  if (!dateColumns.length) return;
 
-  return date.getTime();
+  const firstRow = Math.max(2, editedRange.getRow());
+  const lastRow = Math.min(
+    sheet.getLastRow(),
+    firstRow + Math.max(1, editedRange.getNumRows()) - 1
+  );
+  const editFirstCol = editedRange.getColumn();
+  const editLastCol = editFirstCol + editedRange.getNumColumns() - 1;
+
+  dateColumns.forEach(function(col) {
+    if (col < editFirstCol || col > editLastCol) return;
+
+    const range = sheet.getRange(firstRow, col, lastRow - firstRow + 1, 1);
+    let values;
+    try {
+      values = range.getDisplayValues();
+    } catch (_) {
+      return;
+    }
+
+    const converted = values.map(function(row) {
+      const text = String(row[0] || "").trim();
+      if (!text) return [""];
+      const parsed = parseSheetDateTime_(text);
+      return [parsed || text];
+    });
+
+    try {
+      range.setValues(converted);
+    } catch (error) {
+      // Do not break the CRM if a particular typed column is locked by the
+      // table configuration. The synchronization can still continue.
+      console.warn(
+        "Date/time normalization skipped for " + sheet.getName() +
+        " column " + col + ": " + error.message
+      );
+    }
+  });
 }
 
 function getFirebaseServiceAccount_() {
@@ -2510,7 +2656,19 @@ function buildRow(headers, app) {
       applicationreason:"Application Reason", reason:"Application Reason", whyareyouapplying:"Application Reason", interest:"Application Reason",
       callstatus:"Call Status", nextfollowup:"Next Follow-up", followup:"Next Follow-up", assignedto:"Assigned To", remarks:"Remarks", remark:"Remarks"
     };
-    return map[n] ? (app[map[n]] || "") : "";
+    if (!map[n]) return "";
+
+    const field = map[n];
+    const raw = app[field];
+
+    // CRITICAL: Timestamp and Next Follow-up belong to typed Date time
+    // columns. Never write the formatted string representation into those
+    // columns; convert it to a real Date object first.
+    if (field === "Timestamp" || field === "Next Follow-up") {
+      return toSheetDateTimeValue_(raw, true);
+    }
+
+    return raw || "";
   });
 }
 
@@ -2894,6 +3052,89 @@ function getExistingApplicationIds(sheet, headers) {
   sheet.getRange(2,col,sheet.getLastRow()-1,1).getDisplayValues().forEach((r,i)=>{const id=String(r[0]||"").trim();if(id)result[id]=i+2;});
   return result;
 }
+/**
+ * One-time repair for existing red Date time cells.
+ *
+ * Run this AFTER deploying this version if the sheet already contains text
+ * dates such as "13-09-2026 10:27:31". It converts every parseable Timestamp
+ * and Next Follow-up value in the Master and counselor lead sheets into real
+ * Google Sheets Date values.
+ */
+function repairAllTypedDateTimeValues() {
+  const report = {
+    status: "success",
+    master: 0,
+    counselors: 0,
+    errors: []
+  };
+
+  function repairSheet_(sheet) {
+    if (!sheet || sheet.getLastRow() < 2) return 0;
+
+    const headers = getHeaders(sheet);
+    const dateColumns = [];
+    headers.forEach(function(header, index) {
+      const key = normalizeHeader(header);
+      if (key === "timestamp" || key === "nextfollowup") {
+        dateColumns.push(index + 1);
+      }
+    });
+    if (!dateColumns.length) return 0;
+
+    let changed = 0;
+    const rows = sheet.getLastRow() - 1;
+
+    dateColumns.forEach(function(col) {
+      const range = sheet.getRange(2, col, rows, 1);
+      const display = range.getDisplayValues();
+      const converted = display.map(function(row) {
+        const text = String(row[0] || "").trim();
+        if (!text) return [""];
+        const parsed = parseSheetDateTime_(text);
+        if (parsed) {
+          changed++;
+          return [parsed];
+        }
+        return [text];
+      });
+
+      range.setValues(converted);
+    });
+
+    SpreadsheetApp.flush();
+    return changed;
+  }
+
+  try {
+    const master = getMasterSpreadsheet_().getSheetByName(CONFIG.SHEET_NAME);
+    report.master = repairSheet_(master);
+  } catch (error) {
+    report.errors.push("Master: " + error.message);
+  }
+
+  try {
+    getCounselors().forEach(function(counselor) {
+      const name = normalizeCounselorName(counselor.name);
+      const spreadsheetId = value(counselor.spreadsheetId);
+      if (!name || !spreadsheetId) return;
+
+      try {
+        const ss = SpreadsheetApp.openById(spreadsheetId);
+        const sheet = findCounselorLeadSheet_(ss, name, false);
+        if (!sheet) return;
+        report.counselors += repairSheet_(sheet);
+      } catch (error) {
+        report.errors.push(name + ": " + error.message);
+      }
+    });
+  } catch (error) {
+    report.errors.push("Counselors: " + error.message);
+  }
+
+  if (report.errors.length) report.status = "completed_with_errors";
+  return report;
+}
+
 function standardizeAllCallStatuses() {
   const master = getMasterSpreadsheet_();
   const masterSheet = master.getSheetByName(CONFIG.SHEET_NAME);

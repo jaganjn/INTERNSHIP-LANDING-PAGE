@@ -90,6 +90,7 @@ let activeActivityListenerRef = null;
 let counselorNames = [];
 let selectedApplicationIds = new Set();
 let abandonedFilteredRows = [];
+let abandonedApplications = {};
 
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -293,10 +294,48 @@ function visitorCard(visitor, inactive = false) {
 }
 
 
+function recoveryStoreRows() {
+  const liveByDraft = {};
+  Object.values(visitors).forEach(v => { if (v.draftId) liveByDraft[String(v.draftId)] = v; });
+  return Object.entries(abandonedApplications).map(([id, raw]) => {
+    const live = liveByDraft[String(raw.draftId || id)] || {};
+    const fieldData = {
+      name: raw.name || live.fieldData?.name || live.name || '',
+      phone: raw.phone || live.fieldData?.phone || live.phone || '',
+      email: raw.email || live.fieldData?.email || live.email || '',
+      college: raw.college || live.fieldData?.college || live.college || '',
+      department: raw.department || live.fieldData?.department || live.department || '',
+      year: raw.year || live.fieldData?.year || live.year || '',
+      domain: raw.domain || live.fieldData?.domain || live.domain || ''
+    };
+    return { id, ...raw, ...live, fieldData,
+      formProgress: Number(raw.progress ?? live.formProgress ?? 0),
+      currentStep: raw.currentStep ?? live.currentStep ?? 1,
+      currentField: raw.lastField || live.currentField || '',
+      lastActive: raw.lastActive || live.lastActive || raw.updatedAtMs || live.lastActive,
+      exitType: raw.exitType || live.exitType || '',
+      exitReason: raw.exitReason || live.exitReason || '',
+      recoveryStatus: raw.recoveryStatus || live.recoveryStatus || 'Needs Follow-up'
+    };
+  });
+}
+
+function dedupeRecoveryRows(rows) {
+  const groups = new Map();
+  rows.forEach(v => {
+    const d = v.fieldData || {};
+    const key = normalizePhoneKey(d.phone || v.phone) || String(d.email || v.email || '').trim().toLowerCase() || `id:${v.id}`;
+    const current = groups.get(key);
+    if (!current || asMs(v.lastActive || v.updatedAtMs) > asMs(current.lastActive || current.updatedAtMs)) groups.set(key, v);
+  });
+  return [...groups.values()];
+}
+
 function renderRecoveryCenter(rows) {
   if (!E.recoveryList) return;
-  const recovery = rows.filter(v => ['abandoned','left'].includes(v.state) && Number(v.formProgress || 0) > 0)
-    .sort((a,b) => asMs(b.leftAt || b.abandonedAt || b.lastActive) - asMs(a.leftAt || a.abandonedAt || a.lastActive))
+  const recovery = dedupeRecoveryRows(recoveryStoreRows())
+    .filter(v => Number(v.formProgress || 0) > 0 && !['Recovered','Submitted / Recovered'].includes(String(v.recoveryStatus || '')))
+    .sort((a,b) => asMs(b.lastActive || b.updatedAtMs) - asMs(a.lastActive || a.updatedAtMs))
     .slice(0, 30);
   const highIntent = recovery.filter(v => Number(v.formProgress || 0) >= 60).length;
   const cancelled = recovery.filter(v => String(v.lastAction || '').toLowerCase().includes('cancel')).length;
@@ -320,8 +359,12 @@ function renderRecoveryCenter(rows) {
 }
 
 function renderAbandonedDashboard(rows) {
-  const all = rows.filter(v => ['abandoned','left'].includes(v.state) && Number(v.formProgress || 0) > 0)
-    .sort((a,b) => asMs(b.leftAt || b.abandonedAt || b.lastActive) - asMs(a.leftAt || a.abandonedAt || a.lastActive));
+  const stored = dedupeRecoveryRows(recoveryStoreRows()).filter(v => Number(v.formProgress || 0) > 0);
+  const recoveredRows = stored.filter(v => ['Recovered','Submitted / Recovered'].includes(String(v.recoveryStatus || '')));
+  const activeRows = stored.filter(v => !['Recovered','Submitted / Recovered'].includes(String(v.recoveryStatus || '')));
+  const recoveryFilter = String(el('abRecoveryFilter')?.value || '');
+  const all = (recoveryFilter ? stored : activeRows)
+    .sort((a,b) => asMs(b.lastActive || b.updatedAtMs) - asMs(a.lastActive || a.updatedAtMs));
   const search = String(el('abSearch')?.value || '').trim().toLowerCase();
   const type = String(el('abTypeFilter')?.value || '');
   const intent = String(el('abIntentFilter')?.value || '');
@@ -337,12 +380,11 @@ function renderAbandonedDashboard(rows) {
       (!intent || (intent === 'high' ? progress >= 60 : intent === 'medium' ? progress >= 30 && progress < 60 : progress < 30));
   });
   abandonedFilteredRows = filtered;
-  const high = all.filter(v => Number(v.formProgress || 0) >= 60).length;
-  const cancelled = all.filter(v => String(v.exitType || v.lastAction || '').toLowerCase().includes('cancel')).length;
-  const left = all.length - cancelled;
-  const needs = all.filter(v => String(v.recoveryStatus || 'Needs Follow-up') === 'Needs Follow-up').length;
-  const recovered = all.filter(v => ['Recovered','Submitted / Recovered'].includes(String(v.recoveryStatus || ''))).length;
-  [['abTotal',all.length],['abHighIntent',high],['abCancelled',cancelled],['abLeft',Math.max(0,left)],['abNeedsFollowup',needs],['abRecovered',recovered]].forEach(([id,val])=>{const n=el(id);if(n)n.textContent=val;});
+  const high = activeRows.filter(v => Number(v.formProgress || 0) >= 60).length;
+  const cancelled = activeRows.filter(v => String(v.exitType || v.lastAction || '').toLowerCase().includes('cancel')).length;
+  const left = Math.max(0, activeRows.length - cancelled);
+  const needs = activeRows.filter(v => String(v.recoveryStatus || 'Needs Follow-up') === 'Needs Follow-up').length;
+  [['abTotal',activeRows.length],['abHighIntent',high],['abCancelled',cancelled],['abLeft',left],['abNeedsFollowup',needs],['abRecovered',recoveredRows.length]].forEach(([id,val])=>{const n=el(id);if(n)n.textContent=val;});
   const body = el('abandonedTableBody');
   if (!body) return;
   body.innerHTML = filtered.length ? filtered.map(v => {
@@ -367,20 +409,28 @@ function renderAbandonedDashboard(rows) {
   const count = el('abResultCount'); if(count) count.textContent = `${filtered.length} of ${all.length} abandoned applications`;
 }
 
-function updateAbandonedRecoveryStatus(visitorId, status) {
-  const v = visitors[visitorId];
+function updateAbandonedRecoveryStatus(recordId, status) {
+  const stored = abandonedApplications[recordId];
+  const live = Object.values(visitors).find(v => String(v.draftId || '') === String(recordId));
+  const v = stored || live;
   if (!v) return;
-  const d = v.fieldData || {};
+  const d = v.fieldData || v;
+  const draftId = v.draftId || recordId;
   v.recoveryStatus = status;
-  renderAbandonedDashboard(Object.entries(visitors).map(([id,x])=>({id,...x,state:sessionState(x,Date.now())})));
+  if (abandonedApplications[recordId]) abandonedApplications[recordId].recoveryStatus = status;
+  renderAbandonedDashboard([]);
   const payload = {
-    action:'saveAbandonedApplication', draftId:v.draftId || visitorId, startedAt:v.startedAt || '', lastActive:new Date().toISOString(),
-    ...d, progress:Number(v.formProgress||0), currentStep:v.currentStep||1, lastField:v.currentField||'',
+    action:'saveAbandonedApplication', draftId, startedAt:v.startedAt || '', lastActive:new Date().toISOString(),
+    name:d.name||'', phone:d.phone||'', email:d.email||'', college:d.college||'', department:d.department||'', year:d.year||'', domain:d.domain||'', state:d.state||'',
+    communicationLanguage:d.communicationLanguage||'', startAvailability:d.startAvailability||'', applicationReason:d.applicationReason||'',
+    progress:Number(v.formProgress ?? v.progress ?? 0), currentStep:v.currentStep||1, lastField:v.currentField||v.lastField||'',
     exitType:v.exitType || (String(v.lastAction||'').toLowerCase().includes('cancel')?'Cancelled Application':'Left Page'),
     exitReason:v.exitReason||'', referral:v.referral||'', device:v.device||'', recoveryStatus:status, applicationId:v.applicationId||''
   };
   fetch(SHEETS_RECOVERY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),keepalive:true}).catch(console.warn);
-  db.ref(`liveVisitors/${visitorId}`).update({recoveryStatus:status});
+  const liveId = Object.entries(visitors).find(([,x]) => String(x.draftId || '') === String(draftId))?.[0];
+  if (liveId) db.ref(`liveVisitors/${liveId}`).update({recoveryStatus:status});
+  db.ref(`abandonedApplications/${String(draftId).replace(/[.#$\[\]\/]/g,'_')}`).update({recoveryStatus:status,updatedAtMs:Date.now()}).catch(console.warn);
 }
 
 function setupAbandonedDashboardActions() {
@@ -396,7 +446,7 @@ function setupAbandonedDashboardActions() {
     const view=e.target.closest('[data-ab-view]'), wa=e.target.closest('[data-ab-wa]'), contact=e.target.closest('[data-ab-contact]');
     if(wa){window.open(wa.dataset.abWa,'_blank','noopener');return;}
     if(contact){updateAbandonedRecoveryStatus(contact.dataset.abContact,'Contacted');return;}
-    if(view){const v=visitors[view.dataset.abView];if(v){const d=v.fieldData||{};alert(`Abandoned Application\n\nName: ${d.name||'—'}\nPhone: ${d.phone||'—'}\nEmail: ${d.email||'—'}\nCollege: ${d.college||'—'}\nDomain: ${d.domain||'—'}\nProgress: ${v.formProgress||0}%\nStep: ${v.currentStep||'—'}\nExit: ${v.exitType||v.lastAction||'—'}\nLast Active: ${fmt(v.leftAt||v.lastActive)}`);}}
+    if(view){const v=abandonedApplications[view.dataset.abView] || Object.values(visitors).find(x=>String(x.draftId||'')===String(view.dataset.abView));if(v){const d=v.fieldData||v;alert(`Abandoned Application\n\nName: ${d.name||'—'}\nPhone: ${d.phone||'—'}\nEmail: ${d.email||'—'}\nCollege: ${d.college||'—'}\nDomain: ${d.domain||'—'}\nProgress: ${v.formProgress ?? v.progress ?? 0}%\nStep: ${v.currentStep||'—'}\nExit: ${v.exitType||v.lastAction||'—'}\nLast Active: ${fmt(v.leftAt||v.lastActive||v.updatedAtMs)}`);}}
   });
 }
 
@@ -408,8 +458,8 @@ function renderVisitors() {
 
   const active = rows.filter(visitor => visitor.state === "active" || visitor.state === "filling");
   const filling = rows.filter(visitor => visitor.state === "filling");
-  const abandoned = rows.filter(visitor => visitor.state === "abandoned");
-  const recentInactive = rows.filter(visitor => ["abandoned", "left"].includes(visitor.state)).slice(0, 20);
+  const abandoned = rows.filter(visitor => visitor.state === "abandoned" && !isSubmittedVisitor(visitor));
+  const recentInactive = rows.filter(visitor => ["abandoned", "left"].includes(visitor.state) && !isSubmittedVisitor(visitor)).slice(0, 20);
 
   const todayKey = getTodayISTKey();
   const todayApplications = applications.filter(app =>
@@ -449,7 +499,7 @@ async function cleanupStale({ removeAbandoned = false } = {}) {
   const updates = {};
 
   Object.entries(visitors).forEach(([id, visitor]) => {
-    if (visitor.status === "submitted") return;
+    if (isSubmittedVisitor(visitor)) return;
     const age = now - asMs(visitor.lastActive || visitor.clientLastActive);
     const progress = Number(visitor.formProgress || 0);
     const hasStartedFilling = visitor.hasStartedFilling === true || progress > 0;
@@ -1797,6 +1847,11 @@ function listeners() {
     renderVisitors();
   });
 
+  db.ref("abandonedApplications").on("value", snapshot => {
+    abandonedApplications = snapshot.val() || {};
+    renderVisitors();
+  });
+
   db.ref("publicStats/applicationVisitorCount").on("value", snapshot => {
     const count = Number(snapshot.val());
     const displayCount = Number.isFinite(count) && count >= 0 ? Math.floor(count).toLocaleString("en-IN") : "0";
@@ -1828,6 +1883,8 @@ function listeners() {
     applications = nextApplications;
     db.ref("publicStats/applicationCount").set(applications.length).catch(error => console.warn("Public application count sync failed:", error));
     renderApplications(newIds);
+    renderVisitors();
+    renderVisitors();
   });
 
   db.ref("referrals").on("value", snapshot => {

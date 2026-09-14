@@ -1292,7 +1292,7 @@ function recoveryDevice() {
   return window.innerWidth <= 820 ? 'Mobile' : 'Desktop';
 }
 
-function sendRecoverySnapshot(exitType = 'Left Page', exitReason = '', force = false) {
+async function sendRecoverySnapshot(exitType = 'Left Page', exitReason = '', force = false) {
   if (visitorComplete || submitLocked) return false;
   if (!recoveryHasMeaningfulData()) return false;
   if (!force && sessionStorage.getItem(RECOVERY_SENT_KEY) === '1') return false;
@@ -1325,10 +1325,28 @@ function sendRecoverySnapshot(exitType = 'Left Page', exitReason = '', force = f
   };
 
   try {
-    fetch(SHEET_ENDPOINT, {
-      method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload), keepalive: true
-    }).catch(() => {});
+    // Firebase is the realtime source for the Admin Abandoned Applications workspace.
+    // Google Sheets remains the durable recovery/reporting copy.
+    if (typeof db !== 'undefined') {
+      const recoveryId = String(payload.draftId).replace(/[.#$\[\]\/]/g, '_');
+      db.ref(`abandonedApplications/${recoveryId}`).set({
+        draftId: payload.draftId, visitorId: visitorId || '', startedAt: payload.startedAt,
+        lastActive: payload.lastActive, name: payload.name || '', phone: payload.phone || '',
+        email: payload.email || '', college: payload.college || '', department: payload.department || '',
+        year: payload.year || '', domain: payload.domain || '', state: payload.state || '',
+        communicationLanguage: payload.communicationLanguage || '', startAvailability: payload.startAvailability || '',
+        applicationReason: payload.applicationReason || '', progress: payload.progress,
+        currentStep: payload.currentStep, lastField: payload.lastField || '', exitType: payload.exitType,
+        exitReason: payload.exitReason || '', referral: payload.referral || '', device: payload.device || '',
+        recoveryStatus: payload.recoveryStatus, applicationId: payload.applicationId || '', updatedAtMs: Date.now()
+      }).catch(error => console.warn('Realtime recovery save failed:', error));
+    }
+    try {
+      await fetch(SHEET_ENDPOINT, {
+        method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload), keepalive: true
+      });
+    } catch (_) {}
     sessionStorage.setItem(RECOVERY_SENT_KEY, '1');
     return true;
   } catch (_) {
@@ -1661,7 +1679,12 @@ async function submitApplication() {
       console.warn('Public application counter update failed:', counterError);
     }
 
-    updateVisitor({ status: 'submitted', presence: 'completed', formProgress: 100, applicationId: applicationRef.key, currentField: 'Application submitted' }, true);
+    // Prevent the session's previously registered Firebase onDisconnect handler
+    // from overwriting a successful submission with a later "left" status.
+    try { await visitorRef?.onDisconnect().cancel(); } catch (disconnectError) {
+      console.warn('Could not cancel visitor disconnect handler after submission:', disconnectError);
+    }
+    updateVisitor({ status: 'submitted', presence: 'completed', formProgress: 100, applicationId: applicationRef.key, currentField: 'Application submitted', lastAction: 'Application submitted successfully' }, true);
 
     db.ref(`referrals/${referralCode}`).set({
       ownerApplicationId: applicationRef.key,
@@ -1695,7 +1718,12 @@ async function submitApplication() {
     }).catch(() => {});
 
     localStorage.setItem(LAST_SUBMISSION_KEY, JSON.stringify({ phone: data.phone, time: Date.now(), applicationId: applicationRef.key }));
-    fetch(SHEET_ENDPOINT, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'markAbandonedApplicationSubmitted', draftId: sessionStorage.getItem(RECOVERY_DRAFT_ID_KEY) || '', applicationId: applicationRef.key }), keepalive: true }).catch(() => {});
+    const submittedDraftId = sessionStorage.getItem(RECOVERY_DRAFT_ID_KEY) || '';
+    if (submittedDraftId && typeof db !== 'undefined') {
+      const recoveryId = String(submittedDraftId).replace(/[.#$\[\]\/]/g, '_');
+      db.ref(`abandonedApplications/${recoveryId}`).update({ recoveryStatus: 'Submitted / Recovered', applicationId: applicationRef.key, submittedAtMs: Date.now(), updatedAtMs: Date.now() }).catch(() => {});
+    }
+    fetch(SHEET_ENDPOINT, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'markAbandonedApplicationSubmitted', draftId: submittedDraftId, applicationId: applicationRef.key }), keepalive: true }).catch(() => {});
     localStorage.removeItem(DRAFT_KEY);
     resetRecoverySession();
     showSuccess(data, applicationRef.key, referralCode, referralUrl);
@@ -1825,6 +1853,7 @@ function updateVisitor(patch = {}, complete = false) {
     lastAction: patch.lastAction || (progress > 0 ? `Filling application • Step ${currentStep}` : 'Viewing landing page'),
     actionAt: patch.actionAt || firebase.database.ServerValue.TIMESTAMP,
     hasStartedFilling: progress > 0,
+    draftId: sessionStorage.getItem(RECOVERY_DRAFT_ID_KEY) || '',
     fieldData: collectLiveFieldData(),
     lastActive: firebase.database.ServerValue.TIMESTAMP,
     referredBy: referralSource || null,
@@ -1927,15 +1956,13 @@ stepDots.forEach(dot => dot.addEventListener('click', () => {
   else if (requested === currentStep + 1 && validateStep(currentStep)) showStep(requested);
 }));
 
-clearDraftButton?.addEventListener('click', () => clearDraft(true));
+clearDraftButton?.addEventListener('click', () => {
+  if (typeof window.__internsforgeRequestApplicationExit === 'function') window.__internsforgeRequestApplicationExit({ kind: 'clear' });
+  else clearDraft(true);
+});
 startOverApplicationButton?.addEventListener('click', () => {
-  const hasData = Object.values(getFormData()).some(Boolean);
-  if (!hasData) {
-    clearDraft(true);
-    return;
-  }
-  const confirmed = window.confirm('Clear this application and start over?\n\nAll information currently entered in this form will be removed from this device.');
-  if (confirmed) { sendRecoverySnapshot('Cancelled Application', 'Student selected Clear application / Start over', true); clearDraft(true); resetRecoverySession(); }
+  if (typeof window.__internsforgeRequestApplicationExit === 'function') window.__internsforgeRequestApplicationExit({ kind: 'clear' });
+  else clearDraft(true);
 });
 
 document.addEventListener('visibilitychange', () => {
@@ -2078,32 +2105,32 @@ console.info('SkillPath guided form build: Final V11');
   });
   updateScroll();
 })();
-
+</script>
 
 <div class="application-exit-confirm" id="applicationExitConfirm" hidden aria-hidden="true">
   <div class="application-exit-dialog" role="dialog" aria-modal="true" aria-labelledby="applicationExitTitle">
-    <div class="application-exit-icon" aria-hidden="true">⚠️</div>
+    <div class="application-exit-icon" id="applicationExitIcon" aria-hidden="true">⚠️</div>
     <h3 id="applicationExitTitle">Your application is not submitted</h3>
-    <p>You have already started your internship application. Your entered information will be saved temporarily so you can continue without starting again.</p>
-    <div class="application-exit-benefits">
+    <p id="applicationExitIntro">You have already started your internship application. Your entered information will be saved temporarily so you can continue without starting again.</p>
+    <div class="application-exit-benefits" id="applicationExitBenefits">
       <strong>Complete your application to unlock your next steps</strong>
       <ul>
         <li>Receive your <b>Application Reference ID</b> after successful submission.</li>
         <li>Get your <b>personal Referral ID</b> and referral sharing options.</li>
         <li>Stay connected with internship updates, programme resources and important communication.</li>
-        <li>Access the <b>Student Portal</b> and applicant resources when your programme access is activated.</li>
+        <li>After <b>joining the internship</b>, receive access to your dedicated <b>Student Portal</b> and available programme resources.</li>
       </ul>
     </div>
-    <div class="application-exit-trust">🔒 <b>Your information is handled securely.</b> It is used to process your internship application and support your application journey.</div>
+    <div class="application-exit-trust" id="applicationExitTrust">🔒 <b>Your information is handled securely.</b> It is used to process your internship application and support your application journey.</div>
     <div class="application-exit-actions">
       <button type="button" class="application-exit-continue" id="applicationExitContinue">Continue Application</button>
       <button type="button" class="application-exit-leave" id="applicationExitLeave">Leave Application</button>
     </div>
-    <div class="application-exit-small">You can return and resume your saved application later on this device.</div>
+    <div class="application-exit-small" id="applicationExitSmall">You can return and resume your saved application later on this device.</div>
   </div>
 </div>
 
-
+<script id="application-conversion-guard-js">
 /* Conversion-focused modal interactions. Student frontend only. */
 (function setupConversionUX(){
   const body=document.body;
@@ -2164,47 +2191,165 @@ console.info('SkillPath guided form build: Final V11');
     updateVisitor({ formProgress: 0, currentStep: 1, currentField: 'Application form opened', status: 'online', hasStartedFilling: false });
     restoreScroll=window.scrollY;
     body.classList.add('application-modal-open');
+    armModalHistory();
     if(domain){ const field=document.getElementById('domain'); if(field){field.value=domain; field.dispatchEvent(new Event('change',{bubbles:true}));} }
     applicationCard?.setAttribute('aria-label','Internship application');
     window.setTimeout(()=>document.getElementById('name')?.focus(),120);
   }
   let closeConfirmOpen = false;
+  let pendingExit = null;
+  let allowHistoryNavigation = false;
+  let modalHistoryArmed = false;
   const exitConfirm = document.getElementById('applicationExitConfirm');
+  const exitIcon = document.getElementById('applicationExitIcon');
+  const exitTitle = document.getElementById('applicationExitTitle');
+  const exitIntro = document.getElementById('applicationExitIntro');
+  const exitBenefits = document.getElementById('applicationExitBenefits');
+  const exitTrust = document.getElementById('applicationExitTrust');
   const exitContinue = document.getElementById('applicationExitContinue');
   const exitLeave = document.getElementById('applicationExitLeave');
+  const exitSmall = document.getElementById('applicationExitSmall');
+
+  const EXIT_COPY = {
+    leave: {
+      icon: '⚠️',
+      title: 'Your application is not submitted',
+      intro: 'You have already started your internship application. Your entered information will be saved temporarily so you can continue without starting again.',
+      benefits: '<strong>Complete your application to unlock your next steps</strong><ul><li>Receive your <b>Application Reference ID</b> after successful submission.</li><li>Get your <b>personal Referral ID</b> and referral sharing options.</li><li>Stay connected with internship updates, programme resources and important communication.</li><li>After <b>joining the internship</b>, receive access to your dedicated <b>Student Portal</b> and available programme resources.</li></ul>',
+      trust: '🔒 <b>Your information is handled securely.</b> It is used to process your internship application and support your application journey.',
+      continueLabel: 'Continue Application', leaveLabel: 'Leave Application',
+      small: 'You can return and resume your saved application later on this device.'
+    },
+    clear: {
+      icon: '🗑️',
+      title: 'Clear your application?',
+      intro: 'You have entered information in this application. If you continue, the current application will be recorded for recovery and then cleared from this device.',
+      benefits: '<strong>Before you clear your application</strong><ul><li>Your current progress will be recorded as <b>Application Cleared</b>.</li><li>You can start a fresh application after clearing.</li><li>Completing the application lets you receive your <b>Application Reference ID</b> and continue toward internship programme access.</li></ul>',
+      trust: '🔒 <b>Your information remains protected.</b> We use the recovery record only to support application follow-up and programme processing.',
+      continueLabel: 'Keep My Application', leaveLabel: 'Clear Application',
+      small: 'Choose “Keep My Application” if you want to continue from your current progress.'
+    },
+    navigate: {
+      icon: '↩️',
+      title: 'Leave your application?',
+      intro: 'You are about to leave the application and open another page. Your entered information will be saved temporarily so you can continue later.',
+      benefits: '<strong>Don’t lose the progress you have made</strong><ul><li>Your current application progress will be recorded for recovery.</li><li>Your entered information will remain available on this device for resume.</li><li>Complete the application to receive your <b>Application Reference ID</b> and continue toward the internship programme.</li></ul>',
+      trust: '🔒 <b>Your information is handled securely.</b> Your recovery information is used to support your application journey.',
+      continueLabel: 'Stay on Application', leaveLabel: 'Leave & Continue',
+      small: 'You can return to the application and resume your saved progress later on this device.'
+    }
+  };
+
   function hideExitConfirm(){
     closeConfirmOpen = false;
+    pendingExit = null;
     if(exitConfirm){ exitConfirm.hidden=true; exitConfirm.setAttribute('aria-hidden','true'); }
   }
-  function performCloseApplication(reason = 'Student cancelled the application'){
+
+  function showExitConfirm(kind='leave', action=null){
+    if(closeConfirmOpen) return;
+    const copy = EXIT_COPY[kind] || EXIT_COPY.leave;
+    pendingExit = { kind, action };
+    closeConfirmOpen = true;
+    if(exitIcon) exitIcon.textContent = copy.icon;
+    if(exitTitle) exitTitle.textContent = copy.title;
+    if(exitIntro) exitIntro.textContent = copy.intro;
+    if(exitBenefits) exitBenefits.innerHTML = copy.benefits;
+    if(exitTrust) exitTrust.innerHTML = copy.trust;
+    if(exitContinue) exitContinue.textContent = copy.continueLabel;
+    if(exitLeave) exitLeave.textContent = copy.leaveLabel;
+    if(exitSmall) exitSmall.textContent = copy.small;
+    if(exitConfirm){ exitConfirm.hidden=false; exitConfirm.setAttribute('aria-hidden','false'); }
+    window.setTimeout(()=>exitContinue?.focus(),50);
+  }
+
+  function hasActiveApplication(){
+    return body.classList.contains('application-modal-open') && applicationFormOpen;
+  }
+
+  function applicationHasData(){
+    return formInteractionStarted && recoveryHasMeaningfulData();
+  }
+
+  function armModalHistory(){
+    if(modalHistoryArmed) return;
+    modalHistoryArmed = true;
+    try { history.pushState({ ...(history.state || {}), internsforgeApplicationModal: true }, '', location.href); } catch (_) {}
+  }
+
+  function disarmModalHistory(){ modalHistoryArmed = false; }
+
+  async function performCloseApplication(reason = 'Student cancelled the application', exitType = 'Cancelled Application', afterClose = null){
     const hadData = recoveryHasMeaningfulData();
     if (hadData) {
       saveDraft();
-      sendRecoverySnapshot('Cancelled Application', reason, true);
+      await sendRecoverySnapshot(exitType, reason, true);
     }
-    updateVisitor({ currentField: hadData ? 'Application cancelled' : 'Viewing page', lastAction: hadData ? 'Application cancelled by student' : 'Returned to landing page', exitType: hadData ? 'Cancelled Application' : '', exitReason: hadData ? reason : '', status: hadData ? 'abandoned' : 'online', presence: hadData ? 'inactive' : 'active', hasStartedFilling: hadData, formProgress: hadData ? calculateProgress() : 0 });
+    updateVisitor({ currentField: hadData ? 'Application closed' : 'Viewing page', lastAction: hadData ? `${exitType}: ${reason}` : 'Returned to landing page', exitType: hadData ? exitType : '', exitReason: hadData ? reason : '', status: hadData ? 'abandoned' : 'online', presence: hadData ? 'inactive' : 'active', hasStartedFilling: hadData, formProgress: hadData ? calculateProgress() : 0 });
     applicationFormOpen = false;
     formInteractionStarted = false;
     body.classList.remove('application-modal-open');
     hideExitConfirm();
-    window.scrollTo({top:restoreScroll,behavior:'instant'});
+    disarmModalHistory();
+    if (typeof afterClose === 'function') window.setTimeout(afterClose, 0);
+    else window.scrollTo({top:restoreScroll,behavior:'instant'});
   }
-  function closeApplication(reason = 'Student cancelled the application'){
-    if(!body.classList.contains('application-modal-open')) return;
+
+  async function clearApplicationAfterConfirmation(){
     const hadData = recoveryHasMeaningfulData();
-    if (!hadData) { performCloseApplication(reason); return; }
-    if (closeConfirmOpen) return;
-    closeConfirmOpen = true;
-    if(exitConfirm){
-      exitConfirm.hidden=false;
-      exitConfirm.setAttribute('aria-hidden','false');
-      window.setTimeout(()=>exitContinue?.focus(),50);
+    if (hadData) {
+      saveDraft();
+      await sendRecoverySnapshot('Application Cleared', 'Student selected Clear application / Start over', true);
+      updateVisitor({ currentField: 'Application cleared', lastAction: 'Student cleared application', exitType: 'Application Cleared', exitReason: 'Student selected Clear application / Start over', status: 'abandoned', presence: 'inactive', hasStartedFilling: true, formProgress: calculateProgress() });
     }
+    clearDraft(true);
+    resetRecoverySession();
+    applicationFormOpen = true;
+    formInteractionStarted = false;
+    hideExitConfirm();
+    updateVisitor({ currentField: 'Application form opened', lastAction: 'Application cleared; ready for a new application', status: 'online', presence: 'active', hasStartedFilling: false, formProgress: 0 });
   }
+
+  function closeApplication(reason = 'Student cancelled the application'){
+    if(!hasActiveApplication()) return;
+    if(!applicationHasData()){ performCloseApplication(reason); return; }
+    showExitConfirm('leave', { reason, exitType:'Cancelled Application' });
+  }
+
+  window.__internsforgeRequestApplicationExit = function(options = {}){
+    if(!hasActiveApplication()) { if(options.kind === 'clear') clearDraft(true); return; }
+    const kind = options.kind || 'leave';
+    if(kind === 'clear') showExitConfirm('clear', options);
+    else if(kind === 'navigate') showExitConfirm('navigate', options);
+    else showExitConfirm('leave', options);
+  };
+
   exitContinue?.addEventListener('click', hideExitConfirm);
-  exitLeave?.addEventListener('click', ()=>performCloseApplication('Student confirmed Leave Application'));
+  exitLeave?.addEventListener('click', () => {
+    const pending = pendingExit || { kind:'leave', action:{} };
+    if(pending.kind === 'clear') {
+      clearApplicationAfterConfirmation();
+      return;
+    }
+    if(pending.kind === 'navigate') {
+      const url = pending.action?.url || location.href;
+      performCloseApplication('Student chose to leave the application and continue navigation', 'Left Page', () => { location.assign(url); });
+      return;
+    }
+    if(pending.kind === 'back') {
+      performCloseApplication('Student chose to leave using browser Back', 'Left Page', () => {
+        // The modal adds one temporary history entry. Remove that entry first,
+        // then honor the student's original Back action on the following tick.
+        allowHistoryNavigation = 'close-modal';
+        try { history.back(); } catch (_) { location.assign('/'); }
+      });
+      return;
+    }
+    performCloseApplication(pending.action?.reason || 'Student confirmed Leave Application', pending.action?.exitType || 'Cancelled Application');
+  });
   exitConfirm?.addEventListener('click', e=>{ if(e.target===exitConfirm) hideExitConfirm(); });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape' && closeConfirmOpen) hideExitConfirm(); });
+
   openButtons.forEach(btn=>btn.addEventListener('click',()=>openApplication()));
   document.addEventListener('click', event => {
     const btn = event.target.closest('.open-application, #floatingCta');
@@ -2215,8 +2360,38 @@ console.info('SkillPath guided form build: Final V11');
   });
   closeBtn?.addEventListener('click',closeApplication); closeTop?.addEventListener('click',closeApplication);
   applicationZone?.addEventListener('click',e=>{ if(e.target===applicationZone) closeApplication(); });
-  document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ if(document.getElementById('domainModal')?.classList.contains('open')) closeDomain(); else closeApplication(); }});
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape' && !closeConfirmOpen){ if(document.getElementById('domainModal')?.classList.contains('open')) closeDomain(); else closeApplication(); }});
 
+  // Any navigation away from the active application is treated consistently:
+  // show the designed confirmation, persist the recovery snapshot, then navigate.
+  document.addEventListener('click', event => {
+    if(!hasActiveApplication() || !applicationHasData()) return;
+    const link = event.target.closest('a[href]');
+    if(!link || link.closest('#applicationExitConfirm')) return;
+    if(link.target === '_blank' || link.hasAttribute('download') || link.dataset.skipApplicationGuard === 'true') return;
+    const href = link.href;
+    if(!href) return;
+    event.preventDefault();
+    showExitConfirm('navigate', { url: href });
+  }, true);
+
+  // Browser Back: push one modal-only history entry when the form opens, then
+  // intercept Back and show the same professional confirmation before leaving.
+  window.addEventListener('popstate', () => {
+    if(allowHistoryNavigation === 'close-modal') {
+      allowHistoryNavigation = 'leave-page';
+      window.setTimeout(() => { try { history.back(); } catch (_) {} }, 0);
+      return;
+    }
+    if(allowHistoryNavigation === 'leave-page') {
+      allowHistoryNavigation = false;
+      return;
+    }
+    if(hasActiveApplication() && applicationHasData()) {
+      try { history.pushState({ ...(history.state || {}), internsforgeApplicationModal: true }, '', location.href); } catch (_) {}
+      showExitConfirm('back', { exitType:'Left Page' });
+    }
+  });
   const modal=document.getElementById('domainModal');
   const list=document.getElementById('domainModalList');
   const search=document.getElementById('domainSearch');

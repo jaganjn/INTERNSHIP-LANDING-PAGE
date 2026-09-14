@@ -364,7 +364,25 @@ body.application-modal-open #message{display:block;position:relative;z-index:3;m
 .application-exit-continue{border:1px solid #cbd7eb;background:#fff;color:#21437a}
 .application-exit-leave{border:1px solid #1d4ed8;background:linear-gradient(135deg,#2459d6,#5437c9);color:#fff;box-shadow:0 10px 22px rgba(42,78,190,.22)}
 .application-exit-dialog .application-exit-small{margin-top:12px;text-align:center;font-size:10px;color:#8491a5}
-@media(max-width:600px){.application-exit-confirm{padding:14px;align-items:end}.application-exit-dialog{border-radius:22px;padding:23px 20px}.application-exit-actions{grid-template-columns:1fr}.application-exit-continue{order:0}.application-exit-leave{order:1}}
+@media(max-width:600px){
+  .application-exit-confirm{padding:0;align-items:end;background:rgba(6,15,30,.68);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .application-exit-dialog{width:100%;max-width:none;max-height:min(88dvh,760px);overflow:auto;border-radius:26px 26px 0 0;padding:18px 17px calc(18px + env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,.72);border-bottom:0;background:linear-gradient(180deg,#ffffff 0%,#f7f9ff 100%);box-shadow:0 -20px 70px rgba(4,16,39,.34);animation:applicationExitSheetIn .22s ease-out}
+  .application-exit-dialog:before{content:"";display:block;width:42px;height:4px;border-radius:999px;background:#c9d3e4;margin:0 auto 15px}
+  .application-exit-icon{width:44px;height:44px;border-radius:14px;margin:0 auto 12px;font-size:21px;background:#fff7e7;border-color:#f1d79e}
+  .application-exit-dialog h3{text-align:center;font-size:21px;line-height:1.22;letter-spacing:-.35px;margin-bottom:8px}
+  .application-exit-dialog p{text-align:center;font-size:12.5px;line-height:1.58;color:#5c6b82;padding:0 4px}
+  .application-exit-benefits{margin:13px 0 11px;padding:12px 12px;border-radius:15px;background:#f6f8ff;border-color:#dfe6f3;font-size:10.5px;line-height:1.48}
+  .application-exit-benefits strong{font-size:11.5px;margin-bottom:6px;color:#1e3764}
+  .application-exit-benefits ul{padding-left:17px}
+  .application-exit-benefits li{margin:3px 0}
+  .application-exit-trust{margin:11px 0 13px;padding:10px 11px;border-radius:13px;font-size:10.5px;line-height:1.45;text-align:center;background:#f1f6ff;border-color:#d9e6fb}
+  .application-exit-actions{grid-template-columns:1fr 1fr;gap:8px;position:sticky;bottom:0;padding-top:4px;background:linear-gradient(180deg,rgba(247,249,255,0),#f7f9ff 18%)}
+  .application-exit-actions button{min-height:48px;border-radius:14px;padding:0 10px;font-size:12px;letter-spacing:-.1px}
+  .application-exit-continue{order:0}
+  .application-exit-leave{order:1}
+  .application-exit-small{font-size:9.5px;line-height:1.4;margin-top:9px;padding:0 8px}
+}
+@keyframes applicationExitSheetIn{from{transform:translateY(18px);opacity:.7}to{transform:translateY(0);opacity:1}}
 </style>
 <style id="domain-mobile-visibility-and-card-transitions">
 /* Mobile domain cards: strong contrast and lightweight per-carousel transitions. */

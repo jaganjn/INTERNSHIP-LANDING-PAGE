@@ -1347,7 +1347,38 @@ body.module-modal-open{overflow:hidden}
   }
   body.admin-page .hero h2{font-size:21px;letter-spacing:-.045em;margin:6px 0 5px}
   body.admin-page .hero p{font-size:9px;line-height:1.45;color:#6f829f}
-  body.admin-page .hero-actions{display:none}
+  /* Keep the Control Hub visible on mobile; hide only the desktop health block. */
+  body.admin-page .hero-actions{
+    display:flex;
+    position:absolute;
+    top:10px;
+    right:12px;
+    z-index:20;
+  }
+  body.admin-page .hero-health{display:none}
+  body.admin-page .hero-module-menu{display:block}
+  body.admin-page .hero-module-menu > summary{
+    min-height:34px;
+    padding:0 9px;
+    border-radius:10px;
+    font-size:8px;
+    gap:6px;
+    background:rgba(12,27,47,.94);
+    border:1px solid rgba(91,136,224,.28);
+    box-shadow:0 8px 20px rgba(0,0,0,.18);
+  }
+  body.admin-page .hub-button-label{display:inline}
+  body.admin-page .hub-button-icon{transform:scale(.82)}
+  body.admin-page .hero-module-dropdown{
+    right:0;
+    left:auto;
+    top:42px;
+    width:218px;
+    max-width:calc(100vw - 24px);
+    max-height:65vh;
+    overflow:auto;
+    z-index:100;
+  }
   .mobile-operations-cockpit{display:block;padding:3px 11px 25px;color:#edf4ff}
   .mo-status-strip{display:flex;align-items:center;gap:8px;padding:9px 10px;margin-bottom:8px;border:1px solid rgba(77,146,220,.17);border-radius:12px;background:#081625}
   .mo-status-strip>i{width:7px;height:7px;flex:none;border-radius:50%;background:#63ed8c;box-shadow:0 0 11px rgba(99,237,140,.45)}

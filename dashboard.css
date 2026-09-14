@@ -1392,8 +1392,43 @@ body.module-modal-open{overflow:hidden}
   body.admin-page .hub-button-label{
     display:inline;
     white-space:nowrap;
+    font-size:8px;
+    letter-spacing:.01em;
+    font-weight:800;
   }
-  body.admin-page .hub-button-icon{transform:scale(.82);flex:none}
+  /* Corporate Operations mark — replaces the playful star icon on mobile. */
+  body.admin-page .hub-button-mark{
+    width:22px;
+    height:22px;
+    flex:none;
+    display:grid;
+    grid-template-columns:repeat(2,5px);
+    grid-template-rows:repeat(2,5px);
+    gap:3px;
+    place-content:center;
+    border-radius:7px;
+    background:linear-gradient(145deg,#1b3556,#10243e);
+    border:1px solid rgba(119,157,216,.28);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 3px 10px rgba(0,0,0,.18);
+  }
+  body.admin-page .hub-button-mark span{
+    width:5px;
+    height:5px;
+    display:block;
+    border-radius:1.5px;
+    background:#9eb7dc;
+  }
+  body.admin-page .hub-button-mark span:nth-child(1){opacity:.72}
+  body.admin-page .hub-button-mark span:nth-child(2){opacity:.9}
+  body.admin-page .hub-button-mark span:nth-child(3){opacity:.9}
+  body.admin-page .hub-button-mark:after{
+    content:"";
+    width:5px;
+    height:5px;
+    display:block;
+    border-radius:1.5px;
+    background:#5f8dcb;
+  }
   body.admin-page .hero-module-dropdown{
     right:0;
     left:auto;
@@ -1428,4 +1463,16 @@ body.module-modal-open{overflow:hidden}
   .mo-tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}.mo-tool-grid button{min-width:0;min-height:63px;padding:9px;display:grid;grid-template-columns:25px minmax(0,1fr);column-gap:6px;align-items:center;text-align:left;border:1px solid rgba(76,133,207,.11);border-radius:11px;background:#0a1726;color:#eef4ff}.mo-tool-grid button>span{grid-row:1/3;width:25px;height:25px;display:grid;place-items:center;border-radius:7px;background:#172744;color:#8ea4ff;font-size:10px}.mo-tool-grid b{font-size:7.5px;line-height:1.1}.mo-tool-grid small{font-size:6.5px;color:#627894;margin-top:2px}.mo-tool-grid button:active{transform:scale(.985);background:#102038}
   .mo-bottom-health{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:11px 3px 0;color:#627994}.mo-bottom-health span{font-size:7.5px;font-weight:800}.mo-bottom-health span i{display:inline-block;width:5px;height:5px;margin-right:4px;border-radius:50%;background:#60e98e;box-shadow:0 0 7px rgba(96,233,142,.4)}.mo-bottom-health small{font-size:6.5px}
   @media(max-width:390px){.mobile-operations-cockpit{padding-left:9px;padding-right:9px}.mo-split-grid{grid-template-columns:1fr}.mo-hero-card{min-height:105px}.mo-priority-card{min-height:76px;padding:9px}}
+}
+
+/* V3.9.3 corporate Operations mark */
+.hub-button-mark{display:inline-grid;flex:none}
+@media (min-width:701px){
+  .hub-button-mark{
+    width:20px;height:20px;grid-template-columns:repeat(2,4px);
+    grid-template-rows:repeat(2,4px);gap:2.5px;place-content:center;
+    border-radius:6px;background:#172a45;border:1px solid rgba(119,157,216,.22);
+  }
+  .hub-button-mark span{width:4px;height:4px;border-radius:1px;background:#8da7cc}
+  .hub-button-mark:after{content:"";width:4px;height:4px;border-radius:1px;background:#587fb5}
 }

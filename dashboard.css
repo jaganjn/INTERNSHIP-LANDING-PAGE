@@ -1502,3 +1502,150 @@ body.module-modal-open{overflow:hidden}
   }
   body.admin-page .hero-module-close:active{background:rgba(77,125,192,.08)}
 }
+
+/* ==========================================================
+   V3.9.5 — MOBILE CONTROL HUB PROPER POPUP
+   The menu is a viewport-level popup so it never covers the
+   top navigation/title area. Desktop is untouched.
+   ========================================================== */
+@media (max-width:700px){
+  body.admin-page .hero-actions{
+    position:absolute;
+    top:10px;
+    right:12px;
+    left:12px;
+    z-index:1000;
+    display:flex;
+    justify-content:flex-end;
+    align-items:flex-start;
+  }
+
+  body.admin-page .hero-module-menu{
+    position:relative;
+    margin:0;
+  }
+
+  body.admin-page .hero-module-menu > summary{
+    min-width:142px;
+    width:auto;
+    height:36px;
+    min-height:36px;
+    box-sizing:border-box;
+    padding:0 10px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    background:#0c1b2d;
+    border:1px solid rgba(104,151,224,.34);
+    color:#eaf2ff;
+    box-shadow:0 7px 20px rgba(0,0,0,.2);
+  }
+
+  body.admin-page .hero-module-menu > summary .hub-button-label{
+    display:inline;
+    white-space:nowrap;
+    font-size:8px;
+    font-weight:800;
+    letter-spacing:.02em;
+  }
+
+  body.admin-page .hero-module-menu > summary .hub-button-mark{
+    width:20px;
+    height:20px;
+    flex:none;
+    display:grid;
+    grid-template-columns:repeat(2,4px);
+    grid-template-rows:repeat(2,4px);
+    gap:3px;
+    place-content:center;
+    border-radius:6px;
+    background:#152942;
+    border:1px solid rgba(132,168,218,.25);
+  }
+  body.admin-page .hero-module-menu > summary .hub-button-mark span{
+    width:4px;height:4px;display:block;border-radius:1px;background:#9db5d6;
+  }
+  body.admin-page .hero-module-menu > summary .hub-button-mark span:nth-child(4){
+    background:#5e86bd;
+  }
+
+  /* Critical fix: detach the open menu from the hero stacking context. */
+  body.admin-page .hero-module-menu[open] .hero-module-dropdown{
+    position:fixed;
+    top:132px;
+    left:12px;
+    right:12px;
+    width:auto;
+    max-width:none;
+    max-height:calc(100vh - 148px);
+    overflow-y:auto;
+    overflow-x:hidden;
+    box-sizing:border-box;
+    padding:8px;
+    display:grid;
+    gap:4px;
+    border-radius:16px;
+    background:#071524;
+    border:1px solid rgba(70,139,221,.25);
+    box-shadow:0 22px 65px rgba(0,0,0,.58),0 0 0 1px rgba(255,255,255,.02);
+    z-index:2000;
+    overscroll-behavior:contain;
+  }
+
+  body.admin-page .hero-module-menu[open] .hero-module-dropdown button{
+    min-height:48px;
+    padding:0 12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    border:1px solid rgba(69,116,177,.10);
+    background:#091827;
+    border-radius:11px;
+    color:#cbd7e8;
+    font-size:9px;
+    font-weight:700;
+  }
+  body.admin-page .hero-module-menu[open] .hero-module-dropdown button span{
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  body.admin-page .hero-module-menu[open] .hero-module-dropdown button:active{
+    background:#10233b;
+  }
+
+  body.admin-page .hero-module-close{
+    position:fixed;
+    left:12px;
+    right:12px;
+    top:calc(100vh - 64px);
+    width:auto;
+    min-height:42px;
+    z-index:2100;
+    box-sizing:border-box;
+    border:1px solid rgba(91,135,204,.22);
+    border-radius:11px;
+    background:#0b1a2b;
+    box-shadow:0 12px 30px rgba(0,0,0,.35);
+  }
+
+  /* Keep enough room above the close action for the scrollable menu. */
+  body.admin-page .hero-module-menu[open] .hero-module-dropdown{
+    padding-bottom:58px;
+  }
+}
+
+@media (max-width:390px){
+  body.admin-page .hero-module-menu[open] .hero-module-dropdown{
+    top:128px;
+    left:9px;
+    right:9px;
+    max-height:calc(100vh - 143px);
+  }
+  body.admin-page .hero-module-close{
+    left:9px;right:9px;
+  }
+}

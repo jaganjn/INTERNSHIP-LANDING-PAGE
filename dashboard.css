@@ -1654,3 +1654,32 @@ body.module-modal-open{overflow:hidden}
 /* V13 application recovery workspace */
 .recovery-center-panel{grid-column:1/-1}.recovery-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 16px}.recovery-summary>div{padding:14px;border:1px solid #e2e8f0;border-radius:14px;background:#f8fafc}.recovery-summary strong,.recovery-summary span{display:block}.recovery-summary strong{font:800 22px Manrope;color:#23395d}.recovery-summary span{font-size:10px;color:#77849a;margin-top:3px}.recovery-list{display:grid;gap:10px}.recovery-item{padding:15px;border:1px solid #e0e6ef;border-radius:15px;background:#fff}.recovery-item-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.recovery-item-top strong,.recovery-item-top small{display:block}.recovery-item-top strong{font:800 14px Manrope;color:#20385e}.recovery-item-top small{font-size:10px;color:#7b8799;margin-top:4px}.recovery-type{font-size:9px;font-weight:800;padding:6px 8px;border-radius:999px;background:#fff4df;color:#9b6500;white-space:nowrap}.recovery-type.cancelled{background:#fff0f1;color:#b23a46}.recovery-progress{height:7px;border-radius:999px;background:#edf1f7;margin:13px 0 8px;overflow:hidden}.recovery-progress span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#4c6fe8,#8b5cf6)}.recovery-meta,.recovery-contact{display:flex;flex-wrap:wrap;gap:10px;font-size:10px;color:#77849a}.recovery-meta b,.recovery-contact b{color:#2b4165}.recovery-contact{margin-top:8px;padding-top:8px;border-top:1px solid #edf0f5}
 @media(max-width:700px){.recovery-center-panel{grid-column:auto}.recovery-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.recovery-item{padding:13px}.recovery-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.recovery-contact{display:grid;gap:6px}.recovery-item-top{gap:8px}}
+
+/* V13.1 — dedicated Abandoned Applications workspace */
+.abandoned-dashboard{min-width:0}
+.abandoned-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:18px}
+.abandoned-head h2{margin:4px 0 6px}
+.abandoned-head p{margin:0;color:#94a3b8;max-width:760px}
+.abandoned-toolbar{grid-template-columns:minmax(280px,2fr) repeat(3,minmax(160px,1fr)) auto}
+.abandoned-table-wrap{overflow:auto}
+.abandoned-table{min-width:980px}
+.abandoned-table td{vertical-align:middle}
+.abandoned-student{display:flex;flex-direction:column;gap:4px;min-width:170px}
+.abandoned-student strong{color:inherit}
+.abandoned-student small,.abandoned-muted{color:#94a3b8}
+.abandoned-progress{min-width:120px}
+.abandoned-progress-track{height:7px;border-radius:99px;background:rgba(148,163,184,.16);overflow:hidden;margin-bottom:5px}
+.abandoned-progress-track span{display:block;height:100%;border-radius:inherit;background:currentColor}
+.abandoned-progress b{font-size:12px}
+.abandoned-type{display:inline-flex;padding:6px 9px;border-radius:999px;background:rgba(245,158,11,.12);color:#f59e0b;font-size:11px;font-weight:800;white-space:nowrap}
+.abandoned-type.cancelled{background:rgba(244,63,94,.12);color:#fb7185}
+.abandoned-recovery{font-size:11px;font-weight:800}
+.abandoned-action{display:flex;gap:6px;flex-wrap:wrap}
+.abandoned-action button{border:1px solid rgba(148,163,184,.22);background:transparent;color:inherit;border-radius:8px;padding:7px 9px;font-weight:700;cursor:pointer}
+.abandoned-action button:hover{background:rgba(148,163,184,.08)}
+@media(max-width:700px){
+  .abandoned-head{display:block}
+  .abandoned-head .crm-head-actions{margin-top:12px;display:grid;grid-template-columns:1fr 1fr}
+  .abandoned-toolbar{grid-template-columns:1fr}
+  .abandoned-table{min-width:940px}
+}

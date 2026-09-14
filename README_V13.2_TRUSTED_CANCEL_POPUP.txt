@@ -1,0 +1,1 @@
+V13.2 adds a professional custom cancellation confirmation modal for in-progress applications. It replaces the browser confirm dialog for the normal Close action, explains temporary save/privacy in trust-oriented language, and preserves the existing abandoned-application save/update flow.

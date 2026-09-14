@@ -32,7 +32,7 @@
         <button type="button" data-admin-module="activity">⌁ <span>Applications Activity</span></button>
         <button type="button" data-admin-module="analytics">◫ <span>College Insights</span></button>
         <button type="button" data-admin-module="liveVisitors">◉ <span>Live Visitors</span></button>
-        <button type="button" data-admin-module="applicationRecovery">↻ <span>Application Recovery</span></button>
+        <button type="button" data-admin-module="abandonedApplications">↻ <span>Abandoned Applications</span></button>
         <button type="button" data-admin-module="applicationVisitors">◌ <span>Application Form Visitors</span></button>
         <button type="button" data-admin-module="applications">▥ <span>Recent Applications</span></button>
         <button type="button" data-admin-module="domainInsights">◆ <span>Domain Insights</span></button>
@@ -122,6 +122,33 @@
     </table>
   </div>
   <div class="crm-footer"><span id="crmResultCount">0 applications</span><small id="crmSyncStatus">● Firebase live • CRM edits are pushed to Google Sheets automatically. Bulk sync is available above.</small></div>
+</section>
+
+<section class="panel admin-module abandoned-dashboard" id="abandonedApplications">
+  <div class="section-head abandoned-head">
+    <div><span class="eyebrow">ABANDONED APPLICATIONS <b class="crm-live-badge">● LIVE</b></span><h2>Abandoned Application Management</h2><p>Search, filter, review and recover students who started but did not submit an application.</p></div>
+    <div class="crm-head-actions"><button id="exportAbandonedButton" class="panel-action" type="button">Export CSV</button><button id="refreshAbandonedButton" class="panel-action" type="button">↻ Refresh</button></div>
+  </div>
+  <div class="crm-metrics abandoned-metrics">
+    <article><span>Total Abandoned</span><strong id="abTotal">0</strong></article>
+    <article><span>High Intent ≥60%</span><strong id="abHighIntent">0</strong></article>
+    <article><span>Cancelled</span><strong id="abCancelled">0</strong></article>
+    <article><span>Left Page</span><strong id="abLeft">0</strong></article>
+    <article><span>Needs Follow-up</span><strong id="abNeedsFollowup">0</strong></article>
+    <article><span>Recovered</span><strong id="abRecovered">0</strong></article>
+  </div>
+  <div class="crm-toolbar abandoned-toolbar">
+    <div class="crm-search"><span>⌕</span><input id="abSearch" type="search" placeholder="Search name, phone, email, college, domain or draft ID"></div>
+    <select id="abTypeFilter"><option value="">All exit types</option><option value="Cancelled Application">Cancelled Application</option><option value="Left Page">Left Page</option><option value="Browser Closed">Browser Closed</option><option value="Inactive / Timeout">Inactive / Timeout</option></select>
+    <select id="abIntentFilter"><option value="">All intent levels</option><option value="high">High intent ≥60%</option><option value="medium">30–59%</option><option value="low">Below 30%</option></select>
+    <select id="abRecoveryFilter"><option value="">All recovery status</option><option value="Needs Follow-up">Needs Follow-up</option><option value="Contacted">Contacted</option><option value="Recovered">Recovered</option><option value="Submitted / Recovered">Submitted / Recovered</option></select>
+    <button id="abClearFilters" class="panel-action secondary" type="button">Clear</button>
+  </div>
+  <div class="crm-table-wrap abandoned-table-wrap">
+    <table class="crm-table abandoned-table"><thead><tr><th>Student</th><th>College / Academic</th><th>Domain</th><th>Progress</th><th>Exit</th><th>Last Active</th><th>Recovery</th><th>Action</th></tr></thead>
+    <tbody id="abandonedTableBody"><tr><td colspan="8" class="empty">Loading abandoned applications…</td></tr></tbody></table>
+  </div>
+  <div class="crm-footer"><span id="abResultCount">0 abandoned applications</span><small>Live Firebase sessions are shown here immediately after an abandonment/cancellation event.</small></div>
 </section>
 
 <div id="adminModuleHint" class="admin-module-hint"><strong>Workspace ready</strong><span>Open <b>Control Hub</b> and choose a module. It will open in a focused popup, keeping this dashboard compact.</span></div>

@@ -89,6 +89,7 @@ let activeApplicationId = null;
 let activeActivityListenerRef = null;
 let counselorNames = [];
 let selectedApplicationIds = new Set();
+let abandonedFilteredRows = [];
 
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -318,6 +319,87 @@ function renderRecoveryCenter(rows) {
   }).join('') : '<p class="empty">No incomplete applications in the recent recovery window.</p>';
 }
 
+function renderAbandonedDashboard(rows) {
+  const all = rows.filter(v => ['abandoned','left'].includes(v.state) && Number(v.formProgress || 0) > 0)
+    .sort((a,b) => asMs(b.leftAt || b.abandonedAt || b.lastActive) - asMs(a.leftAt || a.abandonedAt || a.lastActive));
+  const search = String(el('abSearch')?.value || '').trim().toLowerCase();
+  const type = String(el('abTypeFilter')?.value || '');
+  const intent = String(el('abIntentFilter')?.value || '');
+  const recovery = String(el('abRecoveryFilter')?.value || '');
+  const filtered = all.filter(v => {
+    const d = v.fieldData || {};
+    const hay = [d.name,d.phone,d.email,d.college,d.domain,v.id,v.draftId].join(' ').toLowerCase();
+    const progress = Number(v.formProgress || 0);
+    const exit = String(v.exitType || (String(v.lastAction || '').toLowerCase().includes('cancel') ? 'Cancelled Application' : 'Left Page'));
+    const status = String(v.recoveryStatus || 'Needs Follow-up');
+    return (!search || hay.includes(search)) && (!type || exit === type) &&
+      (!recovery || status === recovery) &&
+      (!intent || (intent === 'high' ? progress >= 60 : intent === 'medium' ? progress >= 30 && progress < 60 : progress < 30));
+  });
+  abandonedFilteredRows = filtered;
+  const high = all.filter(v => Number(v.formProgress || 0) >= 60).length;
+  const cancelled = all.filter(v => String(v.exitType || v.lastAction || '').toLowerCase().includes('cancel')).length;
+  const left = all.length - cancelled;
+  const needs = all.filter(v => String(v.recoveryStatus || 'Needs Follow-up') === 'Needs Follow-up').length;
+  const recovered = all.filter(v => ['Recovered','Submitted / Recovered'].includes(String(v.recoveryStatus || ''))).length;
+  [['abTotal',all.length],['abHighIntent',high],['abCancelled',cancelled],['abLeft',Math.max(0,left)],['abNeedsFollowup',needs],['abRecovered',recovered]].forEach(([id,val])=>{const n=el(id);if(n)n.textContent=val;});
+  const body = el('abandonedTableBody');
+  if (!body) return;
+  body.innerHTML = filtered.length ? filtered.map(v => {
+    const d = v.fieldData || {};
+    const progress = Math.max(0,Math.min(100,Number(v.formProgress || 0)));
+    const exit = String(v.exitType || (String(v.lastAction || '').toLowerCase().includes('cancel') ? 'Cancelled Application' : 'Left Page'));
+    const status = String(v.recoveryStatus || 'Needs Follow-up');
+    const colourClass = exit.toLowerCase().includes('cancel') ? 'cancelled' : '';
+    const phone = String(d.phone || v.phone || '').replace(/\D/g,'');
+    const wa = phone ? `https://wa.me/${phone}` : '#';
+    return `<tr>
+      <td><div class="abandoned-student"><strong>${esc(d.name || v.name || 'Anonymous applicant')}</strong><small>${esc(d.email || v.email || 'No email')}</small><small>${esc(d.phone || v.phone || 'No WhatsApp')}</small></div></td>
+      <td>${esc(d.college || v.college || '—')}<br><span class="abandoned-muted">${esc(d.department || v.department || '—')} • Year ${esc(d.year || v.year || '—')}</span></td>
+      <td>${esc(d.domain || v.domain || 'Not selected')}</td>
+      <td><div class="abandoned-progress"><div class="abandoned-progress-track"><span style="width:${progress}%"></span></div><b>${progress}%</b> · Step ${esc(v.currentStep || '1')}</div></td>
+      <td><span class="abandoned-type ${colourClass}">${esc(exit)}</span><br><small class="abandoned-muted">${esc(v.exitReason || v.currentField || '—')}</small></td>
+      <td>${esc(fmt(v.leftAt || v.abandonedAt || v.lastActive))}</td>
+      <td><span class="abandoned-recovery">${esc(status)}</span></td>
+      <td><div class="abandoned-action"><button type="button" data-ab-view="${esc(v.id)}">View</button>${phone ? `<button type="button" data-ab-wa="${esc(wa)}">WhatsApp</button>` : ''}<button type="button" data-ab-contact="${esc(v.id)}">Contacted</button></div></td>
+    </tr>`;
+  }).join('') : '<tr><td colspan="8" class="empty">No abandoned applications match the current filters.</td></tr>';
+  const count = el('abResultCount'); if(count) count.textContent = `${filtered.length} of ${all.length} abandoned applications`;
+}
+
+function updateAbandonedRecoveryStatus(visitorId, status) {
+  const v = visitors[visitorId];
+  if (!v) return;
+  const d = v.fieldData || {};
+  v.recoveryStatus = status;
+  renderAbandonedDashboard(Object.entries(visitors).map(([id,x])=>({id,...x,state:sessionState(x,Date.now())})));
+  const payload = {
+    action:'saveAbandonedApplication', draftId:v.draftId || visitorId, startedAt:v.startedAt || '', lastActive:new Date().toISOString(),
+    ...d, progress:Number(v.formProgress||0), currentStep:v.currentStep||1, lastField:v.currentField||'',
+    exitType:v.exitType || (String(v.lastAction||'').toLowerCase().includes('cancel')?'Cancelled Application':'Left Page'),
+    exitReason:v.exitReason||'', referral:v.referral||'', device:v.device||'', recoveryStatus:status, applicationId:v.applicationId||''
+  };
+  fetch(SHEETS_RECOVERY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),keepalive:true}).catch(console.warn);
+  db.ref(`liveVisitors/${visitorId}`).update({recoveryStatus:status});
+}
+
+function setupAbandonedDashboardActions() {
+  ['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id => el(id)?.addEventListener('input',()=>renderAbandonedDashboard(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})))));
+  el('abClearFilters')?.addEventListener('click',()=>{['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id=>{const n=el(id);if(n)n.value='';});renderAbandonedDashboard(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})));});
+  el('refreshAbandonedButton')?.addEventListener('click',renderVisitors);
+  el('exportAbandonedButton')?.addEventListener('click',()=>{
+    const rows=abandonedFilteredRows; const headers=['Name','Phone','Email','College','Department','Year','Domain','Progress %','Current Step','Exit Type','Exit Reason','Last Active','Recovery Status','Draft ID'];
+    const csv=[headers,...rows.map(v=>{const d=v.fieldData||{};return[d.name||v.name||'',d.phone||v.phone||'',d.email||v.email||'',d.college||v.college||'',d.department||v.department||'',d.year||v.year||'',d.domain||v.domain||'',v.formProgress||0,v.currentStep||'',v.exitType||'',v.exitReason||'',v.leftAt||v.lastActive||'',v.recoveryStatus||'Needs Follow-up',v.draftId||v.id||''];})].map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`internsforge-abandoned-${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  });
+  el('abandonedTableBody')?.addEventListener('click',e=>{
+    const view=e.target.closest('[data-ab-view]'), wa=e.target.closest('[data-ab-wa]'), contact=e.target.closest('[data-ab-contact]');
+    if(wa){window.open(wa.dataset.abWa,'_blank','noopener');return;}
+    if(contact){updateAbandonedRecoveryStatus(contact.dataset.abContact,'Contacted');return;}
+    if(view){const v=visitors[view.dataset.abView];if(v){const d=v.fieldData||{};alert(`Abandoned Application\n\nName: ${d.name||'—'}\nPhone: ${d.phone||'—'}\nEmail: ${d.email||'—'}\nCollege: ${d.college||'—'}\nDomain: ${d.domain||'—'}\nProgress: ${v.formProgress||0}%\nStep: ${v.currentStep||'—'}\nExit: ${v.exitType||v.lastAction||'—'}\nLast Active: ${fmt(v.leftAt||v.lastActive)}`);}}
+  });
+}
+
 function renderVisitors() {
   const now = Date.now();
   const rows = Object.entries(visitors)
@@ -357,6 +439,7 @@ function renderVisitors() {
 
   E.visitorList.innerHTML = activeMarkup + inactiveMarkup;
   renderRecoveryCenter(rows);
+  renderAbandonedDashboard(rows);
   updateStamp();
   renderMobileOperationsCockpit();
 }
@@ -2327,6 +2410,8 @@ function handleMobileOperationsAction(action) {
 }
 
 /* === Single top-right navigation + focused popup workspace === */
+setupAbandonedDashboardActions();
+
 (function setupCompactAdminWorkspace(){
   const menu = document.getElementById('adminModuleMenu');
   const hint = document.getElementById('adminModuleHint');
@@ -2338,7 +2423,8 @@ function handleMobileOperationsAction(action) {
   if(!menu || !modal || !modalBody) return;
 
   const titles = {
-    applicationCRM: ['Application CRM', 'Search, contact, assign and manage every application.'],
+    applicationCRM: ['Application CRM', 'Search, contact, assign and manage every submitted application.'],
+    abandonedApplications: ['Abandoned Applications', 'Search, review, contact and recover incomplete applications.'],
     activity: ['Applications Activity', 'Live application flow and the last 7 days.'],
     analytics: ['College Insights', 'See which colleges are generating applications.'],
     liveVisitors: ['Live Visitors', 'Monitor active visitors and application sessions.'],
@@ -2354,6 +2440,7 @@ function handleMobileOperationsAction(action) {
   const nodesFor = target => {
     if(target === 'referrals') return [...document.querySelectorAll('.admin-referral-module')];
     if(target === 'applicationCRM') return [document.getElementById('applicationCRM')];
+    if(target === 'abandonedApplications') return [document.getElementById('abandonedApplications')];
     return [document.getElementById(target)];
   };
 

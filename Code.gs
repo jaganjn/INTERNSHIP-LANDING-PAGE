@@ -1494,6 +1494,138 @@ function logApplicationSheetEdit_(applicationId, source, actor, editedColumn, ol
   });
 }
 
+
+
+/**
+ * ==========================================================
+ * APPLICATION RECOVERY / ABANDONMENT TRACKING
+ * ==========================================================
+ * Stores incomplete application sessions in a dedicated sheet.
+ * The browser sends only a snapshot when a meaningful application
+ * is cancelled/left; completed submissions are marked submitted.
+ */
+const ABANDONED_SHEET_NAME = "Abandoned Applications";
+const ABANDONED_HEADERS = [
+  "Recorded At", "Draft ID", "Started At", "Last Active", "Name", "Phone",
+  "Email", "College", "Department", "Year", "Domain", "State",
+  "Communication Language", "Start Availability", "Application Reason",
+  "Progress %", "Current Step", "Last Field", "Exit Type", "Exit Reason",
+  "Referral", "Device", "Recovery Status", "Application ID"
+];
+
+function ensureAbandonedApplicationsSheet_() {
+  const ss = getMasterSpreadsheet_();
+  let sheet = ss.getSheetByName(ABANDONED_SHEET_NAME);
+  if (!sheet) sheet = ss.insertSheet(ABANDONED_SHEET_NAME);
+
+  if (sheet.getLastRow() === 0) {
+    sheet.getRange(1, 1, 1, ABANDONED_HEADERS.length).setValues([ABANDONED_HEADERS]);
+    sheet.setFrozenRows(1);
+  } else {
+    const current = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), ABANDONED_HEADERS.length)).getValues()[0];
+    ABANDONED_HEADERS.forEach((header, index) => {
+      if (String(current[index] || "").trim() !== header) sheet.getRange(1, index + 1).setValue(header);
+    });
+  }
+  return sheet;
+}
+
+function setupAbandonedApplicationsSheet() {
+  const sheet = ensureAbandonedApplicationsSheet_();
+  return {status:"success", sheetName:sheet.getName(), message:"Abandoned Applications sheet is ready."};
+}
+
+function normalizeRecoveryText_(v, max) {
+  const text = String(v == null ? "" : v).trim();
+  return max ? text.slice(0, max) : text;
+}
+
+function saveAbandonedApplication(raw) {
+  raw = raw || {};
+  const draftId = normalizeRecoveryText_(raw.draftId || raw.visitorId, 120);
+  if (!draftId) return jsonResponse({status:"error", message:"Draft ID is required."});
+
+  const sheet = ensureAbandonedApplicationsSheet_();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(8000);
+  try {
+    const values = sheet.getLastRow() > 1
+      ? sheet.getRange(2, 1, sheet.getLastRow() - 1, ABANDONED_HEADERS.length).getValues()
+      : [];
+    let rowNumber = -1;
+    for (let i = 0; i < values.length; i++) {
+      if (String(values[i][1] || "").trim() === draftId) { rowNumber = i + 2; break; }
+    }
+
+    const now = new Date();
+    const row = [
+      now,
+      draftId,
+      normalizeRecoveryText_(raw.startedAt, 80),
+      normalizeRecoveryText_(raw.lastActive, 80),
+      normalizeRecoveryText_(raw.name, 120),
+      normalizeRecoveryText_(raw.phone, 40),
+      normalizeRecoveryText_(raw.email, 180),
+      normalizeRecoveryText_(raw.college, 180),
+      normalizeRecoveryText_(raw.department, 120),
+      normalizeRecoveryText_(raw.year, 40),
+      normalizeRecoveryText_(raw.domain, 160),
+      normalizeRecoveryText_(raw.state, 100),
+      normalizeRecoveryText_(raw.communicationLanguage, 80),
+      normalizeRecoveryText_(raw.startAvailability, 100),
+      normalizeRecoveryText_(raw.applicationReason, 600),
+      Math.max(0, Math.min(100, Number(raw.progress) || 0)),
+      normalizeRecoveryText_(raw.currentStep, 40),
+      normalizeRecoveryText_(raw.lastField, 120),
+      normalizeRecoveryText_(raw.exitType || "Left Page", 60),
+      normalizeRecoveryText_(raw.exitReason, 240),
+      normalizeRecoveryText_(raw.referral, 120),
+      normalizeRecoveryText_(raw.device, 80),
+      normalizeRecoveryText_(raw.recoveryStatus || "Needs Follow-up", 60),
+      normalizeRecoveryText_(raw.applicationId, 120)
+    ];
+
+    if (rowNumber > 0) {
+      // Preserve the original start time and recorded timestamp; refresh the latest snapshot.
+      const existing = sheet.getRange(rowNumber, 1, 1, ABANDONED_HEADERS.length).getValues()[0];
+      row[0] = existing[0] || now;
+      row[2] = existing[2] || row[2];
+      sheet.getRange(rowNumber, 1, 1, ABANDONED_HEADERS.length).setValues([row]);
+    } else {
+      sheet.appendRow(row);
+      rowNumber = sheet.getLastRow();
+    }
+    SpreadsheetApp.flush();
+    return jsonResponse({status:"success", row:rowNumber, draftId:draftId, message:"Application recovery record saved."});
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function markAbandonedApplicationSubmitted(raw) {
+  raw = raw || {};
+  const draftId = normalizeRecoveryText_(raw.draftId || "", 120);
+  const applicationId = normalizeRecoveryText_(raw.applicationId || "", 120);
+  if (!draftId && !applicationId) return jsonResponse({status:"error", message:"Draft ID or Application ID is required."});
+
+  const sheet = ensureAbandonedApplicationsSheet_();
+  if (sheet.getLastRow() < 2) return jsonResponse({status:"success", updated:0});
+  const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, ABANDONED_HEADERS.length).getValues();
+  let updated = 0;
+  values.forEach((row, i) => {
+    const sameDraft = draftId && String(row[1] || "").trim() === draftId;
+    const sameApplication = applicationId && String(row[23] || "").trim() === applicationId;
+    if (sameDraft || sameApplication) {
+      const rowNumber = i + 2;
+      sheet.getRange(rowNumber, 23).setValue("Submitted / Recovered");
+      if (applicationId) sheet.getRange(rowNumber, 24).setValue(applicationId);
+      updated++;
+    }
+  });
+  SpreadsheetApp.flush();
+  return jsonResponse({status:"success", updated:updated});
+}
+
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) return jsonResponse({status:"error", message:"No data received."});
@@ -1501,7 +1633,8 @@ function doPost(e) {
     if (data.action === "syncApplications") return jsonResponse(syncApplicationsToSheet(data.applications || [], data.updateExisting === true));
     if (data.action === "updateApplication") return jsonResponse(updateApplicationInSheet(data.application || {}));
     if (data.action === "deleteApplication") return jsonResponse(deleteApplicationFromSheets(data.application || data));
-    if (data.action === "saveAbandonedApplication") return jsonResponse(saveAbandonedApplication(data));
+    if (data.action === "saveAbandonedApplication") return saveAbandonedApplication(data);
+    if (data.action === "markAbandonedApplicationSubmitted") return markAbandonedApplicationSubmitted(data);
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
     if (data.action === "removeCounselor") return jsonResponse(removeCounselor(data.counselorName || data.name || ""));
     if (data.action === "health") return jsonResponse({status:"online", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
@@ -1586,95 +1719,6 @@ function deleteApplicationFromSheets(raw) {
     ? "Application deleted from Google Sheets."
     : "Application ID was not found in Google Sheets.";
   return result;
-}
-
-
-const ABANDONED_APPLICATION_SHEET = 'Abandoned Applications';
-const ABANDONED_APPLICATION_HEADERS = [
-  'First Seen', 'Last Updated', 'Draft ID', 'Name', 'Phone', 'Email', 'College',
-  'Department', 'Year', 'Domain', 'State', 'Communication Language',
-  'Start Availability', 'Application Reason', 'Interest', 'Progress', 'Current Step',
-  'Current Field', 'Abandonment Reason', 'Referral Code', 'Referred By', 'Recovery Status', 'Source'
-];
-
-function ensureAbandonedApplicationsSheet_() {
-  const ss = getMasterSpreadsheet_();
-  let sheet = ss.getSheetByName(ABANDONED_APPLICATION_SHEET);
-  if (!sheet) sheet = ss.insertSheet(ABANDONED_APPLICATION_SHEET);
-  const current = getHeaders(sheet);
-  if (!current.length || current.join('|') !== ABANDONED_APPLICATION_HEADERS.join('|')) {
-    sheet.getRange(1,1,1,ABANDONED_APPLICATION_HEADERS.length).setValues([ABANDONED_APPLICATION_HEADERS]);
-    sheet.setFrozenRows(1);
-    try { sheet.getRange(1,1,1,ABANDONED_APPLICATION_HEADERS.length).setFontWeight('bold'); } catch (_) {}
-  }
-  return sheet;
-}
-
-function saveAbandonedApplication(data) {
-  data = data || {};
-  const draftId = value(data.draftId || data.draftID);
-  if (!draftId) return {status:'error', message:'Draft ID is required.'};
-  if (!value(data.name) && !value(data.phone) && !value(data.email) && !value(data.college)) {
-    return {status:'ignored', message:'No meaningful application data.'};
-  }
-
-  const sheet = ensureAbandonedApplicationsSheet_();
-  const headers = getHeaders(sheet);
-  const now = new Date();
-  const firstSeen = value(data.firstSeen || data.startedAt) || now;
-  const lastUpdated = value(data.lastSeenAt || data.lastUpdated) || now;
-  const row = headers.map(h => {
-    switch (normalizeHeader(h)) {
-      case 'firstseen': return firstSeen;
-      case 'lastupdated': return lastUpdated;
-      case 'draftid': return draftId;
-      case 'name': return value(data.name);
-      case 'phone': return value(data.phone);
-      case 'email': return value(data.email);
-      case 'college': return value(data.college);
-      case 'department': return value(data.department);
-      case 'year': return value(data.year);
-      case 'domain': return value(data.domain);
-      case 'state': return value(data.state);
-      case 'communicationlanguage': return value(data.communicationLanguage);
-      case 'startavailability': return value(data.startAvailability);
-      case 'applicationreason': return value(data.applicationReason);
-      case 'interest': return value(data.interest);
-      case 'progress': return Number(data.progress || 0);
-      case 'currentstep': return Number(data.currentStep || 1);
-      case 'currentfield': return value(data.currentField);
-      case 'abandonmentreason': return value(data.abandonmentReason);
-      case 'referralcode': return value(data.referralCode);
-      case 'referredby': return value(data.referredBy);
-      case 'recoverystatus': return value(data.recoveryStatus) || 'New';
-      case 'source': return value(data.source) || 'skillpath_landing_final_v11';
-      default: return '';
-    }
-  });
-
-  const draftCol = headers.findIndex(h => normalizeHeader(h) === 'draftid') + 1;
-  let existingRow = 0;
-  if (draftCol) {
-    const lastRow = sheet.getLastRow();
-    if (lastRow > 1) {
-      const values = sheet.getRange(2, draftCol, lastRow - 1, 1).getValues();
-      for (let i = 0; i < values.length; i++) {
-        if (String(values[i][0] || '') === draftId) { existingRow = i + 2; break; }
-      }
-    }
-  }
-  if (existingRow) {
-    sheet.getRange(existingRow, 1, 1, headers.length).setValues([row]);
-    return {status:'success', updated:true, row:existingRow, draftId:draftId};
-  }
-  sheet.appendRow(row);
-  SpreadsheetApp.flush();
-  return {status:'success', updated:false, row:sheet.getLastRow(), draftId:draftId};
-}
-
-function setupAbandonedApplicationsSheet() {
-  const sheet = ensureAbandonedApplicationsSheet_();
-  return 'Abandoned Applications sheet is ready: ' + sheet.getName();
 }
 
 function saveSingleApplication(data) {

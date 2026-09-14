@@ -69,6 +69,8 @@ const E = {
   referralSearch: el("referralSearch"),
   applicationVisitorCount: el("applicationVisitorCount"),
   applicationVisitorCountMetric: el("applicationVisitorCountMetric"),
+  recoverySummary: el("recoverySummary"),
+  recoveryList: el("recoveryList"),
   landingPageVisitorCountMetric: el("landingPageVisitorCountMetric")
 };
 
@@ -289,6 +291,33 @@ function visitorCard(visitor, inactive = false) {
     </article>`;
 }
 
+
+function renderRecoveryCenter(rows) {
+  if (!E.recoveryList) return;
+  const recovery = rows.filter(v => ['abandoned','left'].includes(v.state) && Number(v.formProgress || 0) > 0)
+    .sort((a,b) => asMs(b.leftAt || b.abandonedAt || b.lastActive) - asMs(a.leftAt || a.abandonedAt || a.lastActive))
+    .slice(0, 30);
+  const highIntent = recovery.filter(v => Number(v.formProgress || 0) >= 60).length;
+  const cancelled = recovery.filter(v => String(v.lastAction || '').toLowerCase().includes('cancel')).length;
+  const left = Math.max(0, recovery.length - cancelled);
+  if (E.recoverySummary) E.recoverySummary.innerHTML = `
+    <div><strong>${recovery.length}</strong><span>Recent incomplete</span></div>
+    <div><strong>${highIntent}</strong><span>High intent ≥60%</span></div>
+    <div><strong>${cancelled}</strong><span>Cancelled</span></div>
+    <div><strong>${left}</strong><span>Left page</span></div>`;
+  E.recoveryList.innerHTML = recovery.length ? recovery.map(v => {
+    const data = v.fieldData || {};
+    const progress = Math.max(0, Math.min(100, Number(v.formProgress || 0)));
+    const type = String(v.lastAction || '').toLowerCase().includes('cancel') ? 'Cancelled' : 'Left Page';
+    return `<article class="recovery-item">
+      <div class="recovery-item-top"><div><strong>${esc(data.name || 'Anonymous applicant')}</strong><small>${esc(data.college || 'College not captured')} • ${esc(data.domain || 'Domain not selected')}</small></div><span class="recovery-type ${type === 'Cancelled' ? 'cancelled' : ''}">${type}</span></div>
+      <div class="recovery-progress"><span style="width:${progress}%"></span></div>
+      <div class="recovery-meta"><span><b>${progress}%</b> completed</span><span>Step ${esc(v.currentStep || '1')}</span><span>${esc(v.currentField || '—')}</span><span>${esc(fmt(v.leftAt || v.abandonedAt || v.lastActive))}</span></div>
+      <div class="recovery-contact"><span>WhatsApp: <b>${esc(data.phone || '—')}</b></span><span>Email: <b>${esc(data.email || '—')}</b></span></div>
+    </article>`;
+  }).join('') : '<p class="empty">No incomplete applications in the recent recovery window.</p>';
+}
+
 function renderVisitors() {
   const now = Date.now();
   const rows = Object.entries(visitors)
@@ -327,6 +356,7 @@ function renderVisitors() {
     : "";
 
   E.visitorList.innerHTML = activeMarkup + inactiveMarkup;
+  renderRecoveryCenter(rows);
   updateStamp();
   renderMobileOperationsCockpit();
 }

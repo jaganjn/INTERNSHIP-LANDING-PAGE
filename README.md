@@ -56,10 +56,3 @@ The included `Code.gs` is based on the current centralized Apps Script architect
 The web dashboard files are static Firebase-hosted files. `admin.html`, `admin.js`, and `dashboard.css` have been updated for the canonical status list and legacy-status normalization.
 
 The admin JavaScript cache-busting query has been updated to `admin.js?v=20260911-counselor2-status`.
-
-
-## Anti-abandonment application recovery (V12)
-- The landing form already saves drafts locally and now records meaningful incomplete applications in `Abandoned Applications`.
-- Deploy the updated Apps Script web app, then run `setupAbandonedApplicationsSheet()` once from Apps Script.
-- The applicant receives an exit confirmation when leaving a started application; saved progress remains available on the device.
-- Browser/page close uses `sendBeacon`/keepalive as a best-effort abandoned-lead capture.

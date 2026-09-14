@@ -981,7 +981,9 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 
 const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbykckN1IqJxrzGTbJt7FSC7z0F9h_2z2JhihsBncDoYlmXhaFhSc6b8PX5FL8HbkBPY-g/exec';
 const DRAFT_KEY = 'skillpathApplicationDraftV11';
-const ABANDONED_DRAFT_ID_KEY = 'skillpathAbandonedDraftIdV11';
+const RECOVERY_DRAFT_ID_KEY = 'skillpathRecoveryDraftIdV13';
+const RECOVERY_STARTED_AT_KEY = 'skillpathRecoveryStartedAtV13';
+const RECOVERY_SENT_KEY = 'skillpathRecoverySentV13';
 const LAST_SUBMISSION_KEY = 'skillpathLastSubmissionV11';
 const VISITOR_KEY = 'skillpathVisitorSessionV11';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1002,7 +1004,6 @@ let currentStep = 1;
 let submitLocked = false;
 let lastMilestone = 0;
 let draftTimer = 0;
-let abandonedSaved = false;
 
 const stepMeta = {
   1: { badge: '01', title: 'Let’s begin your application', subtitle: 'Enter your contact details first. Only after this step is completed, the academic step will be shown.', visual: 'CONTACT', hint: 'Start here', progressText: 'Step 1 of 4 · Contact details', time: 'About 60 seconds left' },
@@ -1254,17 +1255,83 @@ function launchSparks(count = 12) {
   }
 }
 
+
+function recoveryDraftId() {
+  let id = sessionStorage.getItem(RECOVERY_DRAFT_ID_KEY);
+  if (!id) {
+    id = `draft_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+    sessionStorage.setItem(RECOVERY_DRAFT_ID_KEY, id);
+  }
+  if (!sessionStorage.getItem(RECOVERY_STARTED_AT_KEY)) sessionStorage.setItem(RECOVERY_STARTED_AT_KEY, new Date().toISOString());
+  return id;
+}
+
+function recoveryHasMeaningfulData() {
+  const data = getFormData();
+  return Object.values(data).some(value => String(value || '').trim() !== '');
+}
+
+function recoveryDevice() {
+  return window.innerWidth <= 820 ? 'Mobile' : 'Desktop';
+}
+
+function sendRecoverySnapshot(exitType = 'Left Page', exitReason = '', force = false) {
+  if (visitorComplete || submitLocked) return false;
+  if (!recoveryHasMeaningfulData()) return false;
+  if (!force && sessionStorage.getItem(RECOVERY_SENT_KEY) === '1') return false;
+
+  const data = getFormData();
+  const payload = {
+    action: 'saveAbandonedApplication',
+    draftId: recoveryDraftId(),
+    startedAt: sessionStorage.getItem(RECOVERY_STARTED_AT_KEY) || new Date().toISOString(),
+    lastActive: new Date().toISOString(),
+    name: data.name,
+    phone: data.phone,
+    email: data.email,
+    college: data.college,
+    department: data.department,
+    year: data.year,
+    domain: data.domain,
+    state: data.state,
+    communicationLanguage: data.communicationLanguage,
+    startAvailability: data.startAvailability,
+    applicationReason: data.applicationReason,
+    progress: calculateProgress(),
+    currentStep,
+    lastField: document.activeElement?.name || `Step ${currentStep}`,
+    exitType,
+    exitReason,
+    referral: referralSource || '',
+    device: recoveryDevice(),
+    recoveryStatus: 'Needs Follow-up'
+  };
+
+  try {
+    fetch(SHEET_ENDPOINT, {
+      method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload), keepalive: true
+    }).catch(() => {});
+    sessionStorage.setItem(RECOVERY_SENT_KEY, '1');
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+function resetRecoverySession() {
+  sessionStorage.removeItem(RECOVERY_SENT_KEY);
+  sessionStorage.removeItem(RECOVERY_DRAFT_ID_KEY);
+  sessionStorage.removeItem(RECOVERY_STARTED_AT_KEY);
+}
+
 function saveDraft() {
   if (!form || submitLocked) return;
   clearTimeout(draftTimer);
   draftTimer = window.setTimeout(() => {
     const data = getFormData();
     const hasData = Object.values(data).some(Boolean);
-    if (hasData) {
-      let draftId = localStorage.getItem(ABANDONED_DRAFT_ID_KEY);
-      if (!draftId) { draftId = `draft_${Date.now()}_${Math.random().toString(36).slice(2,10)}`; localStorage.setItem(ABANDONED_DRAFT_ID_KEY, draftId); }
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...data, savedAt: Date.now(), draftId }));
-    }
+    if (hasData) localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...data, savedAt: Date.now() }));
     else localStorage.removeItem(DRAFT_KEY);
   }, 180);
 }
@@ -1293,8 +1360,6 @@ function restoreDraft() {
 
 function clearDraft(resetForm = true) {
   localStorage.removeItem(DRAFT_KEY);
-  localStorage.removeItem(ABANDONED_DRAFT_ID_KEY);
-  abandonedSaved = false;
   if (resetForm) form?.reset();
   draftBanner.hidden = true;
   document.querySelectorAll('.field-wrap').forEach(wrap => wrap.classList.remove('valid', 'invalid'));
@@ -1495,46 +1560,6 @@ function duplicateSubmission(phone) {
   }
 }
 
-
-function hasMeaningfulApplicationData() {
-  if (!form) return false;
-  const data = getFormData();
-  return Boolean(data.name || data.phone || data.email || data.college || data.department || data.year || data.domain || data.state || data.communicationLanguage || data.startAvailability || data.applicationReason);
-}
-
-function saveAbandonedApplication(reason = 'Page left before submission') {
-  if (submitLocked || visitorComplete || !hasMeaningfulApplicationData() || abandonedSaved) return;
-  const data = getFormData();
-  let draftId = localStorage.getItem(ABANDONED_DRAFT_ID_KEY);
-  if (!draftId) {
-    draftId = `draft_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
-    try { localStorage.setItem(ABANDONED_DRAFT_ID_KEY, draftId); } catch (_) {}
-  }
-  const payload = {
-    action: 'saveAbandonedApplication',
-    draftId,
-    ...data,
-    progress: calculateProgress(),
-    currentStep,
-    currentField: document.activeElement?.name || `Step ${currentStep}`,
-    abandonmentReason: reason,
-    lastSeenAtMs: Date.now(),
-    lastSeenAt: new Intl.DateTimeFormat('en-IN', { timeZone:'Asia/Kolkata', dateStyle:'short', timeStyle:'medium' }).format(new Date()),
-    source: 'skillpath_landing_final_v11',
-    referredBy: referralSource || ''
-  };
-  try {
-    const body = JSON.stringify(payload);
-    if (navigator.sendBeacon) {
-      const blob = new Blob([body], { type: 'text/plain;charset=UTF-8' });
-      navigator.sendBeacon(SHEET_ENDPOINT, blob);
-    } else {
-      fetch(SHEET_ENDPOINT, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body, keepalive:true }).catch(()=>{});
-    }
-    abandonedSaved = true;
-  } catch (_) {}
-}
-
 async function submitApplication() {
   if (submitLocked || !form) return;
   if (!validateStep(1, false) || !validateStep(2, false)) {
@@ -1653,9 +1678,9 @@ async function submitApplication() {
     }).catch(() => {});
 
     localStorage.setItem(LAST_SUBMISSION_KEY, JSON.stringify({ phone: data.phone, time: Date.now(), applicationId: applicationRef.key }));
+    fetch(SHEET_ENDPOINT, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: 'markAbandonedApplicationSubmitted', draftId: sessionStorage.getItem(RECOVERY_DRAFT_ID_KEY) || '', applicationId: applicationRef.key }), keepalive: true }).catch(() => {});
     localStorage.removeItem(DRAFT_KEY);
-    localStorage.removeItem(ABANDONED_DRAFT_ID_KEY);
-    abandonedSaved = true;
+    resetRecoverySession();
     showSuccess(data, applicationRef.key, referralCode, referralUrl);
   } catch (error) {
     console.error('Application submission failed:', error);
@@ -1780,6 +1805,8 @@ function updateVisitor(patch = {}, complete = false) {
     formProgress: progress,
     currentStep,
     currentField: patch.currentField || (progress > 0 ? `Step ${currentStep}` : 'Viewing page'),
+    lastAction: patch.lastAction || (progress > 0 ? `Filling application • Step ${currentStep}` : 'Viewing landing page'),
+    actionAt: patch.actionAt || firebase.database.ServerValue.TIMESTAMP,
     hasStartedFilling: progress > 0,
     fieldData: collectLiveFieldData(),
     lastActive: firebase.database.ServerValue.TIMESTAMP,
@@ -1800,6 +1827,8 @@ function initialiseVisitor() {
     formProgress: 0,
     currentStep: 1,
     currentField: 'Viewing page',
+    lastAction: 'Viewing landing page',
+    actionAt: firebase.database.ServerValue.TIMESTAMP,
     hasStartedFilling: false,
     fieldData: collectLiveFieldData(),
     startedAt: firebase.database.ServerValue.TIMESTAMP,
@@ -1813,7 +1842,7 @@ if (form) {
   form.addEventListener('focusin', event => {
     const field = event.target.closest('input[name],select[name],textarea[name]');
     if (!field) return;
-    if (applicationFormOpen) formInteractionStarted = true;
+    if (applicationFormOpen) { formInteractionStarted = true; recoveryDraftId(); }
     document.querySelectorAll('.field-wrap.focused').forEach(wrap => wrap.classList.remove('focused'));
     const wrap = field.closest('.field-wrap');
     wrap?.classList.add('focused');
@@ -1833,7 +1862,7 @@ if (form) {
     updateJourney(nowValid && !wasValid);
     refreshStepAccess(nowValid && !wasValid);
     moveTypingAura(field);
-    updateVisitor({ currentField: field.name, status: 'filling_form' });
+    updateVisitor({ currentField: field.name, status: 'filling_form', lastAction: `Editing ${field.name}`, actionAt: firebase.database.ServerValue.TIMESTAMP });
   });
   form.addEventListener('change', event => {
     const field = event.target.closest('input[name],select[name],textarea[name]');
@@ -1845,7 +1874,7 @@ if (form) {
     updateJourney(true);
     refreshStepAccess(true);
     moveTypingAura(field);
-    updateVisitor({ currentField: field.name, status: 'filling_form' });
+    updateVisitor({ currentField: field.name, status: 'filling_form', lastAction: `Editing ${field.name}`, actionAt: firebase.database.ServerValue.TIMESTAMP });
   });
   form.addEventListener('focusout', event => {
     const field = event.target.closest('input[name],select[name],textarea[name]');
@@ -1889,7 +1918,7 @@ startOverApplicationButton?.addEventListener('click', () => {
     return;
   }
   const confirmed = window.confirm('Clear this application and start over?\n\nAll information currently entered in this form will be removed from this device.');
-  if (confirmed) clearDraft(true);
+  if (confirmed) { sendRecoverySnapshot('Cancelled Application', 'Student selected Clear application / Start over', true); clearDraft(true); resetRecoverySession(); }
 });
 
 document.addEventListener('visibilitychange', () => {
@@ -1897,17 +1926,17 @@ document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') updateVisitor({ presence: 'background' });
   else updateVisitor({ presence: 'active' });
 });
-window.addEventListener('pagehide', () => {
-  if (!visitorComplete && hasMeaningfulApplicationData()) saveAbandonedApplication('Browser/tab/page closed before submission');
-  if (!visitorComplete) updateVisitor({ presence: 'inactive', status: calculateProgress() ? 'abandoned' : 'left' });
-});
-
-
 window.addEventListener('beforeunload', event => {
-  if (applicationFormOpen && hasMeaningfulApplicationData() && !submitLocked) {
-    saveAbandonedApplication('Browser navigation/close attempted before submission');
-    event.preventDefault();
-    event.returnValue = '';
+  if (visitorComplete || !applicationFormOpen || !formInteractionStarted || !recoveryHasMeaningfulData()) return;
+  sendRecoverySnapshot('Left Page', 'Student attempted to leave before submitting', false);
+  event.preventDefault();
+  event.returnValue = '';
+});
+window.addEventListener('pagehide', () => {
+  if (!visitorComplete) {
+    const progress = calculateProgress();
+    if (applicationFormOpen && formInteractionStarted && progress > 0) sendRecoverySnapshot('Left Page', 'Application page closed or navigated away', false);
+    updateVisitor({ presence: 'inactive', status: progress ? 'abandoned' : 'left', lastAction: progress ? 'Student left before submission' : 'Visitor left page' });
   }
 });
 
@@ -2088,6 +2117,7 @@ console.info('SkillPath guided form build: Final V11');
   function openApplication(domain){
     countApplicationVisitor();
     applicationFormOpen = true;
+    resetRecoverySession();
     // Opening the form alone is not "filling"; filling begins on field interaction.
     formInteractionStarted = false;
     updateVisitor({ formProgress: 0, currentStep: 1, currentField: 'Application form opened', status: 'online', hasStartedFilling: false });
@@ -2097,16 +2127,13 @@ console.info('SkillPath guided form build: Final V11');
     applicationCard?.setAttribute('aria-label','Internship application');
     window.setTimeout(()=>document.getElementById('name')?.focus(),120);
   }
-  function closeApplication(){
+  function closeApplication(reason = 'Student cancelled the application'){
     if(!body.classList.contains('application-modal-open')) return;
-    if (hasMeaningfulApplicationData()) {
-      const leave = window.confirm('⚠️ Your internship application is not submitted yet.\n\nYour progress is saved on this device. Continue filling the application, or choose OK to leave now.');
-      if (!leave) return;
-      saveAbandonedApplication('Applicant chose to leave before submission');
-    }
+    const hadData = recoveryHasMeaningfulData();
+    if (hadData) sendRecoverySnapshot('Cancelled Application', reason, true);
+    updateVisitor({ currentField: hadData ? 'Application cancelled' : 'Viewing page', lastAction: hadData ? 'Application cancelled by student' : 'Returned to landing page', status: hadData ? 'abandoned' : 'online', presence: hadData ? 'inactive' : 'active', hasStartedFilling: hadData, formProgress: hadData ? calculateProgress() : 0 });
     applicationFormOpen = false;
     formInteractionStarted = false;
-    updateVisitor({ formProgress: 0, currentStep: 1, currentField: 'Viewing page', status: 'online', hasStartedFilling: false });
     body.classList.remove('application-modal-open');
     window.scrollTo({top:restoreScroll,behavior:'instant'});
   }

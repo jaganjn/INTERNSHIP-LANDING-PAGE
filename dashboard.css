@@ -1043,3 +1043,124 @@ body.module-modal-open{overflow:hidden}
   .admin-page .crm-metrics article span{font-size:7.3px !important}
   .admin-page .crm-metrics article strong{font-size:17px !important}
 }
+
+/* =========================================================
+   V3.6 — MOBILE CRM ALIGNMENT / OVERFLOW FIX
+   Mobile-only. Desktop remains unchanged.
+   ========================================================= */
+@media (max-width:700px){
+  html,
+  body.admin-page{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    overflow-x:hidden !important;
+  }
+
+  .admin-page .app-shell,
+  .admin-page .workspace,
+  .admin-page main{
+    width:100%;
+    max-width:none;
+    min-width:0;
+    box-sizing:border-box;
+  }
+
+  .admin-page .workspace{margin:0 !important;}
+  .admin-page main{padding-left:7px !important;padding-right:7px !important;}
+
+  /* CRM section stays inside the viewport */
+  .admin-page .crm-section{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    margin-left:0;
+    margin-right:0;
+    overflow:visible;
+  }
+
+  /* Search + filters: equal columns with no intrinsic-width overflow */
+  .admin-page .crm-toolbar{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+    gap:8px;
+    padding:10px !important;
+    overflow:visible;
+  }
+
+  .admin-page .crm-search{
+    width:100%;
+    min-width:0 !important;
+    max-width:100%;
+    grid-column:1 / -1 !important;
+    box-sizing:border-box;
+  }
+
+  .admin-page .crm-search input{
+    min-width:0 !important;
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  .admin-page .crm-toolbar select,
+  .admin-page #crmClearFilters{
+    width:100%;
+    min-width:0 !important;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  .admin-page .crm-toolbar select{
+    padding-left:11px !important;
+    padding-right:30px !important;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* Keep the filter card visually centered */
+  .admin-page .crm-toolbar,
+  .admin-page .crm-assignment-toolbar,
+  .admin-page .crm-table-wrap{
+    margin-left:auto;
+    margin-right:auto;
+  }
+
+  /* Assignment controls use the same safe grid behavior */
+  .admin-page .crm-assignment-toolbar{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+  }
+
+  .admin-page .crm-assignment-toolbar select,
+  .admin-page .crm-assignment-toolbar .primary-action{
+    width:100%;
+    min-width:0 !important;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  /* Prevent long names/IDs from pushing the page sideways */
+  .admin-page .crm-section *{
+    min-width:0;
+  }
+
+  .admin-page .crm-table-wrap{
+    width:100%;
+    max-width:100%;
+  }
+}
+
+@media (max-width:390px){
+  .admin-page main{padding-left:6px !important;padding-right:6px !important;}
+  .admin-page .crm-toolbar{padding:9px !important;gap:7px;}
+  .admin-page .crm-toolbar select,
+  .admin-page #crmClearFilters{font-size:8.5px !important;}
+}

@@ -1501,6 +1501,7 @@ function doPost(e) {
     if (data.action === "syncApplications") return jsonResponse(syncApplicationsToSheet(data.applications || [], data.updateExisting === true));
     if (data.action === "updateApplication") return jsonResponse(updateApplicationInSheet(data.application || {}));
     if (data.action === "deleteApplication") return jsonResponse(deleteApplicationFromSheets(data.application || data));
+    if (data.action === "saveAbandonedApplication") return jsonResponse(saveAbandonedApplication(data));
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
     if (data.action === "removeCounselor") return jsonResponse(removeCounselor(data.counselorName || data.name || ""));
     if (data.action === "health") return jsonResponse({status:"online", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
@@ -1585,6 +1586,95 @@ function deleteApplicationFromSheets(raw) {
     ? "Application deleted from Google Sheets."
     : "Application ID was not found in Google Sheets.";
   return result;
+}
+
+
+const ABANDONED_APPLICATION_SHEET = 'Abandoned Applications';
+const ABANDONED_APPLICATION_HEADERS = [
+  'First Seen', 'Last Updated', 'Draft ID', 'Name', 'Phone', 'Email', 'College',
+  'Department', 'Year', 'Domain', 'State', 'Communication Language',
+  'Start Availability', 'Application Reason', 'Interest', 'Progress', 'Current Step',
+  'Current Field', 'Abandonment Reason', 'Referral Code', 'Referred By', 'Recovery Status', 'Source'
+];
+
+function ensureAbandonedApplicationsSheet_() {
+  const ss = getMasterSpreadsheet_();
+  let sheet = ss.getSheetByName(ABANDONED_APPLICATION_SHEET);
+  if (!sheet) sheet = ss.insertSheet(ABANDONED_APPLICATION_SHEET);
+  const current = getHeaders(sheet);
+  if (!current.length || current.join('|') !== ABANDONED_APPLICATION_HEADERS.join('|')) {
+    sheet.getRange(1,1,1,ABANDONED_APPLICATION_HEADERS.length).setValues([ABANDONED_APPLICATION_HEADERS]);
+    sheet.setFrozenRows(1);
+    try { sheet.getRange(1,1,1,ABANDONED_APPLICATION_HEADERS.length).setFontWeight('bold'); } catch (_) {}
+  }
+  return sheet;
+}
+
+function saveAbandonedApplication(data) {
+  data = data || {};
+  const draftId = value(data.draftId || data.draftID);
+  if (!draftId) return {status:'error', message:'Draft ID is required.'};
+  if (!value(data.name) && !value(data.phone) && !value(data.email) && !value(data.college)) {
+    return {status:'ignored', message:'No meaningful application data.'};
+  }
+
+  const sheet = ensureAbandonedApplicationsSheet_();
+  const headers = getHeaders(sheet);
+  const now = new Date();
+  const firstSeen = value(data.firstSeen || data.startedAt) || now;
+  const lastUpdated = value(data.lastSeenAt || data.lastUpdated) || now;
+  const row = headers.map(h => {
+    switch (normalizeHeader(h)) {
+      case 'firstseen': return firstSeen;
+      case 'lastupdated': return lastUpdated;
+      case 'draftid': return draftId;
+      case 'name': return value(data.name);
+      case 'phone': return value(data.phone);
+      case 'email': return value(data.email);
+      case 'college': return value(data.college);
+      case 'department': return value(data.department);
+      case 'year': return value(data.year);
+      case 'domain': return value(data.domain);
+      case 'state': return value(data.state);
+      case 'communicationlanguage': return value(data.communicationLanguage);
+      case 'startavailability': return value(data.startAvailability);
+      case 'applicationreason': return value(data.applicationReason);
+      case 'interest': return value(data.interest);
+      case 'progress': return Number(data.progress || 0);
+      case 'currentstep': return Number(data.currentStep || 1);
+      case 'currentfield': return value(data.currentField);
+      case 'abandonmentreason': return value(data.abandonmentReason);
+      case 'referralcode': return value(data.referralCode);
+      case 'referredby': return value(data.referredBy);
+      case 'recoverystatus': return value(data.recoveryStatus) || 'New';
+      case 'source': return value(data.source) || 'skillpath_landing_final_v11';
+      default: return '';
+    }
+  });
+
+  const draftCol = headers.findIndex(h => normalizeHeader(h) === 'draftid') + 1;
+  let existingRow = 0;
+  if (draftCol) {
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      const values = sheet.getRange(2, draftCol, lastRow - 1, 1).getValues();
+      for (let i = 0; i < values.length; i++) {
+        if (String(values[i][0] || '') === draftId) { existingRow = i + 2; break; }
+      }
+    }
+  }
+  if (existingRow) {
+    sheet.getRange(existingRow, 1, 1, headers.length).setValues([row]);
+    return {status:'success', updated:true, row:existingRow, draftId:draftId};
+  }
+  sheet.appendRow(row);
+  SpreadsheetApp.flush();
+  return {status:'success', updated:false, row:sheet.getLastRow(), draftId:draftId};
+}
+
+function setupAbandonedApplicationsSheet() {
+  const sheet = ensureAbandonedApplicationsSheet_();
+  return 'Abandoned Applications sheet is ready: ' + sheet.getName();
 }
 
 function saveSingleApplication(data) {

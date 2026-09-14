@@ -981,6 +981,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 
 const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbykckN1IqJxrzGTbJt7FSC7z0F9h_2z2JhihsBncDoYlmXhaFhSc6b8PX5FL8HbkBPY-g/exec';
 const DRAFT_KEY = 'skillpathApplicationDraftV11';
+const ABANDONED_DRAFT_ID_KEY = 'skillpathAbandonedDraftIdV11';
 const LAST_SUBMISSION_KEY = 'skillpathLastSubmissionV11';
 const VISITOR_KEY = 'skillpathVisitorSessionV11';
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -1001,6 +1002,7 @@ let currentStep = 1;
 let submitLocked = false;
 let lastMilestone = 0;
 let draftTimer = 0;
+let abandonedSaved = false;
 
 const stepMeta = {
   1: { badge: '01', title: 'Let’s begin your application', subtitle: 'Enter your contact details first. Only after this step is completed, the academic step will be shown.', visual: 'CONTACT', hint: 'Start here', progressText: 'Step 1 of 4 · Contact details', time: 'About 60 seconds left' },
@@ -1258,7 +1260,11 @@ function saveDraft() {
   draftTimer = window.setTimeout(() => {
     const data = getFormData();
     const hasData = Object.values(data).some(Boolean);
-    if (hasData) localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...data, savedAt: Date.now() }));
+    if (hasData) {
+      let draftId = localStorage.getItem(ABANDONED_DRAFT_ID_KEY);
+      if (!draftId) { draftId = `draft_${Date.now()}_${Math.random().toString(36).slice(2,10)}`; localStorage.setItem(ABANDONED_DRAFT_ID_KEY, draftId); }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...data, savedAt: Date.now(), draftId }));
+    }
     else localStorage.removeItem(DRAFT_KEY);
   }, 180);
 }
@@ -1287,6 +1293,8 @@ function restoreDraft() {
 
 function clearDraft(resetForm = true) {
   localStorage.removeItem(DRAFT_KEY);
+  localStorage.removeItem(ABANDONED_DRAFT_ID_KEY);
+  abandonedSaved = false;
   if (resetForm) form?.reset();
   draftBanner.hidden = true;
   document.querySelectorAll('.field-wrap').forEach(wrap => wrap.classList.remove('valid', 'invalid'));
@@ -1487,6 +1495,46 @@ function duplicateSubmission(phone) {
   }
 }
 
+
+function hasMeaningfulApplicationData() {
+  if (!form) return false;
+  const data = getFormData();
+  return Boolean(data.name || data.phone || data.email || data.college || data.department || data.year || data.domain || data.state || data.communicationLanguage || data.startAvailability || data.applicationReason);
+}
+
+function saveAbandonedApplication(reason = 'Page left before submission') {
+  if (submitLocked || visitorComplete || !hasMeaningfulApplicationData() || abandonedSaved) return;
+  const data = getFormData();
+  let draftId = localStorage.getItem(ABANDONED_DRAFT_ID_KEY);
+  if (!draftId) {
+    draftId = `draft_${Date.now()}_${Math.random().toString(36).slice(2,10)}`;
+    try { localStorage.setItem(ABANDONED_DRAFT_ID_KEY, draftId); } catch (_) {}
+  }
+  const payload = {
+    action: 'saveAbandonedApplication',
+    draftId,
+    ...data,
+    progress: calculateProgress(),
+    currentStep,
+    currentField: document.activeElement?.name || `Step ${currentStep}`,
+    abandonmentReason: reason,
+    lastSeenAtMs: Date.now(),
+    lastSeenAt: new Intl.DateTimeFormat('en-IN', { timeZone:'Asia/Kolkata', dateStyle:'short', timeStyle:'medium' }).format(new Date()),
+    source: 'skillpath_landing_final_v11',
+    referredBy: referralSource || ''
+  };
+  try {
+    const body = JSON.stringify(payload);
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body], { type: 'text/plain;charset=UTF-8' });
+      navigator.sendBeacon(SHEET_ENDPOINT, blob);
+    } else {
+      fetch(SHEET_ENDPOINT, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body, keepalive:true }).catch(()=>{});
+    }
+    abandonedSaved = true;
+  } catch (_) {}
+}
+
 async function submitApplication() {
   if (submitLocked || !form) return;
   if (!validateStep(1, false) || !validateStep(2, false)) {
@@ -1606,6 +1654,8 @@ async function submitApplication() {
 
     localStorage.setItem(LAST_SUBMISSION_KEY, JSON.stringify({ phone: data.phone, time: Date.now(), applicationId: applicationRef.key }));
     localStorage.removeItem(DRAFT_KEY);
+    localStorage.removeItem(ABANDONED_DRAFT_ID_KEY);
+    abandonedSaved = true;
     showSuccess(data, applicationRef.key, referralCode, referralUrl);
   } catch (error) {
     console.error('Application submission failed:', error);
@@ -1848,7 +1898,17 @@ document.addEventListener('visibilitychange', () => {
   else updateVisitor({ presence: 'active' });
 });
 window.addEventListener('pagehide', () => {
+  if (!visitorComplete && hasMeaningfulApplicationData()) saveAbandonedApplication('Browser/tab/page closed before submission');
   if (!visitorComplete) updateVisitor({ presence: 'inactive', status: calculateProgress() ? 'abandoned' : 'left' });
+});
+
+
+window.addEventListener('beforeunload', event => {
+  if (applicationFormOpen && hasMeaningfulApplicationData() && !submitLocked) {
+    saveAbandonedApplication('Browser navigation/close attempted before submission');
+    event.preventDefault();
+    event.returnValue = '';
+  }
 });
 
 restoreDraft();
@@ -2039,6 +2099,11 @@ console.info('SkillPath guided form build: Final V11');
   }
   function closeApplication(){
     if(!body.classList.contains('application-modal-open')) return;
+    if (hasMeaningfulApplicationData()) {
+      const leave = window.confirm('⚠️ Your internship application is not submitted yet.\n\nYour progress is saved on this device. Continue filling the application, or choose OK to leave now.');
+      if (!leave) return;
+      saveAbandonedApplication('Applicant chose to leave before submission');
+    }
     applicationFormOpen = false;
     formInteractionStarted = false;
     updateVisitor({ formProgress: 0, currentStep: 1, currentField: 'Viewing page', status: 'online', hasStartedFilling: false });

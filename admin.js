@@ -732,6 +732,8 @@ function renderApplicationCRM() {
     if (status === "Enrolled") counts.joined++;
   });
   el("crmTotal").textContent = applications.length;
+  const mobileApplicationsCount = el("mobileOpenApplicationsCount");
+  if (mobileApplicationsCount) mobileApplicationsCount.textContent = applications.length;
   el("crmNotContacted").textContent = counts.not;
   el("crmFollowUps").textContent = counts.due;
   el("crmInterested").textContent = counts.interested;
@@ -2243,10 +2245,28 @@ async function recoverAllFirebaseToSheets(){
   // The old left navigation and mobile bottom navigation are intentionally removed.
   document.querySelectorAll('.side-nav,.sidebar,.bottom-nav,.menu-toggle').forEach(node => node.remove());
 
-  // Keep the dashboard itself compact: only the metric cards remain on the home view.
-  document.querySelectorAll('.dashboard-grid.admin-module,.crm-section.admin-module,#sheetsRecovery.admin-module,#settings.admin-module,.admin-referral-module').forEach(node => {
+  // Keep desktop behavior unchanged. On mobile, the full application CRM (including lead cards)
+  // is hidden from the dashboard and is opened only through the dedicated Applications launcher.
+  const mobileQuery = window.matchMedia('(max-width: 700px)');
+  function syncMobileApplicationVisibility(){
+    const crm = document.getElementById('applicationCRM');
+    if(!crm) return;
+    if(mobileQuery.matches){
+      if(!moved.has(crm)) crm.classList.add('mobile-application-drawer-source');
+    }else{
+      crm.classList.remove('mobile-application-drawer-source');
+    }
+  }
+  syncMobileApplicationVisibility();
+  mobileQuery.addEventListener?.('change', syncMobileApplicationVisibility);
+
+  // Keep the dashboard itself compact for the existing modules.
+  document.querySelectorAll('.dashboard-grid.admin-module,#sheetsRecovery.admin-module,#settings.admin-module,.admin-referral-module').forEach(node => {
     if(!moved.has(node)) node.classList.add('compact-hidden-module');
   });
+
+  const mobileOpenApplicationsBtn = document.getElementById('mobileOpenApplicationsBtn');
+  mobileOpenApplicationsBtn?.addEventListener('click', () => openModule('applicationCRM'));
 
   window.openAdminModule = openModule;
   window.closeAdminModule = closeModule;

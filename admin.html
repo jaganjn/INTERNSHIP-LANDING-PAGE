@@ -52,6 +52,20 @@
   <article class="metric"><span class="metric-icon rose">×</span><div><p>Abandoned</p><h3 id="abandonedCount">0</h3><small>Expired incomplete forms</small></div></article>
   </section>
 
+<!-- Mobile-only application launcher. Lead cards stay hidden until this is opened. -->
+<section class="mobile-app-launcher" aria-label="Applications launcher">
+  <div class="mobile-app-launcher-copy">
+    <span class="mobile-app-launcher-kicker">APPLICATIONS</span>
+    <strong>Manage your leads</strong>
+    <small>Open the application workspace when you need to search, assign or follow up.</small>
+  </div>
+  <button id="mobileOpenApplicationsBtn" type="button" class="mobile-open-applications-btn">
+    <span class="mobile-open-applications-icon">▤</span>
+    <span>Open Applications</span>
+    <span class="mobile-open-applications-count" id="mobileOpenApplicationsCount">0</span>
+  </button>
+</section>
+
 <section class="crm-section" id="applicationCRM">
   <div class="section-head crm-head">
     <div><span class="eyebrow">APPLICATION CRM <b class="crm-live-badge">● LIVE SYNC</b></span><h2>Application Management</h2><p>Search, filter, contact, assign and follow up without leaving the dashboard.</p></div>

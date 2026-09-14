@@ -1164,3 +1164,171 @@ body.module-modal-open{overflow:hidden}
   .admin-page .crm-toolbar select,
   .admin-page #crmClearFilters{font-size:8.5px !important;}
 }
+
+
+/* =========================================================
+   V3.7 — MOBILE APPLICATION DRAWER
+   Mobile-only: lead cards are hidden until "Open Applications".
+   Desktop is intentionally unchanged.
+   ========================================================= */
+.mobile-app-launcher{display:none}
+
+@media (max-width:700px){
+  /* Keep the CRM source completely out of the dashboard until opened. */
+  .admin-page #applicationCRM.mobile-application-drawer-source{
+    display:none !important;
+  }
+
+  /* Dedicated mobile launcher shown below the dashboard KPIs. */
+  .admin-page .mobile-app-launcher{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    margin:0 0 12px;
+    padding:12px;
+    border:1px solid rgba(72,166,239,.20);
+    border-radius:17px;
+    background:linear-gradient(145deg,rgba(10,27,46,.98),rgba(5,16,29,.99));
+    box-shadow:0 12px 30px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.03);
+  }
+  .admin-page .mobile-app-launcher-copy{
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .admin-page .mobile-app-launcher-kicker{
+    color:#65caff;
+    font:800 7px/1 Inter,sans-serif;
+    letter-spacing:.15em;
+  }
+  .admin-page .mobile-app-launcher-copy strong{
+    color:#f5f8ff;
+    font:800 13px/1.2 Manrope,sans-serif;
+  }
+  .admin-page .mobile-app-launcher-copy small{
+    color:#8095b2;
+    font:500 8px/1.4 Inter,sans-serif;
+    max-width:205px;
+  }
+  .admin-page .mobile-open-applications-btn{
+    flex:0 0 auto;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    min-height:43px;
+    padding:0 10px;
+    border:1px solid rgba(96,185,255,.28);
+    border-radius:12px;
+    background:linear-gradient(135deg,#176ca8,#234fc1);
+    color:#fff;
+    font:800 9px/1 Inter,sans-serif;
+    box-shadow:0 9px 22px rgba(22,106,176,.22),inset 0 1px 0 rgba(255,255,255,.12);
+    cursor:pointer;
+    white-space:nowrap;
+    touch-action:manipulation;
+  }
+  .admin-page .mobile-open-applications-btn:active{transform:scale(.98)}
+  .admin-page .mobile-open-applications-icon{font-size:13px;line-height:1}
+  .admin-page .mobile-open-applications-count{
+    min-width:20px;
+    height:20px;
+    padding:0 5px;
+    display:inline-grid;
+    place-items:center;
+    box-sizing:border-box;
+    border-radius:999px;
+    background:rgba(255,255,255,.16);
+    font-size:8px;
+  }
+
+  /* Bottom-sheet drawer: not a full-screen replacement. */
+  .admin-page .admin-module-modal{
+    align-items:end !important;
+    justify-items:stretch !important;
+    padding:0 !important;
+    background:rgba(1,7,14,.62) !important;
+    backdrop-filter:blur(7px) !important;
+    -webkit-backdrop-filter:blur(7px) !important;
+  }
+  .admin-page .admin-module-modal-card{
+    width:100% !important;
+    height:min(90svh,760px) !important;
+    max-height:90svh !important;
+    border-radius:22px 22px 0 0 !important;
+    border:1px solid rgba(78,167,239,.22) !important;
+    border-bottom:0 !important;
+    overflow:hidden !important;
+    background:linear-gradient(180deg,#071525 0%,#050e1b 100%) !important;
+    box-shadow:0 -25px 80px rgba(0,0,0,.60),0 -3px 30px rgba(22,145,226,.08) !important;
+    transform:translateY(100%) !important;
+    transition:transform .24s cubic-bezier(.2,.8,.2,1) !important;
+  }
+  .admin-page .admin-module-modal.show .admin-module-modal-card{
+    transform:translateY(0) !important;
+  }
+  .admin-page .admin-module-modal-card::before{
+    content:"";
+    position:absolute;
+    top:7px;
+    left:50%;
+    width:38px;
+    height:4px;
+    transform:translateX(-50%);
+    border-radius:99px;
+    background:rgba(178,207,237,.35);
+    z-index:20;
+  }
+  .admin-page .admin-module-modal-header{
+    min-height:67px !important;
+    padding:16px 13px 11px !important;
+    background:rgba(5,15,28,.96) !important;
+  }
+  .admin-page .admin-module-modal-header .eyebrow{font-size:7px}
+  .admin-page .admin-module-modal-header h2{font-size:16px !important}
+  .admin-page .admin-module-modal-header p{font-size:8.5px !important}
+  .admin-page .admin-module-modal-close{width:36px !important;height:36px !important}
+  .admin-page .admin-module-modal-body{
+    padding:9px 8px 24px !important;
+    overflow:auto !important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Override the hidden source class after the CRM has been moved into the drawer. */
+  .admin-page .admin-module-modal-body > #applicationCRM{
+    display:block !important;
+    width:100% !important;
+    max-width:none !important;
+    min-width:0 !important;
+    margin:0 !important;
+  }
+  .admin-page .admin-module-modal-body > #applicationCRM.mobile-application-drawer-source{
+    display:block !important;
+  }
+
+  /* Drawer CRM is visually tighter because the drawer already has its own frame. */
+  .admin-page .admin-module-modal-body > #applicationCRM .crm-section,
+  .admin-page .admin-module-modal-body > #applicationCRM .crm-section{
+    border-radius:16px !important;
+  }
+  .admin-page .admin-module-modal-body > #applicationCRM .crm-head{
+    padding-top:2px;
+  }
+}
+
+@media (max-width:390px){
+  .admin-page .mobile-app-launcher{padding:10px;gap:7px}
+  .admin-page .mobile-app-launcher-copy strong{font-size:12px}
+  .admin-page .mobile-app-launcher-copy small{font-size:7.5px;max-width:175px}
+  .admin-page .mobile-open-applications-btn{min-height:41px;padding:0 8px;font-size:8px}
+  .admin-page .mobile-open-applications-icon{font-size:12px}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .admin-page .admin-module-modal-card{transition:none !important}
+}

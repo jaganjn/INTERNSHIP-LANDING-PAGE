@@ -1710,3 +1710,16 @@ body.module-modal-open{overflow:hidden}
   .abandoned-table .crm-row-actions button{min-height:34px;padding:0 9px;font-size:9px}
   .abandoned-table .abandoned-assign-select{width:150px;min-height:34px;font-size:9px;padding:0 7px}
 }
+
+/* V14.8: Abandoned Applications interactive controls */
+.abandoned-table .abandoned-recovery-select,
+.abandoned-table .abandoned-assign-select {
+  appearance: auto; -webkit-appearance: auto; min-width: 188px; height: 42px; padding: 0 38px 0 14px;
+  border: 1px solid #d8e0ef; border-radius: 12px; background: #fff; color: #34415a;
+  font: 600 13px/1.2 Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  cursor: pointer; outline: none; box-sizing: border-box; transition: border-color .18s ease, box-shadow .18s ease;
+}
+.abandoned-table .abandoned-recovery-select:hover, .abandoned-table .abandoned-assign-select:hover { border-color: #b9c8e8; }
+.abandoned-table .abandoned-recovery-select:focus, .abandoned-table .abandoned-assign-select:focus { border-color: #7c5ce5; box-shadow: 0 0 0 3px rgba(124,92,229,.12); }
+.abandoned-table .abandoned-recovery-select:disabled, .abandoned-table .abandoned-assign-select:disabled { opacity: .65; cursor: wait; }
+@media (max-width: 760px) { .abandoned-table .abandoned-recovery-select, .abandoned-table .abandoned-assign-select { min-width: 160px; height: 40px; } }

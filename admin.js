@@ -403,6 +403,12 @@ function renderRecoveryCenter(rows) {
   }).join('') : '<p class="empty">No incomplete applications in the recent recovery window.</p>';
 }
 
+function abandonedRecoveryOptions(current) {
+  const options = ["Needs Follow-up", "Contacted", "Recovered", "Submitted / Recovered"];
+  const value = String(current || "Needs Follow-up");
+  return options.map(option => `<option value="${esc(option)}"${option === value ? " selected" : ""}>${esc(option)}</option>`).join("");
+}
+
 function renderAbandonedDashboard(rows) {
   const stored = dedupeRecoveryRows(recoveryStoreRows()).filter(v => Number(v.formProgress || 0) > 0);
   const recoveredRows = stored.filter(v => ['Recovered','Submitted / Recovered'].includes(String(v.recoveryStatus || '')));
@@ -447,7 +453,7 @@ function renderAbandonedDashboard(rows) {
       <td><div class="abandoned-progress"><div class="abandoned-progress-track"><span style="width:${progress}%"></span></div><b>${progress}%</b> · Step ${esc(v.currentStep || '1')}</div></td>
       <td><span class="abandoned-type ${colourClass}">${esc(exit)}</span><br><small class="abandoned-muted">${esc(v.exitReason || v.currentField || '—')}</small></td>
       <td>${esc(fmt(v.leftAt || v.abandonedAt || v.lastActive))}</td>
-      <td><span class="abandoned-recovery">${esc(status)}</span></td>
+      <td><select class="crm-assign-select abandoned-recovery-select" data-ab-recovery="${esc(v.id)}" aria-label="Recovery status">${abandonedRecoveryOptions(status)}</select></td>
       <td><select class="crm-assign-select abandoned-assign-select" data-ab-assign="${esc(v.id)}" aria-label="Assign abandoned application">${counselorOptions(v.assignedTo || '')}</select></td>
       <td><div class="crm-row-actions abandoned-action"><button class="crm-open-btn" type="button" data-ab-open="${esc(v.id)}">Open</button><button class="crm-history-btn" type="button" data-ab-history="${esc(v.id)}">History</button><button class="crm-delete-btn" type="button" data-ab-delete="${esc(v.id)}">Delete</button></div></td>
     </tr>`;
@@ -550,28 +556,35 @@ function showAbandonedHistory(v) {
   alert(`Recovery History\n\n${lines.map(([label,value])=>`${label}: ${value}`).join('\n')}`);
 }
 
-function updateAbandonedRecoveryStatus(recordId, status) {
+async function updateAbandonedRecoveryStatus(recordId, status) {
   const stored = abandonedApplications[recordId];
   const live = Object.values(visitors).find(v => String(v.draftId || '') === String(recordId));
   const v = stored || live;
-  if (!v) return;
-  const d = v.fieldData || v;
-  const draftId = v.draftId || recordId;
-  v.recoveryStatus = status;
-  if (abandonedApplications[recordId]) abandonedApplications[recordId].recoveryStatus = status;
-  renderAbandonedDashboard([]);
-  const payload = {
-    action:'saveAbandonedApplication', draftId, startedAt:v.startedAt || '', lastActive:new Date().toISOString(),
-    name:d.name||'', phone:d.phone||'', email:d.email||'', college:d.college||'', department:d.department||'', year:d.year||'', domain:d.domain||'', state:d.state||'',
-    communicationLanguage:d.communicationLanguage||'', startAvailability:d.startAvailability||'', applicationReason:d.applicationReason||'',
-    progress:Number(v.formProgress ?? v.progress ?? 0), currentStep:v.currentStep||1, lastField:v.currentField||v.lastField||'',
-    exitType:v.exitType || (String(v.lastAction||'').toLowerCase().includes('cancel')?'Cancelled Application':'Left Page'),
-    exitReason:v.exitReason||'', referral:v.referral||'', device:v.device||'', recoveryStatus:status, applicationId:v.applicationId||''
-  };
-  fetch(SHEETS_RECOVERY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),keepalive:true}).catch(console.warn);
-  const liveId = Object.entries(visitors).find(([,x]) => String(x.draftId || '') === String(draftId))?.[0];
-  if (liveId) db.ref(`liveVisitors/${liveId}`).update({recoveryStatus:status});
-  db.ref(`abandonedApplications/${String(draftId).replace(/[.#$\[\]\/]/g,'_')}`).update({recoveryStatus:status,updatedAtMs:Date.now()}).catch(console.warn);
+  if (!v) return false;
+  const clean = String(status || 'Needs Follow-up').trim();
+  const draftId = String(v.draftId || recordId).trim();
+  if (!draftId) {
+    showToast('Recovery update failed', 'This abandoned application has no Draft ID.', 'error', 5000);
+    return false;
+  }
+  const previous = String(v.recoveryStatus || 'Needs Follow-up');
+  if (previous === clean) return true;
+  const select = document.querySelector(`[data-ab-recovery=\"${CSS.escape(String(recordId))}\"]`);
+  try {
+    const response = await fetch(SHEETS_RECOVERY_ENDPOINT, {
+      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'updateAbandonedRecoveryStatus', draftId, recoveryStatus:clean}), keepalive:true
+    });
+    if (abandonedApplications[recordId]) abandonedApplications[recordId].recoveryStatus = clean;
+    if (live) live.recoveryStatus = clean;
+    renderAbandonedDashboard([]);
+    showToast('Recovery updated', `${(v.fieldData || v).name || 'Applicant'} → ${clean}.`, 'success', 3500);
+    return true;
+  } catch (error) {
+    if (select) select.value = previous;
+    showToast('Recovery update failed', error?.message || 'Unable to update recovery status.', 'error', 6000);
+    return false;
+  }
 }
 
 function setupAbandonedDashboardActions() {
@@ -594,11 +607,21 @@ function setupAbandonedDashboardActions() {
     const csv=[headers,...rows.map(v=>{const d=v.fieldData||{};return[d.name||v.name||'',d.phone||v.phone||'',d.email||v.email||'',d.college||v.college||'',d.department||v.department||'',d.year||v.year||'',d.domain||v.domain||'',v.formProgress||0,v.currentStep||'',v.exitType||'',v.exitReason||'',v.leftAt||v.lastActive||'',v.recoveryStatus||'Needs Follow-up',v.assignedTo||'',v.draftId||v.id||''];})].map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`internsforge-abandoned-${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   });
-  el('abandonedTableBody')?.addEventListener('change',e=>{
+  el('abandonedTableBody')?.addEventListener('change',async e=>{
+    const recovery=e.target.closest('[data-ab-recovery]');
+    if(recovery){
+      const recordId=recovery.dataset.abRecovery;
+      const v=abandonedApplications[recordId] || Object.values(visitors).find(x=>String(x.draftId||'')===String(recordId));
+      const previous=String(v?.recoveryStatus || 'Needs Follow-up');
+      const ok=await updateAbandonedRecoveryStatus(recordId,recovery.value);
+      if(!ok) recovery.value=previous;
+      return;
+    }
     const assign=e.target.closest('[data-ab-assign]');
     if(assign){
+      const previous=String((abandonedApplications[assign.dataset.abAssign] || Object.values(visitors).find(x=>String(x.draftId||'')===String(assign.dataset.abAssign)))?.assignedTo || '');
       const value=handleCounselorSelect(assign, clean => assignAbandonedApplication(assign.dataset.abAssign, clean));
-      if(value === '__new__') assign.value='';
+      if(value === '__new__') assign.value=previous;
     }
   });
   el('abandonedTableBody')?.addEventListener('click',e=>{

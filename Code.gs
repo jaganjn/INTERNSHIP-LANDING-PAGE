@@ -1751,6 +1751,37 @@ function deleteAbandonedApplication(raw) {
 }
 
 
+function updateAbandonedRecoveryStatus(raw) {
+  raw = raw || {};
+  const draftId = normalizeRecoveryText_(raw.draftId || raw.visitorId || "", 120);
+  const recoveryStatus = normalizeRecoveryText_(raw.recoveryStatus || "Needs Follow-up", 80);
+  if (!draftId) return jsonResponse({status:"error", message:"Draft ID is required."});
+  const allowed = ["Needs Follow-up", "Contacted", "Recovered", "Submitted / Recovered"];
+  if (!allowed.includes(recoveryStatus)) return jsonResponse({status:"error", message:"Invalid recovery status."});
+  const sheet = ensureAbandonedApplicationsSheet_();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(8000);
+  try {
+    let updated = 0;
+    if (sheet.getLastRow() >= 2) {
+      const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, ABANDONED_HEADERS.length).getValues();
+      for (let i = 0; i < values.length; i++) {
+        if (String(values[i][1] || "").trim() === draftId) {
+          sheet.getRange(i + 2, 23).setValue(recoveryStatus);
+          updated = 1;
+          break;
+        }
+      }
+    }
+    const recoveryId = draftId.replace(/[.#$\[\]\/]/g, "_");
+    firebaseRestPatch("/abandonedApplications/" + recoveryId, {recoveryStatus: recoveryStatus, updatedAtMs: Date.now()});
+    SpreadsheetApp.flush();
+    return jsonResponse({status:"success", updated:updated, draftId:draftId, recoveryStatus:recoveryStatus});
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function updateAbandonedApplicationAssignment(raw) {
   raw = raw || {};
   const draftId = normalizeRecoveryText_(raw.draftId || raw.visitorId || "", 120);
@@ -1825,6 +1856,7 @@ function doPost(e) {
     if (data.action === "saveAbandonedApplication") return saveAbandonedApplication(data);
     if (data.action === "syncAbandonedApplicationsNow") return jsonResponse(syncAbandonedApplicationsSheetToFirebase());
     if (data.action === "updateAbandonedApplicationAssignment") return updateAbandonedApplicationAssignment(data);
+    if (data.action === "updateAbandonedRecoveryStatus") return updateAbandonedRecoveryStatus(data);
     if (data.action === "markAbandonedApplicationSubmitted") return markAbandonedApplicationSubmitted(data);
     if (data.action === "deleteAbandonedApplication") return deleteAbandonedApplication(data);
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));

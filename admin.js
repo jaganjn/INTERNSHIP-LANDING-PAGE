@@ -98,6 +98,8 @@ let counselorNames = [];
 let selectedApplicationIds = new Set();
 let abandonedFilteredRows = [];
 let abandonedApplications = {};
+let abandonedSelectBusy = false;
+let abandonedRenderQueued = false;
 
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -409,6 +411,28 @@ function abandonedRecoveryOptions(current) {
   return options.map(option => `<option value="${esc(option)}"${option === value ? " selected" : ""}>${esc(option)}</option>`).join("");
 }
 
+function renderAbandonedDashboardSafely(rows) {
+  // Do not replace the table DOM while a Recovery/Assigned To select is open
+  // or focused. Replacing <tbody> closes the native select immediately, which
+  // is why the dropdown appeared to disappear when users clicked it.
+  const active = document.activeElement;
+  if (active && active.closest && active.closest('#abandonedTableBody select[data-ab-recovery], #abandonedTableBody select[data-ab-assign]')) {
+    abandonedRenderQueued = true;
+    return;
+  }
+  abandonedRenderQueued = false;
+  renderAbandonedDashboard(rows);
+}
+
+function flushAbandonedRender() {
+  if (!abandonedRenderQueued) return;
+  if (abandonedSelectBusy) return;
+  const active = document.activeElement;
+  if (active && active.closest && active.closest('#abandonedTableBody select[data-ab-recovery], #abandonedTableBody select[data-ab-assign]')) return;
+  abandonedRenderQueued = false;
+  renderAbandonedDashboard([]);
+}
+
 function renderAbandonedDashboard(rows) {
   const stored = dedupeRecoveryRows(recoveryStoreRows()).filter(v => Number(v.formProgress || 0) > 0);
   const recoveredRows = stored.filter(v => ['Recovered','Submitted / Recovered'].includes(String(v.recoveryStatus || '')));
@@ -461,6 +485,15 @@ function renderAbandonedDashboard(rows) {
   const count = el('abResultCount'); if(count) count.textContent = `${filtered.length} of ${all.length} abandoned applications`;
 }
 
+async function callRecoveryEndpoint(action, payload = {}) {
+  const params = new URLSearchParams({ action, ...payload });
+  const url = `${SHEETS_RECOVERY_ENDPOINT}?${params.toString()}`;
+  const response = await fetch(url, { method: 'GET', cache: 'no-store' });
+  if (!response.ok) throw new Error(`Recovery service returned HTTP ${response.status}.`);
+  const data = await response.json();
+  return data;
+}
+
 async function assignAbandonedApplication(recordId, counselor) {
   const stored = abandonedApplications[recordId];
   const live = Object.values(visitors).find(v => String(v.draftId || '') === String(recordId));
@@ -482,17 +515,13 @@ async function assignAbandonedApplication(recordId, counselor) {
     // The Firebase rules may intentionally deny client writes. Route the
     // assignment through the Apps Script service account instead, which also
     // updates the durable Google Sheet in the same operation.
-    await fetch(SHEETS_RECOVERY_ENDPOINT, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: {'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({
-        action: 'updateAbandonedApplicationAssignment',
-        draftId: draftId,
-        assignedTo: clean
-      }),
-      keepalive: true
+    const result = await callRecoveryEndpoint('updateAbandonedApplicationAssignment', {
+      draftId: draftId,
+      assignedTo: clean
     });
+    if (!result || result.status !== 'success') {
+      throw new Error(result?.message || 'The assignment could not be saved.');
+    }
 
     // Optimistic local update keeps the dashboard responsive immediately.
     if (abandonedApplications[recordId]) abandonedApplications[recordId].assignedTo = clean;
@@ -510,7 +539,6 @@ async function assignAbandonedApplication(recordId, counselor) {
       }).catch(() => {});
     }
 
-    renderAbandonedDashboard([]);
     showToast('Lead assigned', `${(v.fieldData || v).name || 'Applicant'} → ${clean || 'Unassigned'}.`, 'success', 4000);
     return true;
   } catch (error) {
@@ -527,13 +555,15 @@ async function deleteAbandonedApplication(v) {
   const name=String(d.name||v?.name||'this applicant').trim();
   if(!confirm(`Delete abandoned application for ${name}?\n\nDraft ID: ${draftId}\n\nThis will remove the recovery record from Firebase and the Abandoned Applications sheet.`)) return;
   try {
-    await fetch(SHEETS_RECOVERY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'deleteAbandonedApplication',draftId:draftId}),keepalive:true});
+    const result = await callRecoveryEndpoint('deleteAbandonedApplication', {draftId:draftId});
+    if (!result || !['success','completed_with_errors'].includes(result.status)) {
+      throw new Error(result?.message || 'The abandoned application could not be deleted.');
+    }
     const recoveryId=draftId.replace(/[.#$\[\]\/]/g,'_');
     await db.ref(`abandonedApplications/${recoveryId}`).remove();
     const liveId=Object.entries(visitors).find(([,x])=>String(x.draftId||'')===draftId)?.[0];
     if(liveId) await db.ref(`liveVisitors/${liveId}`).update({recoveryStatus:'Deleted'});
     showToast('Abandoned application deleted',`${name} was removed from recovery records.`,'success',4500);
-    renderAbandonedDashboard([]);
   } catch(error) {
     console.error('Delete abandoned application failed:',error);
     showToast('Delete failed',error?.message||'Unable to delete this abandoned application.','error',7000);
@@ -571,13 +601,12 @@ async function updateAbandonedRecoveryStatus(recordId, status) {
   if (previous === clean) return true;
   const select = document.querySelector(`[data-ab-recovery=\"${CSS.escape(String(recordId))}\"]`);
   try {
-    const response = await fetch(SHEETS_RECOVERY_ENDPOINT, {
-      method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'updateAbandonedRecoveryStatus', draftId, recoveryStatus:clean}), keepalive:true
-    });
+    const response = await callRecoveryEndpoint('updateAbandonedRecoveryStatus', {draftId, recoveryStatus:clean});
+    if (!response || response.status !== 'success') {
+      throw new Error(response?.message || 'The recovery status could not be saved.');
+    }
     if (abandonedApplications[recordId]) abandonedApplications[recordId].recoveryStatus = clean;
     if (live) live.recoveryStatus = clean;
-    renderAbandonedDashboard([]);
     showToast('Recovery updated', `${(v.fieldData || v).name || 'Applicant'} → ${clean}.`, 'success', 3500);
     return true;
   } catch (error) {
@@ -588,8 +617,8 @@ async function updateAbandonedRecoveryStatus(recordId, status) {
 }
 
 function setupAbandonedDashboardActions() {
-  ['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id => el(id)?.addEventListener('input',()=>renderAbandonedDashboard(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})))));
-  el('abClearFilters')?.addEventListener('click',()=>{['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id=>{const n=el(id);if(n)n.value='';});renderAbandonedDashboard(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})));});
+  ['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id => el(id)?.addEventListener('input',()=>renderAbandonedDashboardSafely(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})))));
+  el('abClearFilters')?.addEventListener('click',()=>{['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id=>{const n=el(id);if(n)n.value='';});renderAbandonedDashboardSafely(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})));});
   el('refreshAbandonedButton')?.addEventListener('click', async () => {
     renderVisitors();
     try {
@@ -610,18 +639,43 @@ function setupAbandonedDashboardActions() {
   el('abandonedTableBody')?.addEventListener('change',async e=>{
     const recovery=e.target.closest('[data-ab-recovery]');
     if(recovery){
+      abandonedSelectBusy = true;
       const recordId=recovery.dataset.abRecovery;
       const v=abandonedApplications[recordId] || Object.values(visitors).find(x=>String(x.draftId||'')===String(recordId));
       const previous=String(v?.recoveryStatus || 'Needs Follow-up');
-      const ok=await updateAbandonedRecoveryStatus(recordId,recovery.value);
-      if(!ok) recovery.value=previous;
+      try {
+        const ok=await updateAbandonedRecoveryStatus(recordId,recovery.value);
+        if(!ok) recovery.value=previous;
+      } finally {
+        abandonedSelectBusy = false;
+        setTimeout(flushAbandonedRender, 0);
+      }
       return;
     }
     const assign=e.target.closest('[data-ab-assign]');
     if(assign){
+      abandonedSelectBusy = true;
       const previous=String((abandonedApplications[assign.dataset.abAssign] || Object.values(visitors).find(x=>String(x.draftId||'')===String(assign.dataset.abAssign)))?.assignedTo || '');
-      const value=handleCounselorSelect(assign, clean => assignAbandonedApplication(assign.dataset.abAssign, clean));
-      if(value === '__new__') assign.value=previous;
+      try {
+        const value=handleCounselorSelect(assign, clean => assignAbandonedApplication(assign.dataset.abAssign, clean));
+        if(value === '__new__') assign.value=previous;
+      } finally {
+        // Keep the selected control alive through any realtime Firebase redraw.
+        // The final render happens only after the selection interaction completes.
+        abandonedSelectBusy = false;
+        setTimeout(flushAbandonedRender, 0);
+      }
+    }
+  });
+  el('abandonedTableBody')?.addEventListener('focusin', e=>{
+    const select=e.target.closest?.('[data-ab-recovery],[data-ab-assign]');
+    if(select) abandonedSelectBusy = true;
+  });
+  el('abandonedTableBody')?.addEventListener('focusout', e=>{
+    const select=e.target.closest?.('[data-ab-recovery],[data-ab-assign]');
+    if(select){
+      abandonedSelectBusy = false;
+      setTimeout(flushAbandonedRender, 0);
     }
   });
   el('abandonedTableBody')?.addEventListener('click',e=>{
@@ -702,7 +756,7 @@ function renderVisitors() {
 
   E.visitorList.innerHTML = activeMarkup + inactiveMarkup;
   renderRecoveryCenter(rows);
-  renderAbandonedDashboard(rows);
+  renderAbandonedDashboardSafely(rows);
   updateStamp();
   renderMobileOperationsCockpit();
 }

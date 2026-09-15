@@ -1846,6 +1846,22 @@ function markAbandonedApplicationSubmitted(raw) {
   return jsonResponse({status:"success", updated:updated});
 }
 
+function doGet(e) {
+  try {
+    const p = (e && e.parameter) ? e.parameter : {};
+    const action = String(p.action || '').trim();
+    if (!action) return jsonResponse({status:'success', service:'InternsForge', message:'GET endpoint online.'});
+    if (action === 'updateAbandonedApplicationAssignment') return updateAbandonedApplicationAssignment(p);
+    if (action === 'updateAbandonedRecoveryStatus') return updateAbandonedRecoveryStatus(p);
+    if (action === 'deleteAbandonedApplication') return deleteAbandonedApplication(p);
+    if (action === 'health') return jsonResponse({status:'online', time:nowString(), message:'InternsForge Sheets receiver is healthy.'});
+    return jsonResponse({status:'error', message:'Unknown action: ' + action});
+  } catch (error) {
+    console.error('GET ERROR', error);
+    return jsonResponse({status:'error', message:error.message || String(error)});
+  }
+}
+
 function doPost(e) {
   try {
     if (!e || !e.postData || !e.postData.contents) return jsonResponse({status:"error", message:"No data received."});

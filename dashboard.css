@@ -519,6 +519,13 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;opa
 .crm-status.not-contacted{background:#eef2f7;color:#657289}.crm-status.new{background:#eef5ff;color:#4b70a8}.crm-status.connected{background:#e9f3ff;color:#2773c5}.crm-status.callback{background:#fff4df;color:#b66b08}.crm-status.details-shared{background:#e9f1ff;color:#3f67ad}.crm-status.follow-up{background:#fff8df;color:#9a7410}.crm-status.interested{background:#e8fbf3;color:#129363}.crm-status.not-interested{background:#fff0f1;color:#c34252}.crm-status.not-picking{background:#f3f4f6;color:#6b7280}.crm-status.paid-pre-reg{background:#eee9ff;color:#6949c8}.crm-status.enrolled{background:#dff9ec;color:#087b52}.crm-status.rnr{background:#fff0e7;color:#a34d19}.crm-status.invalid-number{background:#f4eafa;color:#7b4aa8}
 .follow-pill.none{background:#f2f4f8;color:#788398}.follow-pill.upcoming{background:#eaf4ff;color:#3472b8}.follow-pill.due{background:#fff0f1;color:#c73d4d}
 .crm-open-btn{border:1px solid #d9e2f0;background:#fff;color:#5b4ee0;border-radius:9px;padding:7px 10px;font:800 10px Inter;cursor:pointer}.crm-open-btn:hover{background:#f1efff;border-color:#7b6bf0}.crm-row-actions{display:flex;align-items:center;gap:6px;white-space:nowrap}
+/* Application Management action buttons: use the same CRM button system, never native browser controls. */
+.crm-row-actions button.crm-whatsapp-btn,.crm-row-actions button.crm-contacted-btn{appearance:none;-webkit-appearance:none;box-sizing:border-box;min-height:34px;padding:7px 10px;margin:0;border-radius:9px;line-height:1.1;font-family:Inter,sans-serif;font-size:10px;font-weight:800;cursor:pointer;transition:.18s ease;white-space:nowrap}
+.crm-row-actions button.crm-whatsapp-btn{border:1px solid #cfe5d8;background:#f4fbf7;color:#16804d}
+.crm-row-actions button.crm-whatsapp-btn:hover{background:#e6f7ee;border-color:#82cba5;color:#11683f}
+.crm-row-actions button.crm-contacted-btn{border:1px solid #d9e2f0;background:#fff;color:#334155}
+.crm-row-actions button.crm-contacted-btn:hover{background:#f3f6fa;border-color:#9fb0c7;color:#172846}
+
 /* === Abandoned Applications: match Application Management CRM controls === */
 .abandoned-table .crm-row-actions{display:flex;align-items:center;justify-content:flex-start;gap:6px;flex-wrap:nowrap;white-space:nowrap}
 .abandoned-table .crm-row-actions button{appearance:none;-webkit-appearance:none;box-sizing:border-box;min-height:34px;padding:7px 10px;margin:0;border-radius:9px;line-height:1.1;font-family:Inter,sans-serif;font-size:10px;font-weight:800;cursor:pointer;transition:.18s ease}
@@ -942,7 +949,7 @@ body.module-modal-open{overflow:hidden}
   .admin-page .domain-pill,.admin-page .crm-status,.admin-page .follow-pill{font-size:8px;padding:4px 6px;border-radius:7px;display:inline-block;max-width:100%;white-space:normal}
   .admin-page .crm-assign-select{width:100%;min-height:31px;border-radius:8px;font-size:8px;padding:0 5px}
   .admin-page .crm-row-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
-  .admin-page .crm-row-actions button{min-height:34px;border-radius:9px;font-size:8px;padding:0 5px}
+  .admin-page .crm-row-actions button{appearance:none;-webkit-appearance:none;box-sizing:border-box;min-height:34px;border-radius:9px;font-size:8px;padding:0 5px;font-family:Inter,sans-serif;font-weight:800;line-height:1.1}
   .admin-page .crm-footer{gap:5px;margin-top:9px;padding-top:9px;border-top-color:rgba(78,148,211,.12)}
   .admin-page .crm-footer span{font-size:9px}.admin-page .crm-footer small{font-size:7.5px;line-height:1.4}
 

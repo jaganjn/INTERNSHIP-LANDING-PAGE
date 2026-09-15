@@ -35,6 +35,13 @@ const CALL_STATUS_ALIASES = {
   "Not Reachable": "Not Picking"
 };
 
+function normalizePhoneKey(phone) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (!digits) return "";
+  // Normalize common Indian phone formats to the last 10 digits.
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
 function normalizeCallStatus(status) {
   const raw = String(status || "").trim();
   if (!raw) return "Not Contacted";

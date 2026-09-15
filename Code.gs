@@ -1750,6 +1750,47 @@ function deleteAbandonedApplication(raw) {
   }
 }
 
+
+function updateAbandonedApplicationAssignment(raw) {
+  raw = raw || {};
+  const draftId = normalizeRecoveryText_(raw.draftId || raw.visitorId || "", 120);
+  const assignedTo = normalizeRecoveryText_(raw.assignedTo || "", 120);
+  if (!draftId) return jsonResponse({status:"error", message:"Draft ID is required."});
+
+  const sheet = ensureAbandonedApplicationsSheet_();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(8000);
+  try {
+    let updated = 0;
+    if (sheet.getLastRow() >= 2) {
+      const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, ABANDONED_HEADERS.length).getValues();
+      for (let i = 0; i < values.length; i++) {
+        if (String(values[i][1] || "").trim() === draftId) {
+          sheet.getRange(i + 2, 25).setValue(assignedTo);
+          updated = 1;
+          break;
+        }
+      }
+    }
+
+    const recoveryId = draftId.replace(/[.#$\[\]\/]/g, "_");
+    firebaseRestPatch("/abandonedApplications/" + recoveryId, {
+      assignedTo: assignedTo,
+      updatedAtMs: Date.now()
+    });
+    SpreadsheetApp.flush();
+    return jsonResponse({
+      status:"success",
+      updated:updated,
+      draftId:draftId,
+      assignedTo:assignedTo,
+      message: updated ? "Abandoned application assignment updated." : "Firebase assignment updated; sheet row was not found."
+    });
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function markAbandonedApplicationSubmitted(raw) {
   raw = raw || {};
   const draftId = normalizeRecoveryText_(raw.draftId || "", 120);
@@ -1783,6 +1824,7 @@ function doPost(e) {
     if (data.action === "deleteApplication") return jsonResponse(deleteApplicationFromSheets(data.application || data));
     if (data.action === "saveAbandonedApplication") return saveAbandonedApplication(data);
     if (data.action === "syncAbandonedApplicationsNow") return jsonResponse(syncAbandonedApplicationsSheetToFirebase());
+    if (data.action === "updateAbandonedApplicationAssignment") return updateAbandonedApplicationAssignment(data);
     if (data.action === "markAbandonedApplicationSubmitted") return markAbandonedApplicationSubmitted(data);
     if (data.action === "deleteAbandonedApplication") return deleteAbandonedApplication(data);
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));

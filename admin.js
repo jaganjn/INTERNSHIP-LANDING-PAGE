@@ -1,4 +1,3 @@
-/* V14.6: Application Management actions restored to Open / History / Delete. */
 
 function normalizePhoneKey(phone) {
   const digits = String(phone || '').replace(/\D/g, '');
@@ -467,31 +466,46 @@ async function assignAbandonedApplication(recordId, counselor) {
   const old = String(v.assignedTo || '').trim();
   if (old === clean) return true;
   const draftId = String(v.draftId || recordId).trim();
-  const recoveryId = draftId.replace(/[.#$\[\]\/]/g,'_');
+  if (!draftId) {
+    showToast('Assignment failed', 'This abandoned application has no Draft ID.', 'error', 5000);
+    return false;
+  }
+
   try {
-    // Persist in Firebase immediately for the live dashboard.
-    await db.ref(`abandonedApplications/${recoveryId}`).update({ assignedTo: clean, updatedAtMs: Date.now() });
+    // IMPORTANT: Do not write abandonedApplications directly from the browser.
+    // The Firebase rules may intentionally deny client writes. Route the
+    // assignment through the Apps Script service account instead, which also
+    // updates the durable Google Sheet in the same operation.
+    await fetch(SHEETS_RECOVERY_ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({
+        action: 'updateAbandonedApplicationAssignment',
+        draftId: draftId,
+        assignedTo: clean
+      }),
+      keepalive: true
+    });
+
+    // Optimistic local update keeps the dashboard responsive immediately.
     if (abandonedApplications[recordId]) abandonedApplications[recordId].assignedTo = clean;
     if (live) live.assignedTo = clean;
 
-    // Persist in Google Sheets through the existing Apps Script endpoint.
-    const d = v.fieldData || v;
-    const payload = {
-      action:'saveAbandonedApplication', draftId, startedAt:v.startedAt || '', lastActive:v.lastActive || new Date().toISOString(),
-      name:d.name||'', phone:d.phone||'', email:d.email||'', college:d.college||'', department:d.department||'', year:d.year||'', domain:d.domain||'', state:d.state||'',
-      communicationLanguage:d.communicationLanguage||'', startAvailability:d.startAvailability||'', applicationReason:d.applicationReason||'',
-      progress:Number(v.formProgress ?? v.progress ?? 0), currentStep:v.currentStep||1, lastField:v.currentField||v.lastField||'',
-      exitType:v.exitType || (String(v.lastAction||'').toLowerCase().includes('cancel')?'Cancelled Application':'Left Page'),
-      exitReason:v.exitReason||'', referral:v.referral||'', device:v.device||'', recoveryStatus:v.recoveryStatus||'Needs Follow-up', applicationId:v.applicationId||'', assignedTo:clean
-    };
-    fetch(SHEETS_RECOVERY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),keepalive:true}).catch(console.warn);
-
-    // Record assignment in the same activity trail used by submitted applications.
+    // Keep the activity trail when an Application ID exists. Failure here
+    // must not make a successful assignment look like it failed.
     if (v.applicationId) {
-      logApplicationActivity(v.applicationId, { action:'Lead reassigned', field:'Assigned To', oldValue:old||'', newValue:clean||'', summary:`Abandoned lead assignment changed from ${old||'Unassigned'} to ${clean||'Unassigned'}` }).catch(()=>{});
+      logApplicationActivity(v.applicationId, {
+        action:'Lead reassigned',
+        field:'Assigned To',
+        oldValue:old || '',
+        newValue:clean || '',
+        summary:`Abandoned lead assignment changed from ${old || 'Unassigned'} to ${clean || 'Unassigned'}`
+      }).catch(() => {});
     }
+
     renderAbandonedDashboard([]);
-    showToast('Lead assigned', `${d.name || 'Applicant'} → ${clean || 'Unassigned'}.`, 'success', 4000);
+    showToast('Lead assigned', `${(v.fieldData || v).name || 'Applicant'} → ${clean || 'Unassigned'}.`, 'success', 4000);
     return true;
   } catch (error) {
     console.error('Abandoned lead assignment failed:', error);
@@ -1106,18 +1120,17 @@ function renderCrmTable(rows) {
       <td><span class="crm-status ${statusClass(status)}">${esc(status)}</span></td>
       <td><span class="follow-pill ${followClass}">${isFollowUpDue(app) ? "⚠ " : ""}${esc(formatFollowUp(app))}</span></td>
       <td><select class="crm-assign-select" data-app-id="${esc(app.id)}" aria-label="Assign ${esc(app.name || "lead")}">${counselorOptions(assigned)}</select></td>
-      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button><button class="crm-history-btn" type="button" data-app-history-id="${esc(app.id)}">History</button><button class="crm-delete-btn" type="button" data-app-delete-id="${esc(app.id)}">Delete</button></div></td>
+      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">View</button>${app.phone ? `<button class="crm-whatsapp-btn" type="button" data-app-wa-id="${esc(app.id)}">WhatsApp</button>` : ''}<button class="crm-contacted-btn" type="button" data-app-contact-id="${esc(app.id)}">Contacted</button></div></td>
     </tr>`;
   }).join("") || '<tr><td colspan="9" class="empty">No applications match your filters.</td></tr>';
 
   body.querySelectorAll(".crm-open-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
-  body.querySelectorAll(".crm-history-btn").forEach(btn => btn.addEventListener("click", () => {
-    const id = btn.dataset.appHistoryId;
-    openApplicationModal(id);
-    setTimeout(() => loadApplicationHistory(id), 0);
+  body.querySelectorAll(".crm-whatsapp-btn").forEach(btn => btn.addEventListener("click", () => {
+    const app = applications.find(item => item.id === btn.dataset.appWaId);
+    if (app) openApplicationWhatsApp(app);
   }));
-  body.querySelectorAll(".crm-delete-btn").forEach(btn => btn.addEventListener("click", () => {
-    deleteSingleApplication(btn.dataset.appDeleteId);
+  body.querySelectorAll(".crm-contacted-btn").forEach(btn => btn.addEventListener("click", () => {
+    markApplicationContacted(btn.dataset.appContactId);
   }));
   body.querySelectorAll(".crm-row-check").forEach(box => box.addEventListener("change", () => toggleCrmSelection(box.dataset.appId, box.checked)));
   body.querySelectorAll(".crm-assign-select").forEach(select => select.addEventListener("change", () => {

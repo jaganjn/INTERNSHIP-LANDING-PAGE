@@ -1532,7 +1532,63 @@ function ensureAbandonedApplicationsSheet_() {
 
 function setupAbandonedApplicationsSheet() {
   const sheet = ensureAbandonedApplicationsSheet_();
-  return {status:"success", sheetName:sheet.getName(), message:"Abandoned Applications sheet is ready."};
+  const sync = syncAbandonedApplicationsSheetToFirebase();
+  return {status:"success", sheetName:sheet.getName(), synced:sync.synced, failed:sync.failed, message:"Abandoned Applications sheet is ready and synchronized to Firebase."};
+}
+
+/**
+ * One-way backfill/synchronization for the Abandoned Applications workspace.
+ * Google Sheets remains the durable source; Firebase receives a mirror so the
+ * Admin Dashboard can update in real time. This does not modify any other CRM
+ * or application-management data.
+ */
+function syncAbandonedApplicationsSheetToFirebase() {
+  const sheet = ensureAbandonedApplicationsSheet_();
+  if (sheet.getLastRow() < 2) return {status:"success", synced:0, failed:0};
+
+  const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, ABANDONED_HEADERS.length).getValues();
+  let synced = 0;
+  let failed = 0;
+
+  rows.forEach(row => {
+    const draftId = normalizeRecoveryText_(row[1], 120);
+    if (!draftId) return;
+    const recoveryId = draftId.replace(/[.#$\[\]\/]/g, "_");
+    try {
+      firebaseRestPatch("/abandonedApplications/" + recoveryId, {
+        draftId: draftId,
+        startedAt: normalizeRecoveryText_(row[2], 80),
+        lastActive: normalizeRecoveryText_(row[3], 80),
+        name: normalizeRecoveryText_(row[4], 120),
+        phone: normalizeRecoveryText_(row[5], 40),
+        email: normalizeRecoveryText_(row[6], 180),
+        college: normalizeRecoveryText_(row[7], 180),
+        department: normalizeRecoveryText_(row[8], 120),
+        year: normalizeRecoveryText_(row[9], 40),
+        domain: normalizeRecoveryText_(row[10], 160),
+        state: normalizeRecoveryText_(row[11], 100),
+        communicationLanguage: normalizeRecoveryText_(row[12], 80),
+        startAvailability: normalizeRecoveryText_(row[13], 100),
+        applicationReason: normalizeRecoveryText_(row[14], 600),
+        progress: Math.max(0, Math.min(100, Number(row[15]) || 0)),
+        currentStep: normalizeRecoveryText_(row[16], 40),
+        lastField: normalizeRecoveryText_(row[17], 120),
+        exitType: normalizeRecoveryText_(row[18] || "Left Page", 60),
+        exitReason: normalizeRecoveryText_(row[19], 240),
+        referral: normalizeRecoveryText_(row[20], 120),
+        device: normalizeRecoveryText_(row[21], 80),
+        recoveryStatus: normalizeRecoveryText_(row[22] || "Needs Follow-up", 60),
+        applicationId: normalizeRecoveryText_(row[23], 120),
+        updatedAtMs: Date.now()
+      });
+      synced++;
+    } catch (error) {
+      failed++;
+      console.warn("Abandoned application backfill failed for " + draftId + ":", error);
+    }
+  });
+
+  return {status:"success", synced:synced, failed:failed};
 }
 
 function normalizeRecoveryText_(v, max) {
@@ -1596,6 +1652,46 @@ function saveAbandonedApplication(raw) {
       rowNumber = sheet.getLastRow();
     }
     SpreadsheetApp.flush();
+
+    // Keep the Admin Abandoned Applications dashboard synchronized with the
+    // same recovery record that is written to Google Sheets.  The browser
+    // may be unauthenticated, so do this server-side with the existing
+    // Firebase service-account REST helper.
+    try {
+      const recoveryId = String(draftId).replace(/[.#$\[\]\/]/g, "_");
+      firebaseRestPatch("/abandonedApplications/" + recoveryId, {
+        draftId: draftId,
+        visitorId: normalizeRecoveryText_(raw.visitorId, 120),
+        startedAt: normalizeRecoveryText_(raw.startedAt, 80),
+        lastActive: normalizeRecoveryText_(raw.lastActive, 80),
+        name: normalizeRecoveryText_(raw.name, 120),
+        phone: normalizeRecoveryText_(raw.phone, 40),
+        email: normalizeRecoveryText_(raw.email, 180),
+        college: normalizeRecoveryText_(raw.college, 180),
+        department: normalizeRecoveryText_(raw.department, 120),
+        year: normalizeRecoveryText_(raw.year, 40),
+        domain: normalizeRecoveryText_(raw.domain, 160),
+        state: normalizeRecoveryText_(raw.state, 100),
+        communicationLanguage: normalizeRecoveryText_(raw.communicationLanguage, 80),
+        startAvailability: normalizeRecoveryText_(raw.startAvailability, 100),
+        applicationReason: normalizeRecoveryText_(raw.applicationReason, 600),
+        progress: Math.max(0, Math.min(100, Number(raw.progress) || 0)),
+        currentStep: normalizeRecoveryText_(raw.currentStep, 40),
+        lastField: normalizeRecoveryText_(raw.lastField, 120),
+        exitType: normalizeRecoveryText_(raw.exitType || "Left Page", 60),
+        exitReason: normalizeRecoveryText_(raw.exitReason, 240),
+        referral: normalizeRecoveryText_(raw.referral, 120),
+        device: normalizeRecoveryText_(raw.device, 80),
+        recoveryStatus: normalizeRecoveryText_(raw.recoveryStatus || "Needs Follow-up", 60),
+        applicationId: normalizeRecoveryText_(raw.applicationId, 120),
+        updatedAtMs: Date.now()
+      });
+    } catch (firebaseError) {
+      // The Sheet remains the durable copy; surface the Firebase failure in
+      // logs without making a successful Sheet recovery save fail.
+      console.warn("Abandoned application Firebase sync failed:", firebaseError);
+    }
+
     return jsonResponse({status:"success", row:rowNumber, draftId:draftId, message:"Application recovery record saved."});
   } finally {
     lock.releaseLock();
@@ -1634,6 +1730,7 @@ function doPost(e) {
     if (data.action === "updateApplication") return jsonResponse(updateApplicationInSheet(data.application || {}));
     if (data.action === "deleteApplication") return jsonResponse(deleteApplicationFromSheets(data.application || data));
     if (data.action === "saveAbandonedApplication") return saveAbandonedApplication(data);
+    if (data.action === "syncAbandonedApplicationsNow") return jsonResponse(syncAbandonedApplicationsSheetToFirebase());
     if (data.action === "markAbandonedApplicationSubmitted") return markAbandonedApplicationSubmitted(data);
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
     if (data.action === "removeCounselor") return jsonResponse(removeCounselor(data.counselorName || data.name || ""));

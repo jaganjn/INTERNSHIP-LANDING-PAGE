@@ -297,7 +297,9 @@ function visitorCard(visitor, inactive = false) {
 function recoveryStoreRows() {
   const liveByDraft = {};
   Object.values(visitors).forEach(v => { if (v.draftId) liveByDraft[String(v.draftId)] = v; });
-  return Object.entries(abandonedApplications).map(([id, raw]) => {
+
+  // Persistent recovery records are the primary source.
+  const rows = Object.entries(abandonedApplications).map(([id, raw]) => {
     const live = liveByDraft[String(raw.draftId || id)] || {};
     const fieldData = {
       name: raw.name || live.fieldData?.name || live.name || '',
@@ -318,6 +320,42 @@ function recoveryStoreRows() {
       recoveryStatus: raw.recoveryStatus || live.recoveryStatus || 'Needs Follow-up'
     };
   });
+
+  // Compatibility fallback: older V13.x sessions may have been captured in
+  // liveVisitors before the persistent abandonedApplications record was written.
+  // Surface those records here too, then dedupe by phone/email/draft ID.
+  const persistentDrafts = new Set(rows.map(r => String(r.draftId || r.id || '')));
+  Object.entries(visitors).forEach(([id, live]) => {
+    const progress = Number(live.formProgress || live.progress || 0);
+    const state = sessionState(live, Date.now());
+    const started = live.hasStartedFilling === true || progress > 0;
+    const submitted = isSubmittedVisitor(live);
+    const recoveryStatus = String(live.recoveryStatus || '').toLowerCase();
+    if (!live.draftId || !started || submitted || ['recovered','submitted / recovered'].includes(recoveryStatus)) return;
+    if (!(state === 'abandoned' || state === 'left' || live.presence === 'inactive' || live.status === 'abandoned')) return;
+    const draft = String(live.draftId);
+    if (persistentDrafts.has(draft)) return;
+    rows.push({
+      id: draft, ...live,
+      fieldData: {
+        name: live.fieldData?.name || live.name || '',
+        phone: live.fieldData?.phone || live.phone || '',
+        email: live.fieldData?.email || live.email || '',
+        college: live.fieldData?.college || live.college || '',
+        department: live.fieldData?.department || live.department || '',
+        year: live.fieldData?.year || live.year || '',
+        domain: live.fieldData?.domain || live.domain || ''
+      },
+      formProgress: progress,
+      currentStep: live.currentStep || 1,
+      currentField: live.currentField || '',
+      lastActive: live.lastActive || live.leftAt || live.disconnectedAt,
+      exitType: live.exitType || (String(live.lastAction || '').toLowerCase().includes('cancel') ? 'Cancelled Application' : 'Left Page'),
+      exitReason: live.exitReason || '',
+      recoveryStatus: live.recoveryStatus || 'Needs Follow-up'
+    });
+  });
+  return rows;
 }
 
 function dedupeRecoveryRows(rows) {
@@ -436,7 +474,18 @@ function updateAbandonedRecoveryStatus(recordId, status) {
 function setupAbandonedDashboardActions() {
   ['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id => el(id)?.addEventListener('input',()=>renderAbandonedDashboard(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})))));
   el('abClearFilters')?.addEventListener('click',()=>{['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id=>{const n=el(id);if(n)n.value='';});renderAbandonedDashboard(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})));});
-  el('refreshAbandonedButton')?.addEventListener('click',renderVisitors);
+  el('refreshAbandonedButton')?.addEventListener('click', async () => {
+    renderVisitors();
+    try {
+      await fetch(SHEETS_RECOVERY_ENDPOINT, {
+        method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({action:'syncAbandonedApplicationsNow'}), keepalive:true
+      });
+      setTimeout(() => renderVisitors(), 1200);
+    } catch (error) {
+      console.warn('Abandoned applications sync request failed:', error);
+    }
+  });
   el('exportAbandonedButton')?.addEventListener('click',()=>{
     const rows=abandonedFilteredRows; const headers=['Name','Phone','Email','College','Department','Year','Domain','Progress %','Current Step','Exit Type','Exit Reason','Last Active','Recovery Status','Draft ID'];
     const csv=[headers,...rows.map(v=>{const d=v.fieldData||{};return[d.name||v.name||'',d.phone||v.phone||'',d.email||v.email||'',d.college||v.college||'',d.department||v.department||'',d.year||v.year||'',d.domain||v.domain||'',v.formProgress||0,v.currentStep||'',v.exitType||'',v.exitReason||'',v.leftAt||v.lastActive||'',v.recoveryStatus||'Needs Follow-up',v.draftId||v.id||''];})].map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');

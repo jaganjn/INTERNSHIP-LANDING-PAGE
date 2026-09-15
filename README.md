@@ -1,8 +1,5 @@
-V13.7.2 — ABANDONED DASHBOARD SYNC ONLY
+# InternsForge V13.7 – Abandoned Dashboard Data Loading Fix
 
-This patch changes only the Abandoned Applications synchronization path.
-- Adds a server-side sync action that reads the existing Abandoned Applications sheet and mirrors records into Firebase /abandonedApplications.
-- The Abandoned Applications Refresh button now triggers that sync and re-renders after a short delay.
-- No Application Management, Live Visitors, popup, form, counselor, or other CRM logic was intentionally changed.
+The Abandoned Applications dashboard now uses persistent `abandonedApplications` records as the primary source and falls back to eligible legacy/incomplete `liveVisitors` sessions from older V13.x versions. Submitted/recovered sessions are excluded. The admin.js cache version is bumped so browsers load the corrected script.
 
-Deploy Code.gs as the Apps Script Web App version, then replace admin.js in the admin site and deploy.
+No Firebase data is deleted.

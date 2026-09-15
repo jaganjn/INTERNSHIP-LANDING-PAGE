@@ -1939,17 +1939,34 @@ function listeners() {
       });
   });
 
-  db.ref("submittedApplications").on("value", snapshot => {
-    const nextApplications = Object.entries(snapshot.val() || {})
-      .map(([id, app]) => ({ id, ...app }))
-      .sort((a, b) => asMs(b.submittedAtMs || b.submittedAt) - asMs(a.submittedAtMs || a.submittedAt));
+  // Application Management: keep a dedicated, fault-tolerant realtime listener.
+  // This path is independent of visitor/recovery rendering so a problem in one
+  // workspace cannot leave the CRM stuck on "Loading applications…".
+  const submittedApplicationsRef = db.ref("submittedApplications");
+  submittedApplicationsRef.on("value", snapshot => {
+    try {
+      const nextApplications = Object.entries(snapshot.val() || {})
+        .map(([id, app]) => ({ id, ...(app || {}) }))
+        .sort((a, b) => asMs(b.submittedAtMs || b.submittedAt || b.timestamp) - asMs(a.submittedAtMs || a.submittedAt || a.timestamp));
 
-    const newIds = handleNewApplications(nextApplications);
-    applications = nextApplications;
-    db.ref("publicStats/applicationCount").set(applications.length).catch(error => console.warn("Public application count sync failed:", error));
-    renderApplications(newIds);
-    renderVisitors();
-    renderVisitors();
+      const newIds = handleNewApplications(nextApplications);
+      applications = nextApplications;
+      db.ref("publicStats/applicationCount").set(applications.length)
+        .catch(error => console.warn("Public application count sync failed:", error));
+
+      // Render the CRM even if another dashboard workspace subsequently fails.
+      renderApplications(newIds);
+    } catch (error) {
+      console.error("Application Management render failed:", error);
+      const body = el("crmTableBody");
+      if (body) body.innerHTML = '<tr><td colspan="9" class="empty">Unable to render applications. Refresh the dashboard.</td></tr>';
+      showToast("Application Management error", error?.message || "Unable to render submitted applications.", "error", 7000);
+    }
+  }, error => {
+    console.error("submittedApplications Firebase read failed:", error);
+    const body = el("crmTableBody");
+    if (body) body.innerHTML = '<tr><td colspan="9" class="empty">Unable to load applications from Firebase.</td></tr>';
+    showToast("Applications unavailable", error?.message || "Firebase denied access to submitted applications.", "error", 8000);
   });
 
   db.ref("referrals").on("value", snapshot => {
@@ -2220,7 +2237,6 @@ async function del(path, message, successText) {
     if (path === "submittedApplications") {
       applications = [];
       renderApplications();
-      renderApplications();
     }
     if (path === "referrals" || path === "referralJoins") {
       renderReferrals();
@@ -2290,7 +2306,6 @@ async function resetDashboard() {
     ]);
 
     applications = [];
-    renderApplications();
     renderApplications();
     renderReferrals();
 

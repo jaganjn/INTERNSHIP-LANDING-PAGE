@@ -1368,6 +1368,16 @@ function auditLiveChanges_(applicationId, liveBefore, appAfter, editMeta) {
   return recordApplicationActivityBatch_(applicationId, entries);
 }
 
+function firebaseRestDelete(path) {
+  const url = FIREBASE_SYNC_CONFIG.DATABASE_URL.replace(/\/$/, "") + path + ".json";
+  const token = getFirebaseAccessToken_();
+  const options = {method:"delete", muteHttpExceptions:true, headers:{Authorization:"Bearer " + token}};
+  const response = UrlFetchApp.fetch(url, options);
+  const code = response.getResponseCode();
+  if (code < 200 || code >= 300) throw new Error("Firebase DELETE failed (" + code + "): " + response.getContentText());
+  return response.getContentText();
+}
+
 function firebaseRestPatch(path, payload) {
   const token = getFirebaseAccessToken_();
 
@@ -1510,7 +1520,7 @@ const ABANDONED_HEADERS = [
   "Email", "College", "Department", "Year", "Domain", "State",
   "Communication Language", "Start Availability", "Application Reason",
   "Progress %", "Current Step", "Last Field", "Exit Type", "Exit Reason",
-  "Referral", "Device", "Recovery Status", "Application ID"
+  "Referral", "Device", "Recovery Status", "Application ID", "Assigned To"
 ];
 
 function ensureAbandonedApplicationsSheet_() {
@@ -1579,6 +1589,7 @@ function syncAbandonedApplicationsSheetToFirebase() {
         device: normalizeRecoveryText_(row[21], 80),
         recoveryStatus: normalizeRecoveryText_(row[22] || "Needs Follow-up", 60),
         applicationId: normalizeRecoveryText_(row[23], 120),
+        assignedTo: normalizeRecoveryText_(row[24], 120),
         updatedAtMs: Date.now()
       });
       synced++;
@@ -1638,7 +1649,8 @@ function saveAbandonedApplication(raw) {
       normalizeRecoveryText_(raw.referral, 120),
       normalizeRecoveryText_(raw.device, 80),
       normalizeRecoveryText_(raw.recoveryStatus || "Needs Follow-up", 60),
-      normalizeRecoveryText_(raw.applicationId, 120)
+      normalizeRecoveryText_(raw.applicationId, 120),
+      normalizeRecoveryText_(raw.assignedTo, 120)
     ];
 
     if (rowNumber > 0) {
@@ -1684,6 +1696,7 @@ function saveAbandonedApplication(raw) {
         device: normalizeRecoveryText_(raw.device, 80),
         recoveryStatus: normalizeRecoveryText_(raw.recoveryStatus || "Needs Follow-up", 60),
         applicationId: normalizeRecoveryText_(raw.applicationId, 120),
+        assignedTo: normalizeRecoveryText_(raw.assignedTo, 120),
         updatedAtMs: Date.now()
       });
     } catch (firebaseError) {
@@ -1693,6 +1706,45 @@ function saveAbandonedApplication(raw) {
     }
 
     return jsonResponse({status:"success", row:rowNumber, draftId:draftId, message:"Application recovery record saved."});
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function deleteAbandonedApplication(raw) {
+  raw = raw || {};
+  const draftId = normalizeRecoveryText_(raw.draftId || raw.visitorId || "", 120);
+  if (!draftId) return jsonResponse({status:"error", message:"Draft ID is required."});
+
+  const result = {status:"success", draftId:draftId, deleted:0, firebaseDeleted:false};
+  const sheet = ensureAbandonedApplicationsSheet_();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(8000);
+  try {
+    if (sheet.getLastRow() >= 2) {
+      const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, ABANDONED_HEADERS.length).getValues();
+      for (let i = values.length - 1; i >= 0; i--) {
+        if (String(values[i][1] || "").trim() === draftId) {
+          sheet.deleteRow(i + 2);
+          result.deleted++;
+        }
+      }
+      SpreadsheetApp.flush();
+    }
+
+    try {
+      const recoveryId = draftId.replace(/[.#$\[\]\/]/g, "_");
+      firebaseRestDelete("/abandonedApplications/" + recoveryId);
+      result.firebaseDeleted = true;
+    } catch (firebaseError) {
+      result.status = "completed_with_errors";
+      result.firebaseError = firebaseError.message || String(firebaseError);
+    }
+
+    result.message = result.deleted || result.firebaseDeleted
+      ? "Abandoned application deleted."
+      : "Draft ID was not found in the Abandoned Applications sheet.";
+    return jsonResponse(result);
   } finally {
     lock.releaseLock();
   }
@@ -1732,6 +1784,7 @@ function doPost(e) {
     if (data.action === "saveAbandonedApplication") return saveAbandonedApplication(data);
     if (data.action === "syncAbandonedApplicationsNow") return jsonResponse(syncAbandonedApplicationsSheetToFirebase());
     if (data.action === "markAbandonedApplicationSubmitted") return markAbandonedApplicationSubmitted(data);
+    if (data.action === "deleteAbandonedApplication") return deleteAbandonedApplication(data);
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
     if (data.action === "removeCounselor") return jsonResponse(removeCounselor(data.counselorName || data.name || ""));
     if (data.action === "health") return jsonResponse({status:"online", time:nowString(), message:"InternsForge Sheets receiver is healthy."});

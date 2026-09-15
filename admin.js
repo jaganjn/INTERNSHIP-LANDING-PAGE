@@ -35,13 +35,6 @@ const CALL_STATUS_ALIASES = {
   "Not Reachable": "Not Picking"
 };
 
-function normalizePhoneKey(phone) {
-  const digits = String(phone || "").replace(/\D/g, "");
-  if (!digits) return "";
-  // Normalize common Indian phone formats to the last 10 digits.
-  return digits.length > 10 ? digits.slice(-10) : digits;
-}
-
 function normalizeCallStatus(status) {
   const raw = String(status || "").trim();
   if (!raw) return "Not Contacted";
@@ -448,10 +441,91 @@ function renderAbandonedDashboard(rows) {
       <td><span class="abandoned-type ${colourClass}">${esc(exit)}</span><br><small class="abandoned-muted">${esc(v.exitReason || v.currentField || '—')}</small></td>
       <td>${esc(fmt(v.leftAt || v.abandonedAt || v.lastActive))}</td>
       <td><span class="abandoned-recovery">${esc(status)}</span></td>
-      <td><div class="abandoned-action"><button type="button" data-ab-view="${esc(v.id)}">View</button>${phone ? `<button type="button" data-ab-wa="${esc(wa)}">WhatsApp</button>` : ''}<button type="button" data-ab-contact="${esc(v.id)}">Contacted</button></div></td>
+      <td><select class="crm-assignee-select" data-ab-assign="${esc(v.id)}" aria-label="Assign abandoned application">${counselorOptions(v.assignedTo || '')}</select></td>
+      <td><div class="crm-row-actions abandoned-action"><button class="crm-open-btn" type="button" data-ab-open="${esc(v.id)}">Open</button><button class="crm-history-btn" type="button" data-ab-history="${esc(v.id)}">History</button><button class="crm-delete-btn" type="button" data-ab-delete="${esc(v.id)}">Delete</button></div></td>
     </tr>`;
-  }).join('') : '<tr><td colspan="8" class="empty">No abandoned applications match the current filters.</td></tr>';
+  }).join('') : '<tr><td colspan="9" class="empty">No abandoned applications match the current filters.</td></tr>';
   const count = el('abResultCount'); if(count) count.textContent = `${filtered.length} of ${all.length} abandoned applications`;
+}
+
+async function assignAbandonedApplication(recordId, counselor) {
+  const stored = abandonedApplications[recordId];
+  const live = Object.values(visitors).find(v => String(v.draftId || '') === String(recordId));
+  const v = stored || live;
+  if (!v) return false;
+  const clean = String(counselor || '').trim();
+  if (clean === '__new__') return false;
+  if (clean) rememberCounselor(clean);
+  const old = String(v.assignedTo || '').trim();
+  if (old === clean) return true;
+  const draftId = String(v.draftId || recordId).trim();
+  const recoveryId = draftId.replace(/[.#$\[\]\/]/g,'_');
+  try {
+    // Persist in Firebase immediately for the live dashboard.
+    await db.ref(`abandonedApplications/${recoveryId}`).update({ assignedTo: clean, updatedAtMs: Date.now() });
+    if (abandonedApplications[recordId]) abandonedApplications[recordId].assignedTo = clean;
+    if (live) live.assignedTo = clean;
+
+    // Persist in Google Sheets through the existing Apps Script endpoint.
+    const d = v.fieldData || v;
+    const payload = {
+      action:'saveAbandonedApplication', draftId, startedAt:v.startedAt || '', lastActive:v.lastActive || new Date().toISOString(),
+      name:d.name||'', phone:d.phone||'', email:d.email||'', college:d.college||'', department:d.department||'', year:d.year||'', domain:d.domain||'', state:d.state||'',
+      communicationLanguage:d.communicationLanguage||'', startAvailability:d.startAvailability||'', applicationReason:d.applicationReason||'',
+      progress:Number(v.formProgress ?? v.progress ?? 0), currentStep:v.currentStep||1, lastField:v.currentField||v.lastField||'',
+      exitType:v.exitType || (String(v.lastAction||'').toLowerCase().includes('cancel')?'Cancelled Application':'Left Page'),
+      exitReason:v.exitReason||'', referral:v.referral||'', device:v.device||'', recoveryStatus:v.recoveryStatus||'Needs Follow-up', applicationId:v.applicationId||'', assignedTo:clean
+    };
+    fetch(SHEETS_RECOVERY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),keepalive:true}).catch(console.warn);
+
+    // Record assignment in the same activity trail used by submitted applications.
+    if (v.applicationId) {
+      logApplicationActivity(v.applicationId, { action:'Lead reassigned', field:'Assigned To', oldValue:old||'', newValue:clean||'', summary:`Abandoned lead assignment changed from ${old||'Unassigned'} to ${clean||'Unassigned'}` }).catch(()=>{});
+    }
+    renderAbandonedDashboard([]);
+    showToast('Lead assigned', `${d.name || 'Applicant'} → ${clean || 'Unassigned'}.`, 'success', 4000);
+    return true;
+  } catch (error) {
+    console.error('Abandoned lead assignment failed:', error);
+    showToast('Assignment failed', error?.message || 'Unable to assign this abandoned application.', 'error', 6000);
+    return false;
+  }
+}
+
+async function deleteAbandonedApplication(v) {
+  const d=v?.fieldData||v||{};
+  const draftId=String(v?.draftId||v?.id||'').trim();
+  if(!draftId){ showToast('Delete failed','This abandoned record has no Draft ID.','error',5000); return; }
+  const name=String(d.name||v?.name||'this applicant').trim();
+  if(!confirm(`Delete abandoned application for ${name}?\n\nDraft ID: ${draftId}\n\nThis will remove the recovery record from Firebase and the Abandoned Applications sheet.`)) return;
+  try {
+    await fetch(SHEETS_RECOVERY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'deleteAbandonedApplication',draftId:draftId}),keepalive:true});
+    const recoveryId=draftId.replace(/[.#$\[\]\/]/g,'_');
+    await db.ref(`abandonedApplications/${recoveryId}`).remove();
+    const liveId=Object.entries(visitors).find(([,x])=>String(x.draftId||'')===draftId)?.[0];
+    if(liveId) await db.ref(`liveVisitors/${liveId}`).update({recoveryStatus:'Deleted'});
+    showToast('Abandoned application deleted',`${name} was removed from recovery records.`,'success',4500);
+    renderAbandonedDashboard([]);
+  } catch(error) {
+    console.error('Delete abandoned application failed:',error);
+    showToast('Delete failed',error?.message||'Unable to delete this abandoned application.','error',7000);
+  }
+}
+
+function showAbandonedHistory(v) {
+  const d=v?.fieldData||v||{};
+  const lines=[
+    ['Started',fmt(v.startedAt||v.createdAt||v.recordedAt)],
+    ['Last active',fmt(v.lastActive||v.leftAt||v.updatedAtMs)],
+    ['Current step',v.currentStep||'—'],
+    ['Progress',`${Number(v.formProgress ?? v.progress ?? 0)}%`],
+    ['Last field',v.currentField||v.lastField||'—'],
+    ['Exit type',v.exitType||v.lastAction||'—'],
+    ['Exit reason',v.exitReason||'—'],
+    ['Recovery status',v.recoveryStatus||'Needs Follow-up'],
+    ['Application ID',v.applicationId||'Not submitted']
+  ];
+  alert(`Recovery History\n\n${lines.map(([label,value])=>`${label}: ${value}`).join('\n')}`);
 }
 
 function updateAbandonedRecoveryStatus(recordId, status) {
@@ -494,15 +568,37 @@ function setupAbandonedDashboardActions() {
     }
   });
   el('exportAbandonedButton')?.addEventListener('click',()=>{
-    const rows=abandonedFilteredRows; const headers=['Name','Phone','Email','College','Department','Year','Domain','Progress %','Current Step','Exit Type','Exit Reason','Last Active','Recovery Status','Draft ID'];
-    const csv=[headers,...rows.map(v=>{const d=v.fieldData||{};return[d.name||v.name||'',d.phone||v.phone||'',d.email||v.email||'',d.college||v.college||'',d.department||v.department||'',d.year||v.year||'',d.domain||v.domain||'',v.formProgress||0,v.currentStep||'',v.exitType||'',v.exitReason||'',v.leftAt||v.lastActive||'',v.recoveryStatus||'Needs Follow-up',v.draftId||v.id||''];})].map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const rows=abandonedFilteredRows; const headers=['Name','Phone','Email','College','Department','Year','Domain','Progress %','Current Step','Exit Type','Exit Reason','Last Active','Recovery Status','Assigned To','Draft ID'];
+    const csv=[headers,...rows.map(v=>{const d=v.fieldData||{};return[d.name||v.name||'',d.phone||v.phone||'',d.email||v.email||'',d.college||v.college||'',d.department||v.department||'',d.year||v.year||'',d.domain||v.domain||'',v.formProgress||0,v.currentStep||'',v.exitType||'',v.exitReason||'',v.leftAt||v.lastActive||'',v.recoveryStatus||'Needs Follow-up',v.assignedTo||'',v.draftId||v.id||''];})].map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`internsforge-abandoned-${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   });
+  el('abandonedTableBody')?.addEventListener('change',e=>{
+    const assign=e.target.closest('[data-ab-assign]');
+    if(assign){
+      const value=handleCounselorSelect(assign, clean => assignAbandonedApplication(assign.dataset.abAssign, clean));
+      if(value === '__new__') assign.value='';
+    }
+  });
   el('abandonedTableBody')?.addEventListener('click',e=>{
-    const view=e.target.closest('[data-ab-view]'), wa=e.target.closest('[data-ab-wa]'), contact=e.target.closest('[data-ab-contact]');
-    if(wa){window.open(wa.dataset.abWa,'_blank','noopener');return;}
-    if(contact){updateAbandonedRecoveryStatus(contact.dataset.abContact,'Contacted');return;}
-    if(view){const v=abandonedApplications[view.dataset.abView] || Object.values(visitors).find(x=>String(x.draftId||'')===String(view.dataset.abView));if(v){const d=v.fieldData||v;alert(`Abandoned Application\n\nName: ${d.name||'—'}\nPhone: ${d.phone||'—'}\nEmail: ${d.email||'—'}\nCollege: ${d.college||'—'}\nDomain: ${d.domain||'—'}\nProgress: ${v.formProgress ?? v.progress ?? 0}%\nStep: ${v.currentStep||'—'}\nExit: ${v.exitType||v.lastAction||'—'}\nLast Active: ${fmt(v.leftAt||v.lastActive||v.updatedAtMs)}`);}}
+    const open=e.target.closest('[data-ab-open]'), history=e.target.closest('[data-ab-history]'), del=e.target.closest('[data-ab-delete]');
+    const getRecord = id => abandonedApplications[id] || Object.values(visitors).find(x=>String(x.draftId||'')===String(id));
+    if(open){
+      const v=getRecord(open.dataset.abOpen);
+      if(v){
+        const d=v.fieldData||v;
+        alert(`Abandoned Application\n\nName: ${d.name||'—'}\nPhone: ${d.phone||'—'}\nEmail: ${d.email||'—'}\nCollege: ${d.college||'—'}\nDepartment: ${d.department||'—'}\nYear: ${d.year||'—'}\nDomain: ${d.domain||'—'}\nProgress: ${v.formProgress ?? v.progress ?? 0}%\nStep: ${v.currentStep||'—'}\nExit: ${v.exitType||v.lastAction||'—'}\nExit reason: ${v.exitReason||'—'}\nRecovery: ${v.recoveryStatus||'Needs Follow-up'}\nLast Active: ${fmt(v.leftAt||v.lastActive||v.updatedAtMs)}`);
+      }
+      return;
+    }
+    if(history){
+      const v=getRecord(history.dataset.abHistory);
+      if(v) showAbandonedHistory(v);
+      return;
+    }
+    if(del){
+      const v=getRecord(del.dataset.abDelete);
+      if(v) deleteAbandonedApplication(v);
+    }
   });
 }
 
@@ -746,7 +842,8 @@ function loadCounselorNames() {
   let stored = [];
   try { stored = JSON.parse(localStorage.getItem(COUNSELOR_STORAGE_KEY) || "[]"); } catch (_) {}
   const assigned = applications.map(app => String(app?.assignedTo || "").trim()).filter(Boolean);
-  counselorNames = [...new Set([...stored, ...assigned].map(v => String(v || "").trim()).filter(Boolean))]
+  const abandonedAssigned = Object.values(abandonedApplications || {}).map(app => String(app?.assignedTo || "").trim()).filter(Boolean);
+  counselorNames = [...new Set([...stored, ...assigned, ...abandonedAssigned].map(v => String(v || "").trim()).filter(Boolean))]
     .sort((a,b) => a.localeCompare(b));
   try { localStorage.setItem(COUNSELOR_STORAGE_KEY, JSON.stringify(counselorNames)); } catch (_) {}
 }
@@ -1001,18 +1098,70 @@ function renderCrmTable(rows) {
       <td><span class="crm-status ${statusClass(status)}">${esc(status)}</span></td>
       <td><span class="follow-pill ${followClass}">${isFollowUpDue(app) ? "⚠ " : ""}${esc(formatFollowUp(app))}</span></td>
       <td><select class="crm-assign-select" data-app-id="${esc(app.id)}" aria-label="Assign ${esc(app.name || "lead")}">${counselorOptions(assigned)}</select></td>
-      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button><button class="crm-history-btn" type="button" data-app-id="${esc(app.id)}" aria-label="View history for ${esc(app.name || "lead")}">History</button><button class="crm-delete-btn" type="button" data-app-id="${esc(app.id)}" aria-label="Delete ${esc(app.name || "lead")}">Delete</button></div></td>
+      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">View</button>${app.phone ? `<button class="crm-whatsapp-btn" type="button" data-app-wa-id="${esc(app.id)}">WhatsApp</button>` : ''}<button class="crm-contacted-btn" type="button" data-app-contact-id="${esc(app.id)}">Contacted</button></div></td>
     </tr>`;
   }).join("") || '<tr><td colspan="9" class="empty">No applications match your filters.</td></tr>';
 
   body.querySelectorAll(".crm-open-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
-  body.querySelectorAll(".crm-history-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
-  body.querySelectorAll(".crm-delete-btn").forEach(btn => btn.addEventListener("click", () => deleteSingleApplication(btn.dataset.appId)));
+  body.querySelectorAll(".crm-whatsapp-btn").forEach(btn => btn.addEventListener("click", () => {
+    const app = applications.find(item => item.id === btn.dataset.appWaId);
+    if (app) openApplicationWhatsApp(app);
+  }));
+  body.querySelectorAll(".crm-contacted-btn").forEach(btn => btn.addEventListener("click", () => {
+    markApplicationContacted(btn.dataset.appContactId);
+  }));
   body.querySelectorAll(".crm-row-check").forEach(box => box.addEventListener("change", () => toggleCrmSelection(box.dataset.appId, box.checked)));
   body.querySelectorAll(".crm-assign-select").forEach(select => select.addEventListener("change", () => {
     handleCounselorSelect(select, value => assignApplicationToCounselor(select.dataset.appId, value, "row"));
   }));
   updateCrmSelectionUI();
+}
+
+function normalizeIndianPhoneForCRM(phone) {
+  let digits = String(phone || "").replace(/\D/g, "");
+  if (digits.length === 10) digits = "91" + digits;
+  else if (digits.length === 11 && digits.startsWith("0")) digits = "91" + digits.slice(1);
+  return digits;
+}
+
+function buildApplicationWhatsAppMessage(app) {
+  const name = app?.name || "Student";
+  const domain = app?.domain || "your selected domain";
+  return `Hi ${name},\n\nThis is InternsForge regarding your internship application.\n\nYour Chosen Domain: ${domain}\n\nWe’re reaching out regarding the InternsForge Internship Program 2026, where you can gain practical experience, work on real-time projects, develop industry-relevant skills, and build your career profile.\n\nIf you’re interested in proceeding with your ${domain} internship, please reply “INTERESTED” and our team will guide you through the next steps.\n\nInternsForge 2026\nLearn • Build • Experience • Grow`;
+}
+
+function openApplicationWhatsApp(app) {
+  const digits = normalizeIndianPhoneForCRM(app?.phone);
+  if (digits.length < 10) {
+    showToast("WhatsApp unavailable", "Please check this student's phone number before opening WhatsApp.", "error", 5000);
+    return;
+  }
+  const message = encodeURIComponent(buildApplicationWhatsAppMessage(app));
+  window.open(`https://wa.me/${digits}?text=${message}`, "_blank", "noopener,noreferrer");
+}
+
+async function markApplicationContacted(id) {
+  const app = applications.find(item => item.id === id);
+  if (!app) return;
+  try {
+    const before = {...app};
+    const updates = {callStatus: "Connected"};
+    await db.ref(`submittedApplications/${id}`).update(updates);
+    Object.assign(app, updates);
+    await sendApplicationUpdateToSheets(app);
+    await logApplicationActivity(id, {
+      action: "Application contacted",
+      field: "callStatus",
+      oldValue: getCallStatus(before),
+      newValue: "Connected",
+      summary: "Applicant marked as Contacted from Application Management"
+    });
+    showToast("Applicant contacted", `${app.name || "Student"} is now marked as Connected.`, "success", 3500);
+    renderApplications();
+  } catch (error) {
+    console.error("Mark contacted failed:", error);
+    showToast("Update failed", error?.message || "Unable to mark this applicant as Contacted.", "error", 6500);
+  }
 }
 
 async function sendApplicationDeleteToSheets(app) {

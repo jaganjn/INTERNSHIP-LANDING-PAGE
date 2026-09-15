@@ -1,4 +1,11 @@
 
+function normalizePhoneKey(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
+
+
 document.body.style.visibility = "hidden";
 
 const ACTIVE_MS = 90_000;

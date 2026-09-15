@@ -1674,9 +1674,11 @@ body.module-modal-open{overflow:hidden}
 .abandoned-type{display:inline-flex;padding:6px 9px;border-radius:999px;background:rgba(245,158,11,.12);color:#f59e0b;font-size:11px;font-weight:800;white-space:nowrap}
 .abandoned-type.cancelled{background:rgba(244,63,94,.12);color:#fb7185}
 .abandoned-recovery{font-size:11px;font-weight:800}
-.abandoned-action{display:flex;gap:6px;flex-wrap:wrap}
-.abandoned-action button{border:1px solid rgba(148,163,184,.22);background:transparent;color:inherit;border-radius:8px;padding:7px 9px;font-weight:700;cursor:pointer}
-.abandoned-action button:hover{background:rgba(148,163,184,.08)}
+.abandoned-action{display:flex;align-items:center;gap:6px;flex-wrap:wrap;white-space:nowrap}
+.abandoned-action .crm-open-btn,.abandoned-action .crm-history-btn,.abandoned-action .crm-delete-btn{box-sizing:border-box}
+.abandoned-action .crm-open-btn:hover{background:#f1efff;border-color:#7b6bf0}
+.abandoned-action .crm-history-btn:hover{border-color:#627cff;color:#fff}
+.abandoned-action .crm-delete-btn:hover{background:#ffe8eb;border-color:#e89aa4}
 @media(max-width:700px){
   .abandoned-head{display:block}
   .abandoned-head .crm-head-actions{margin-top:12px;display:grid;grid-template-columns:1fr 1fr}

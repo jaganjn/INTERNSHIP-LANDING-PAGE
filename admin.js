@@ -450,6 +450,22 @@ function setupAbandonedDashboardActions() {
   });
 }
 
+function isSubmittedVisitor(visitor = {}) {
+  if (!visitor || typeof visitor !== "object") return false;
+  const status = String(visitor.status || visitor.state || "").trim().toLowerCase();
+  const presence = String(visitor.presence || "").trim().toLowerCase();
+  const exitType = String(visitor.exitType || "").trim().toLowerCase();
+  const recoveryStatus = String(visitor.recoveryStatus || "").trim().toLowerCase();
+  const progress = Number(visitor.formProgress || visitor.progress || 0);
+  const hasSubmittedFlag = visitor.submitted === true || visitor.isSubmitted === true || visitor.applicationSubmitted === true;
+  const hasSubmittedTimestamp = Boolean(visitor.submittedAtMs || visitor.submittedAt);
+  const submissionState = ["submitted", "completed", "application submitted", "recovered"].includes(status) ||
+    ["completed", "submitted"].includes(presence) ||
+    ["submitted", "recovered"].includes(recoveryStatus) ||
+    ["submitted", "completed"].includes(exitType);
+  return hasSubmittedFlag || hasSubmittedTimestamp || submissionState || (progress >= 100 && !!visitor.applicationId && status !== "abandoned" && status !== "left");
+}
+
 function renderVisitors() {
   const now = Date.now();
   const rows = Object.entries(visitors)

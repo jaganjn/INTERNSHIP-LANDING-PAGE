@@ -448,7 +448,7 @@ function renderAbandonedDashboard(rows) {
       <td><span class="abandoned-type ${colourClass}">${esc(exit)}</span><br><small class="abandoned-muted">${esc(v.exitReason || v.currentField || '—')}</small></td>
       <td>${esc(fmt(v.leftAt || v.abandonedAt || v.lastActive))}</td>
       <td><span class="abandoned-recovery">${esc(status)}</span></td>
-      <td><select class="crm-assignee-select" data-ab-assign="${esc(v.id)}" aria-label="Assign abandoned application">${counselorOptions(v.assignedTo || '')}</select></td>
+      <td><select class="crm-assign-select abandoned-assign-select" data-ab-assign="${esc(v.id)}" aria-label="Assign abandoned application">${counselorOptions(v.assignedTo || '')}</select></td>
       <td><div class="crm-row-actions abandoned-action"><button class="crm-open-btn" type="button" data-ab-open="${esc(v.id)}">Open</button><button class="crm-history-btn" type="button" data-ab-history="${esc(v.id)}">History</button><button class="crm-delete-btn" type="button" data-ab-delete="${esc(v.id)}">Delete</button></div></td>
     </tr>`;
   }).join('') : '<tr><td colspan="9" class="empty">No abandoned applications match the current filters.</td></tr>';

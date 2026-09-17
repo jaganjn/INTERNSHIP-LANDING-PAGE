@@ -1,3 +1,8 @@
+/** InternsForge Code.gs — V15.1 complete backend
+ * Includes CRM sync, audit trail, abandoned application recovery,
+ * direct abandoned-lead assignment, recovery status updates, deletion,
+ * and safe Assigned To column migration.
+ */
 /************************************************************
  * INTERNSFORGE 2026
  * GOOGLE SHEETS RECEIVER + RECOVERY + CRM SYNC
@@ -1529,15 +1534,40 @@ function ensureAbandonedApplicationsSheet_() {
   let sheet = ss.getSheetByName(ABANDONED_SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(ABANDONED_SHEET_NAME);
 
+  // Canonical 25-column structure. Existing rows are preserved.
   if (sheet.getLastRow() === 0) {
     sheet.getRange(1, 1, 1, ABANDONED_HEADERS.length).setValues([ABANDONED_HEADERS]);
     sheet.setFrozenRows(1);
-  } else {
-    const current = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), ABANDONED_HEADERS.length)).getValues()[0];
-    ABANDONED_HEADERS.forEach((header, index) => {
-      if (String(current[index] || "").trim() !== header) sheet.getRange(1, index + 1).setValue(header);
-    });
+    return sheet;
   }
+
+  const currentLastColumn = Math.max(sheet.getLastColumn(), 1);
+  const current = sheet.getRange(1, 1, 1, currentLastColumn).getValues()[0]
+    .map(h => String(h || '').trim());
+
+  // Do not destroy an existing Assigned To column if an older version
+  // placed it somewhere else. Prefer the canonical column 25.
+  const assignedIndex = current.findIndex(h => h.toLowerCase() === 'assigned to');
+  if (assignedIndex !== -1 && assignedIndex !== 24) {
+    const existingAssignedValues = sheet.getLastRow() >= 2
+      ? sheet.getRange(2, assignedIndex + 1, sheet.getLastRow() - 1, 1).getValues()
+      : [];
+    sheet.getRange(1, 25).setValue('Assigned To');
+    if (existingAssignedValues.length) {
+      sheet.getRange(2, 25, existingAssignedValues.length, 1).setValues(existingAssignedValues);
+    }
+  } else {
+    sheet.getRange(1, 25).setValue('Assigned To');
+  }
+
+  // Repair only the canonical headers. Existing data below the headers is untouched.
+  ABANDONED_HEADERS.forEach((header, index) => {
+    if (index === 24) return;
+    const existing = String(sheet.getRange(1, index + 1).getValue() || '').trim();
+    if (existing !== header) sheet.getRange(1, index + 1).setValue(header);
+  });
+
+  sheet.setFrozenRows(1);
   return sheet;
 }
 
@@ -1722,13 +1752,21 @@ function syncAbandonedApplicationsFirebaseToSheet() {
 function createAbandonedFirebaseToSheetTrigger() {
   // Backward-compatible function name. The installed trigger is now SAFE:
   // Sheet -> Firebase only. It never rewrites the Abandoned Applications Sheet.
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    const h = t.getHandlerFunction();
+    if (h === 'syncAbandonedApplicationsFirebaseToSheet' ||
+        h === 'syncAbandonedSourcesToSheet' ||
+        h === 'syncLiveVisitorsToAbandonedApplications') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
   return createAbandonedSheetToFirebaseTrigger();
 }
 
 function removeAbandonedFirebaseToSheetTrigger() {
   ScriptApp.getProjectTriggers().forEach(function(trigger) {
     const handler = trigger.getHandlerFunction();
-    if (handler === 'syncAbandonedApplicationsFirebaseToSheet' || handler === 'syncAbandonedSourcesToSheet' || handler === 'syncAbandonedSheetToFirebaseTrigger' || handler === 'syncAbandonedApplicationsSheetToFirebase') {
+    if (handler === 'syncAbandonedApplicationsFirebaseToSheet' || handler === 'syncAbandonedSourcesToSheet' || handler === 'syncLiveVisitorsToAbandonedApplications' || handler === 'syncAbandonedSheetToFirebaseTrigger' || handler === 'syncAbandonedApplicationsSheetToFirebase') {
       ScriptApp.deleteTrigger(trigger);
     }
   });
@@ -1737,6 +1775,90 @@ function removeAbandonedFirebaseToSheetTrigger() {
 function normalizeRecoveryText_(v, max) {
   const text = String(v == null ? "" : v).trim();
   return max ? text.slice(0, max) : text;
+}
+
+
+function recoveryDateMs_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) return value.getTime();
+  const text = String(value || '').trim();
+  if (!text) return 0;
+  const parsed = new Date(text);
+  return isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+}
+
+/**
+ * Remove duplicate abandoned rows using Draft ID as the ONLY identity key.
+ * When duplicates exist, the row with the newest Last Active is kept and
+ * missing fields are merged from the other duplicate rows. Admin-controlled
+ * fields (Recovery Status / Application ID / Assigned To) are preserved.
+ */
+function cleanupAbandonedApplicationDuplicates() {
+  const sheet = ensureAbandonedApplicationsSheet_();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(15000);
+  try {
+    if (sheet.getLastRow() < 2) return {status:'success', duplicatesRemoved:0, groups:0};
+    const values = sheet.getRange(2, 1, sheet.getLastRow() - 1, ABANDONED_HEADERS.length).getValues();
+    const groups = {};
+    values.forEach(function(row, index) {
+      const id = normalizeRecoveryText_(row[1], 120);
+      if (!id) return;
+      if (!groups[id]) groups[id] = [];
+      groups[id].push({rowNumber:index + 2, row:row});
+    });
+
+    let duplicatesRemoved = 0;
+    const rowsToDelete = [];
+    Object.keys(groups).forEach(function(id) {
+      const group = groups[id];
+      if (group.length < 2) return;
+      group.sort(function(a,b) {
+        return (recoveryDateMs_(b.row[3]) || recoveryDateMs_(b.row[0]) || b.rowNumber) -
+               (recoveryDateMs_(a.row[3]) || recoveryDateMs_(a.row[0]) || a.rowNumber);
+      });
+      const keeper = group[0];
+      const merged = keeper.row.slice();
+
+      // Merge missing student/application fields from duplicate copies.
+      for (let col = 0; col < ABANDONED_HEADERS.length; col++) {
+        if (col === 22 || col === 23 || col === 24) continue;
+        if (String(merged[col] == null ? '' : merged[col]).trim() !== '') continue;
+        for (let i = 1; i < group.length; i++) {
+          const candidate = group[i].row[col];
+          if (String(candidate == null ? '' : candidate).trim() !== '') {
+            merged[col] = candidate;
+            break;
+          }
+        }
+      }
+      // Preserve any admin-controlled value if the newest copy lacks it.
+      [22,23,24].forEach(function(col) {
+        if (String(merged[col] == null ? '' : merged[col]).trim() !== '') return;
+        for (let i = 1; i < group.length; i++) {
+          const candidate = group[i].row[col];
+          if (String(candidate == null ? '' : candidate).trim() !== '') {
+            merged[col] = candidate;
+            break;
+          }
+        }
+      });
+
+      sheet.getRange(keeper.rowNumber, 1, 1, ABANDONED_HEADERS.length).setValues([merged]);
+      for (let i = 1; i < group.length; i++) rowsToDelete.push(group[i].rowNumber);
+    });
+
+    // Delete ALL duplicate rows in descending physical row order so row shifts
+    // cannot accidentally delete or preserve the wrong record in another group.
+    rowsToDelete.sort(function(a,b){ return b-a; });
+    rowsToDelete.forEach(function(rowNumber) {
+      sheet.deleteRow(rowNumber);
+      duplicatesRemoved++;
+    });
+    SpreadsheetApp.flush();
+    return {status:'success', duplicatesRemoved:duplicatesRemoved, groups:Object.keys(groups).length};
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function saveAbandonedApplication(raw) {
@@ -1786,11 +1908,21 @@ function saveAbandonedApplication(raw) {
     ];
 
     if (rowNumber > 0) {
-      // Preserve the original start time and recorded timestamp; refresh the latest snapshot.
+      // Existing row is the durable record. Student recovery snapshots may
+      // refresh the student's entered fields, but MUST NEVER overwrite the
+      // Admin Dashboard-controlled fields: Recovery Status, Application ID,
+      // Assigned To. Dashboard edits use dedicated field-level endpoints.
       const existing = sheet.getRange(rowNumber, 1, 1, ABANDONED_HEADERS.length).getValues()[0];
-      row[0] = existing[0] || now;
-      row[2] = existing[2] || row[2];
-      sheet.getRange(rowNumber, 1, 1, ABANDONED_HEADERS.length).setValues([row]);
+      const merged = existing.slice();
+      merged[0] = existing[0] || now;
+      merged[2] = existing[2] || row[2];
+      for (let col = 1; col < ABANDONED_HEADERS.length; col++) {
+        if (col === 22 || col === 23 || col === 24) continue;
+        const incoming = row[col];
+        const hasIncoming = incoming instanceof Date ? !isNaN(incoming.getTime()) : String(incoming == null ? '' : incoming).trim() !== '';
+        if (hasIncoming) merged[col] = incoming;
+      }
+      sheet.getRange(rowNumber, 1, 1, ABANDONED_HEADERS.length).setValues([merged]);
     } else {
       sheet.appendRow(row);
       rowNumber = sheet.getLastRow();
@@ -1883,6 +2015,10 @@ function deleteAbandonedApplication(raw) {
 }
 
 
+/**
+ * ADMIN DASHBOARD -> GOOGLE SHEET / FIREBASE ONLY.
+ * This is the controlled path for recovery-status edits.
+ */
 function updateAbandonedRecoveryStatus(raw) {
   raw = raw || {};
   const draftId = normalizeRecoveryText_(raw.draftId || raw.visitorId || "", 120);
@@ -1914,6 +2050,10 @@ function updateAbandonedRecoveryStatus(raw) {
   }
 }
 
+/**
+ * ADMIN DASHBOARD -> GOOGLE SHEET / FIREBASE ONLY.
+ * This is the controlled path for counselor-assignment edits.
+ */
 function updateAbandonedApplicationAssignment(raw) {
   raw = raw || {};
   const draftId = normalizeRecoveryText_(raw.draftId || raw.visitorId || "", 120);
@@ -1976,22 +2116,6 @@ function markAbandonedApplicationSubmitted(raw) {
   });
   SpreadsheetApp.flush();
   return jsonResponse({status:"success", updated:updated});
-}
-
-function doGet(e) {
-  try {
-    const p = (e && e.parameter) ? e.parameter : {};
-    const action = String(p.action || '').trim();
-    if (!action) return jsonResponse({status:'success', service:'InternsForge', message:'GET endpoint online.'});
-    if (action === 'updateAbandonedApplicationAssignment') return updateAbandonedApplicationAssignment(p);
-    if (action === 'updateAbandonedRecoveryStatus') return updateAbandonedRecoveryStatus(p);
-    if (action === 'deleteAbandonedApplication') return deleteAbandonedApplication(p);
-    if (action === 'health') return jsonResponse({status:'online', time:nowString(), message:'InternsForge Sheets receiver is healthy.'});
-    return jsonResponse({status:'error', message:'Unknown action: ' + action});
-  } catch (error) {
-    console.error('GET ERROR', error);
-    return jsonResponse({status:'error', message:error.message || String(error)});
-  }
 }
 
 function doPost(e) {

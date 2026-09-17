@@ -1554,54 +1554,185 @@ function setupAbandonedApplicationsSheet() {
  */
 function syncAbandonedApplicationsSheetToFirebase() {
   const sheet = ensureAbandonedApplicationsSheet_();
-  if (sheet.getLastRow() < 2) return {status:"success", synced:0, failed:0};
+  if (sheet.getLastRow() < 2) return {status:"success", synced:0, changed:0, failed:0};
 
   const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, ABANDONED_HEADERS.length).getValues();
   let synced = 0;
+  let changed = 0;
   let failed = 0;
+
+  // Read the persistent Firebase mirror ONCE. This is Sheet -> Firebase only;
+  // Firebase is never allowed to rewrite the Sheet automatically.
+  let existing = {};
+  try {
+    existing = firebaseRestGet_('/abandonedApplications') || {};
+  } catch (error) {
+    return {status:"error", synced:0, changed:0, failed:rows.length, message:"Unable to read Firebase abandonedApplications: " + (error.message || error)};
+  }
 
   rows.forEach(row => {
     const draftId = normalizeRecoveryText_(row[1], 120);
     if (!draftId) return;
     const recoveryId = draftId.replace(/[.#$\[\]\/]/g, "_");
+    const next = {
+      draftId: draftId,
+      startedAt: normalizeRecoveryText_(row[2], 80),
+      lastActive: normalizeRecoveryText_(row[3], 80),
+      name: normalizeRecoveryText_(row[4], 120),
+      phone: normalizeRecoveryText_(row[5], 40),
+      email: normalizeRecoveryText_(row[6], 180),
+      college: normalizeRecoveryText_(row[7], 180),
+      department: normalizeRecoveryText_(row[8], 120),
+      year: normalizeRecoveryText_(row[9], 40),
+      domain: normalizeRecoveryText_(row[10], 160),
+      state: normalizeRecoveryText_(row[11], 100),
+      communicationLanguage: normalizeRecoveryText_(row[12], 80),
+      startAvailability: normalizeRecoveryText_(row[13], 100),
+      applicationReason: normalizeRecoveryText_(row[14], 600),
+      progress: Math.max(0, Math.min(100, Number(row[15]) || 0)),
+      currentStep: normalizeRecoveryText_(row[16], 40),
+      lastField: normalizeRecoveryText_(row[17], 120),
+      exitType: normalizeRecoveryText_(row[18] || "Left Page", 60),
+      exitReason: normalizeRecoveryText_(row[19], 240),
+      referral: normalizeRecoveryText_(row[20], 120),
+      device: normalizeRecoveryText_(row[21], 80),
+      recoveryStatus: normalizeRecoveryText_(row[22] || "Needs Follow-up", 60),
+      applicationId: normalizeRecoveryText_(row[23], 120),
+      assignedTo: normalizeRecoveryText_(row[24], 120)
+    };
+
     try {
-      firebaseRestPatch("/abandonedApplications/" + recoveryId, {
-        draftId: draftId,
-        startedAt: normalizeRecoveryText_(row[2], 80),
-        lastActive: normalizeRecoveryText_(row[3], 80),
-        name: normalizeRecoveryText_(row[4], 120),
-        phone: normalizeRecoveryText_(row[5], 40),
-        email: normalizeRecoveryText_(row[6], 180),
-        college: normalizeRecoveryText_(row[7], 180),
-        department: normalizeRecoveryText_(row[8], 120),
-        year: normalizeRecoveryText_(row[9], 40),
-        domain: normalizeRecoveryText_(row[10], 160),
-        state: normalizeRecoveryText_(row[11], 100),
-        communicationLanguage: normalizeRecoveryText_(row[12], 80),
-        startAvailability: normalizeRecoveryText_(row[13], 100),
-        applicationReason: normalizeRecoveryText_(row[14], 600),
-        progress: Math.max(0, Math.min(100, Number(row[15]) || 0)),
-        currentStep: normalizeRecoveryText_(row[16], 40),
-        lastField: normalizeRecoveryText_(row[17], 120),
-        exitType: normalizeRecoveryText_(row[18] || "Left Page", 60),
-        exitReason: normalizeRecoveryText_(row[19], 240),
-        referral: normalizeRecoveryText_(row[20], 120),
-        device: normalizeRecoveryText_(row[21], 80),
-        recoveryStatus: normalizeRecoveryText_(row[22] || "Needs Follow-up", 60),
-        applicationId: normalizeRecoveryText_(row[23], 120),
-        assignedTo: normalizeRecoveryText_(row[24], 120),
-        updatedAtMs: Date.now()
-      });
+      const prev = existing[recoveryId] || {};
+      const fields = Object.keys(next);
+      const different = fields.some(k => String(prev[k] == null ? '' : prev[k]) !== String(next[k] == null ? '' : next[k]));
+      if (different || !existing[recoveryId]) {
+        next.updatedAtMs = Date.now();
+        firebaseRestPatch("/abandonedApplications/" + recoveryId, next);
+        changed++;
+      }
       synced++;
     } catch (error) {
       failed++;
-      console.warn("Abandoned application backfill failed for " + draftId + ":", error);
+      console.warn("Abandoned application Sheet -> Firebase sync failed for " + draftId + ":", error);
     }
   });
 
-  return {status:"success", synced:synced, failed:failed};
+  return {status:"success", synced:synced, changed:changed, failed:failed, direction:"sheet_to_firebase"};
 }
 
+/**
+ * Safe realtime mirror: Google Sheet -> Firebase.
+ * This trigger is deliberately one-way. It NEVER writes Firebase data back
+ * into the Google Sheet, so it cannot cause repeated/random Sheet updates.
+ */
+function syncAbandonedSheetToFirebaseTrigger() {
+  return syncAbandonedApplicationsSheetToFirebase();
+}
+
+/**
+ * Install exactly one safe 1-minute Sheet -> Firebase mirror trigger.
+ * Legacy Firebase/liveVisitors -> Sheet triggers are removed first.
+ */
+function repairAndStartAbandonedSync() {
+  // One-time repair: deduplicate the Sheet, then mirror the repaired Sheet to
+  // Firebase so the Admin Dashboard immediately sees the same records.
+  const cleanup = cleanupAbandonedApplicationDuplicates();
+  const sync = syncAbandonedApplicationsSheetToFirebase();
+  const trigger = createAbandonedSheetToFirebaseTrigger();
+  return {
+    status: sync.status === 'error' ? 'completed_with_errors' : 'success',
+    cleanup: cleanup,
+    sync: sync,
+    trigger: trigger,
+    message: 'Abandoned Applications repaired and safe Sheet -> Firebase sync installed.'
+  };
+}
+
+function createAbandonedSheetToFirebaseTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    const h = t.getHandlerFunction();
+    if (h === 'syncAbandonedApplicationsFirebaseToSheet' ||
+        h === 'syncAbandonedSourcesToSheet' ||
+        h === 'syncLiveVisitorsToAbandonedApplications' ||
+        h === 'syncAbandonedSheetToFirebaseTrigger' ||
+        h === 'syncAbandonedApplicationsSheetToFirebase') {
+      ScriptApp.deleteTrigger(t);
+    }
+  });
+  ScriptApp.newTrigger('syncAbandonedSheetToFirebaseTrigger').timeBased().everyMinutes(1).create();
+  return 'Safe Sheet -> Firebase abandoned mirror installed. Firebase/liveVisitors -> Sheet triggers removed.';
+}
+
+/**
+ * Firebase -> Google Sheets synchronization for Abandoned Applications.
+ *
+ * This is intentionally separate from the existing Sheet -> Firebase sync.
+ * It makes Firebase-backed abandoned records visible in the Google Sheet even
+ * when the student's final browser exit request never reached Apps Script.
+ * Existing Recovery Status, Application ID and Assigned To values in the Sheet
+ * are preserved when already present.
+ */
+
+/**
+ * Live Visitors -> Abandoned Applications synchronization.
+ *
+ * The Admin dashboard recovery table combines the persistent
+ * /abandonedApplications record with the latest /liveVisitors snapshot.
+ * Therefore a lead can appear in the dashboard even when the final browser
+ * save request never created the persistent abandoned record. This function
+ * closes that gap by copying incomplete visitor snapshots into both the
+ * persistent Firebase abandoned record and the Google Sheet.
+ */
+function syncLiveVisitorsToAbandonedApplications() {
+  // DISABLED BY DESIGN. liveVisitors is volatile browser presence data and must
+  // never write/overwrite the Abandoned Applications Sheet.
+  return { status: 'success', recordsFound: 0, added: 0, updated: 0, skipped: 0, disabled: true,
+    message: 'Live visitor -> Sheet synchronization is disabled.' };
+}
+
+function syncAbandonedSourcesToSheet() {
+  // DISABLED BY DESIGN: Google Sheets must only change from the Admin Dashboard
+  // actions or the original student save operation. Never overwrite Sheet rows
+  // from liveVisitors/Firebase on a timer.
+  return { status: 'success', added: 0, updated: 0, skipped: 0, disabled: true,
+    message: 'Automatic Firebase/Live Visitor -> Sheet sync is disabled. Admin Dashboard changes only update the Sheet.' };
+}
+
+function syncAbandonedApplicationsFirebaseToSheet() {
+  // DISABLED BY DESIGN. The Abandoned Applications Sheet must never be
+  // rewritten from Firebase/liveVisitors. Existing Sheet rows can only be
+  // changed by the controlled Admin Dashboard endpoints or the original
+  // student recovery-save operation.
+  return {
+    status: 'success',
+    added: 0,
+    updated: 0,
+    skipped: 0,
+    disabled: true,
+    message: 'Firebase → Sheet synchronization is disabled. Admin Dashboard changes only update the Sheet.'
+  };
+}
+
+/**
+ * Install a 1-minute trigger so new Firebase abandoned records are copied to
+ * the Abandoned Applications sheet automatically. Existing triggers for this
+ * handler are removed first to avoid duplicates.
+ */
+function createAbandonedFirebaseToSheetTrigger() {
+  // Backward-compatible function name. The installed trigger is now SAFE:
+  // Sheet -> Firebase only. It never rewrites the Abandoned Applications Sheet.
+  return createAbandonedSheetToFirebaseTrigger();
+}
+
+function removeAbandonedFirebaseToSheetTrigger() {
+  ScriptApp.getProjectTriggers().forEach(function(trigger) {
+    const handler = trigger.getHandlerFunction();
+    if (handler === 'syncAbandonedApplicationsFirebaseToSheet' || handler === 'syncAbandonedSourcesToSheet' || handler === 'syncAbandonedSheetToFirebaseTrigger' || handler === 'syncAbandonedApplicationsSheetToFirebase') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+  return 'Abandoned Firebase → Sheet triggers removed.';
+}
 function normalizeRecoveryText_(v, max) {
   const text = String(v == null ? "" : v).trim();
   return max ? text.slice(0, max) : text;
@@ -1875,6 +2006,8 @@ function doPost(e) {
     if (data.action === "updateAbandonedRecoveryStatus") return updateAbandonedRecoveryStatus(data);
     if (data.action === "markAbandonedApplicationSubmitted") return markAbandonedApplicationSubmitted(data);
     if (data.action === "deleteAbandonedApplication") return deleteAbandonedApplication(data);
+    if (data.action === "cleanupAbandonedApplicationDuplicates") return jsonResponse(cleanupAbandonedApplicationDuplicates());
+    if (data.action === "repairAndStartAbandonedSync") return jsonResponse(repairAndStartAbandonedSync());
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
     if (data.action === "removeCounselor") return jsonResponse(removeCounselor(data.counselorName || data.name || ""));
     if (data.action === "health") return jsonResponse({status:"online", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
@@ -1977,8 +2110,55 @@ function saveSingleApplication(data) {
   return jsonResponse({status:"success", duplicate:false, applicationId:application["Application ID"], message:"Application saved successfully."});
 }
 
-function doGet() {
-  return jsonResponse({status:"online", message:"InternsForge Google Sheets receiver is working.", time:nowString()});
+function doGet(e) {
+  try {
+    const p = (e && e.parameter) ? e.parameter : {};
+    const action = String(p.action || '').trim();
+
+    // Health/default endpoint.
+    if (!action) {
+      return jsonResponse({
+        status:"online",
+        message:"InternsForge Google Sheets receiver is working.",
+        time:nowString()
+      });
+    }
+
+    // Abandoned Applications endpoints.
+    if (action === "updateAbandonedApplicationAssignment") {
+      return updateAbandonedApplicationAssignment(p);
+    }
+    if (action === "updateAbandonedRecoveryStatus") {
+      return updateAbandonedRecoveryStatus(p);
+    }
+    if (action === "deleteAbandonedApplication") {
+      return deleteAbandonedApplication(p);
+    }
+    if (action === "syncAbandonedApplicationsNow") {
+      return jsonResponse(syncAbandonedApplicationsSheetToFirebase());
+    }
+    if (action === "syncAbandonedApplicationsFirebaseToSheet") {
+      return jsonResponse(syncAbandonedApplicationsFirebaseToSheet());
+    }
+    if (action === "syncAbandonedSourcesToSheet") {
+      return jsonResponse(syncAbandonedSourcesToSheet());
+    }
+    if (action === "repairAndStartAbandonedSync") {
+      return jsonResponse(repairAndStartAbandonedSync());
+    }
+    if (action === "health") {
+      return jsonResponse({
+        status:"online",
+        time:nowString(),
+        message:"InternsForge Sheets receiver is healthy."
+      });
+    }
+
+    return jsonResponse({status:"error", message:"Unknown action: " + action});
+  } catch (error) {
+    console.error("GET ERROR", error);
+    return jsonResponse({status:"error", message:error.message || String(error)});
+  }
 }
 
 function syncApplicationsToSheet(applications, updateExisting) {

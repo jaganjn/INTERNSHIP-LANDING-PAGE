@@ -1963,6 +1963,34 @@ function listeners() {
     if (E.applicationVisitorCountMetric) E.applicationVisitorCountMetric.textContent = displayCount;
   });
 
+  // Near-real-time CRM -> Google Sheets sync. This listens only for future Firebase record changes, so opening the dashboard does not re-send all existing applications.
+  db.ref("submittedApplications").on("child_changed", snapshot => {
+    const changed = snapshot.val() || {};
+    const appId = snapshot.key;
+
+    // V15.20: immediately reflect counselor-side CRM changes in the
+    // Application Management UI. Do not wait for the Google Sheets round-trip.
+    const localIndex = applications.findIndex(item => String(item.id) === String(appId));
+    if (localIndex >= 0) {
+      applications[localIndex] = { ...applications[localIndex], ...changed, id: appId };
+      renderApplications(new Set());
+    }
+
+    const statusEl = el("crmSyncStatus");
+    if (statusEl) {
+      const statusText = String(changed.callStatus || "").trim();
+      statusEl.textContent = statusText
+        ? `● Counselor update received • Call Status: ${statusText}`
+        : "● Counselor CRM update received • syncing Google Sheets…";
+      statusEl.className = "crm-syncing";
+    }
+
+    // Keep the existing Firebase → Google Sheets synchronization, but it is
+    // now secondary to the immediate dashboard UI update above.
+    sendApplicationUpdateToSheets({ id: appId, ...changed })
+      .then(() => {
+        if (statusEl) {
+          statusEl.textContent = "● Firebase live • Counselor update synchronized.";
   // V15.23: deterministic realtime CRM listener. Both child_added and
   // child_changed are handled so counselor-originated updates are reflected
   // in Application Management even when the dashboard did not previously

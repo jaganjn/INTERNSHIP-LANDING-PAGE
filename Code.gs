@@ -636,18 +636,52 @@ function syncCounselorRowToFirebase(counselorSheet, rowNumber, editMeta) {
    * COUNSELOR → FIREBASE / APPLICATION MANAGEMENT
    * ==========================================================
    */
-  // V15.22: Firebase is updated from the freshly-written canonical Master row,
-  // not from the counselor copy. This makes Counselor -> Master -> Firebase
-  // deterministic and gives the dashboard a guaranteed child_changed event.
-  const firebaseResult = masterRow > 0
-    ? syncCanonicalMasterToFirebase_(master, masterRow, applicationId, "counselor-sheet")
-    : firebaseRestPatch("/submittedApplications/" + encodeURIComponent(applicationId), {
-        callStatus: value(app["Call Status"]),
-        assignedTo: value(app["Assigned To"]),
-        remarks: value(app["Remarks"]),
-        updatedAtMs: Date.now(),
-        syncSource: "counselor-sheet"
-      });
+  const firebaseUpdates = {
+    callStatus:
+      value(app["Call Status"]),
+
+    nextFollowUpAt:
+      sheetDateToIso(
+        app["Next Follow-up"]
+      ),
+
+    assignedTo:
+      value(app["Assigned To"]),
+
+    remarks:
+      value(app["Remarks"])
+  };
+
+  const editable = {
+    name: value(app["Name"]),
+    phone: value(app["Phone"]),
+    email: value(app["Email"]),
+    college: value(app["College"]),
+    department: value(app["Department"]),
+    year: value(app["Year"]),
+    domain: value(app["Domain"]),
+    state: value(app["State"]),
+    communicationLanguage:
+      value(app["Communication Language"]),
+    startAvailability:
+      value(app["Start Availability"]),
+    applicationReason:
+      value(app["Application Reason"])
+  };
+
+  Object.keys(editable).forEach(key => {
+    if (editable[key] !== "") {
+      firebaseUpdates[key] =
+        editable[key];
+    }
+  });
+
+  const firebaseResult =
+    firebaseRestPatch(
+      "/submittedApplications/" +
+        encodeURIComponent(applicationId),
+      firebaseUpdates
+    );
 
   /*
    * If Assigned To was deliberately changed in the counselor
@@ -1382,58 +1416,6 @@ function firebaseRestPatch(path, payload) {
   }
 
   return body ? JSON.parse(body) : {};
-}
-
-function syncCanonicalMasterToFirebase_(master, masterRowNumber, applicationId, source) {
-  const headers = CONFIG.HEADERS.slice();
-  const row = readManagedRow_(master, masterRowNumber, headers.length);
-  const app = rowValuesToApplicationObject(headers, row);
-  app["Application ID"] = applicationId;
-  app["Call Status"] = standardizeCallStatus_(app["Call Status"]);
-
-  // V15.23: every CRM-controlled field is emitted from the freshly-read
-  // canonical Master row. A unique revision makes counselor-originated
-  // updates observable by the Firebase realtime listener even when the
-  // selected value happens to be the same as a previous value.
-  const revisionMs = Date.now();
-  const payload = {
-    callStatus: value(app["Call Status"]),
-    nextFollowUpAt: sheetDateToIso(app["Next Follow-up"]),
-    assignedTo: value(app["Assigned To"]),
-    remarks: value(app["Remarks"]),
-    updatedAtMs: revisionMs,
-    crmRevision: String(revisionMs) + "-" + String(applicationId),
-    syncSource: value(source) || "google-sheets"
-  };
-  const editable = {
-    name: value(app["Name"]), phone: value(app["Phone"]), email: value(app["Email"]),
-    college: value(app["College"]), department: value(app["Department"]), year: value(app["Year"]),
-    domain: value(app["Domain"]), state: value(app["State"]),
-    communicationLanguage: value(app["Communication Language"]),
-    startAvailability: value(app["Start Availability"]),
-    applicationReason: value(app["Application Reason"])
-  };
-  Object.keys(editable).forEach(k => { if (editable[k] !== "") payload[k] = editable[k]; });
-
-  let lastError = null;
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    try {
-      firebaseRestPatch("/submittedApplications/" + encodeURIComponent(applicationId), payload);
-      const verify = firebaseRestGet_("/submittedApplications/" + encodeURIComponent(applicationId)) || {};
-      if (String(verify.callStatus || "") === String(payload.callStatus || "") &&
-          String(verify.assignedTo || "") === String(payload.assignedTo || "") &&
-          String(verify.remarks || "") === String(payload.remarks || "") &&
-          String(verify.nextFollowUpAt || "") === String(payload.nextFollowUpAt || "") &&
-          String(verify.crmRevision || "") === String(payload.crmRevision || "")) {
-        return {status:"success", verified:true, attempt:attempt, payload:payload};
-      }
-      lastError = new Error("Firebase verification did not return the latest counselor update.");
-    } catch (e) {
-      lastError = e;
-    }
-    Utilities.sleep(250 * attempt);
-  }
-  throw lastError || new Error("Could not synchronize canonical Master row to Firebase.");
 }
 
 function testSheetToFirebaseSync() {

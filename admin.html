@@ -37,7 +37,7 @@
         <button type="button" data-admin-module="applications">▥ <span>Recent Applications</span></button>
         <button type="button" data-admin-module="domainInsights">◆ <span>Domain Insights</span></button>
         <button type="button" data-admin-module="referrals">♙ <span>Referral Management</span></button>
-        
+        <button type="button" data-admin-module="sheetsRecovery">☁ <span>Google Sheets</span></button>
         <button type="button" data-admin-module="settings">⚙ <span>Settings</span></button>
         <button type="button" class="hub-landing-link" data-admin-module="landingPage">↗ <span>Open Landing Page</span></button>
         <button type="button" data-admin-module="dashboard">⌂ <span>Dashboard Home</span></button>
@@ -148,7 +148,7 @@
     <table class="crm-table abandoned-table"><thead><tr><th>Student</th><th>College / Academic</th><th>Domain</th><th>Progress</th><th>Exit</th><th>Last Active</th><th>Recovery</th><th>Assigned To</th><th>Action</th></tr></thead>
     <tbody id="abandonedTableBody"><tr><td colspan="9" class="empty">Loading abandoned applications…</td></tr></tbody></table>
   </div>
-  <div class="crm-footer"><span id="abResultCount">0 abandoned applications</span><small>Persistent recovery records are updated in real time; Admin Dashboard changes are written to the matching Sheet fields only.</small></div>
+  <div class="crm-footer"><span id="abResultCount">0 abandoned applications</span><small>Persistent recovery records are updated in real time; recovered submissions remain available through the recovery-status filter.</small></div>
 </section>
 
 <div id="adminModuleHint" class="admin-module-hint"><strong>Workspace ready</strong><span>Open <b>Control Hub</b> and choose a module. It will open in a focused popup, keeping this dashboard compact.</span></div>
@@ -170,7 +170,16 @@
 <article class="panel" id="referralFriends"><header><div><span class="eyebrow">REFERRAL ACTIVITY</span><h2>Friends Joined</h2></div><input id="referralSearch" type="search" placeholder="Search"></header><div class="table-wrap"><table><thead><tr><th>Applicant</th><th>Referred By</th><th>College</th><th>Domain</th><th>Joined</th></tr></thead><tbody id="referralFriendsBody"><tr><td colspan="5" class="empty">No referred applications yet…</td></tr></tbody></table></div></article>
 </section>
 
-
+<section class="panel admin-module" id="sheetsRecovery" style="margin-top:25px;">
+  <div class="panel-header">
+    <h2>📊 Google Sheets Recovery</h2>
+    <span>Today</span>
+  </div>
+  <p style="color:#94a3b8;margin:0 0 14px;line-height:1.6;">Recover applications already stored in Firebase but missing from Google Sheets. Existing Sheet rows are skipped automatically. Use the full recovery button for older records too.</p>
+  <button id="syncTodaySheetsBtn" onclick="syncTodayToSheets()" style="padding:12px 18px;border:0;border-radius:10px;cursor:pointer;font-weight:700;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;">🔄 Sync Today to Sheets</button>
+  <button id="recoverAllSheetsBtn" onclick="recoverAllFirebaseToSheets()" style="padding:12px 18px;margin-left:8px;border:1px solid #6366f1;border-radius:10px;cursor:pointer;font-weight:700;background:#fff;color:#4f46e5;">📥 Recover All Firebase Data</button>
+  <div id="syncTodaySheetsStatus" style="margin-top:12px;color:#94a3b8;"></div>
+</section>
 
 <section class="panel settings admin-module" id="settings">
 <header><div><span class="eyebrow">ADMINISTRATION</span><h2>Settings & Data Controls</h2></div></header>

@@ -627,55 +627,32 @@ function syncCounselorRowToFirebase(counselorSheet, rowNumber, editMeta) {
 
   /*
    * ==========================================================
-   * COUNSELOR → FIREBASE / APPLICATION MANAGEMENT
+   * COUNSELOR → MASTER → FIREBASE
    * ==========================================================
+   *
+   * Once Master Sheet1 has been updated, read that canonical row
+   * and write it to Firebase. This prevents a stale counselor copy
+   * from overwriting newer Master values.
    */
-  const firebaseUpdates = {
-    callStatus:
-      value(app["Call Status"]),
-
-    nextFollowUpAt:
-      sheetDateToIso(
-        app["Next Follow-up"]
-      ),
-
-    assignedTo:
-      value(app["Assigned To"]),
-
-    remarks:
-      value(app["Remarks"])
-  };
-
-  const editable = {
-    name: value(app["Name"]),
-    phone: value(app["Phone"]),
-    email: value(app["Email"]),
-    college: value(app["College"]),
-    department: value(app["Department"]),
-    year: value(app["Year"]),
-    domain: value(app["Domain"]),
-    state: value(app["State"]),
-    communicationLanguage:
-      value(app["Communication Language"]),
-    startAvailability:
-      value(app["Start Availability"]),
-    applicationReason:
-      value(app["Application Reason"])
-  };
-
-  Object.keys(editable).forEach(key => {
-    if (editable[key] !== "") {
-      firebaseUpdates[key] =
-        editable[key];
-    }
-  });
-
-  const firebaseResult =
-    firebaseRestPatch(
-      "/submittedApplications/" +
-        encodeURIComponent(applicationId),
-      firebaseUpdates
-    );
+  const firebaseResult = masterRow > 0
+    ? syncCanonicalMasterToFirebase_(
+        master,
+        masterRow,
+        applicationId,
+        "counselor-sheet"
+      )
+    : firebaseRestPatch(
+        "/submittedApplications/" +
+          encodeURIComponent(applicationId),
+        {
+          callStatus: value(app["Call Status"]),
+          nextFollowUpAt: sheetDateToIso(app["Next Follow-up"]),
+          assignedTo: value(app["Assigned To"]),
+          remarks: value(app["Remarks"]),
+          updatedAtMs: Date.now(),
+          syncSource: "counselor-sheet"
+        }
+      );
 
   /*
    * If Assigned To was deliberately changed in the counselor
@@ -1378,6 +1355,116 @@ function firebaseRestDelete(path) {
   return response.getContentText();
 }
 
+/**
+ * Canonical Master Sheet -> Firebase writer.
+ *
+ * Counselor edits are first written to Master Sheet1. This helper then reads
+ * the freshly-written Master row and writes the complete canonical CRM state
+ * to Firebase. Keeping one canonical writer prevents the counselor copy and
+ * the Master row from competing with each other.
+ */
+function syncCanonicalMasterToFirebase_(masterSheet, masterRow, applicationId, syncSource) {
+  if (!masterSheet || !masterRow || masterRow < 2) {
+    throw new Error("Invalid Master Sheet row.");
+  }
+
+  const id = value(applicationId);
+  if (!id) {
+    throw new Error("Missing Application ID.");
+  }
+
+  const headers = getHeaders(masterSheet);
+  const row = readManagedRow_(masterSheet, masterRow, headers.length);
+  const record = {};
+
+  headers.forEach((header, index) => {
+    record[normalizeHeader(header)] = row[index];
+  });
+
+  const app = buildApplicationObject(record, id);
+  app["Call Status"] = standardizeCallStatus_(app["Call Status"]);
+
+  const updates = {
+    applicationId: id,
+    callStatus: value(app["Call Status"]),
+    nextFollowUpAt: sheetDateToIso(app["Next Follow-up"]),
+    assignedTo: value(app["Assigned To"]),
+    remarks: value(app["Remarks"]),
+    name: value(app["Name"]),
+    phone: value(app["Phone"]),
+    email: value(app["Email"]),
+    college: value(app["College"]),
+    department: value(app["Department"]),
+    year: value(app["Year"]),
+    domain: value(app["Domain"]),
+    state: value(app["State"]),
+    communicationLanguage: value(app["Communication Language"]),
+    startAvailability: value(app["Start Availability"]),
+    applicationReason: value(app["Application Reason"]),
+    updatedAtMs: Date.now(),
+    syncSource: value(syncSource) || "master-sheet"
+  };
+
+  // Optional profile fields are omitted when blank, but CRM control fields
+  // must still be written so clearing Remarks / Assigned To / Next Follow-up
+  // or Call Status in the Sheet is reflected in Firebase.
+  [
+    "name", "phone", "email", "college", "department", "year", "domain",
+    "state", "communicationLanguage", "startAvailability", "applicationReason"
+  ].forEach(key => {
+    if (updates[key] === "") delete updates[key];
+  });
+
+  const result = firebaseRestPatch(
+    "/submittedApplications/" + encodeURIComponent(id),
+    updates
+  );
+
+  // Read-after-write verification makes a failed/stale CRM update visible
+  // immediately in the execution log instead of silently reporting success.
+  try {
+    const live = firebaseRestGet_(
+      "/submittedApplications/" + encodeURIComponent(id)
+    );
+
+    const mismatches = [];
+    const checks = {
+      callStatus: value(updates.callStatus),
+      assignedTo: value(updates.assignedTo),
+      remarks: value(updates.remarks),
+      nextFollowUpAt: value(updates.nextFollowUpAt)
+    };
+
+    Object.keys(checks).forEach(key => {
+      if (checks[key] !== "" && value(live && live[key]) !== checks[key]) {
+        mismatches.push(key);
+      }
+    });
+
+    if (mismatches.length) {
+      console.warn(
+        "Firebase verification mismatch for " + id + ": " +
+        mismatches.join(", ")
+      );
+      return {
+        status: "verified_with_mismatch",
+        mismatches: mismatches,
+        response: result
+      };
+    }
+  } catch (verifyError) {
+    console.warn(
+      "Firebase read-after-write verification skipped for " + id + ": " +
+      verifyError.message
+    );
+  }
+
+  return {
+    status: "success",
+    response: result
+  };
+}
+
 function firebaseRestPatch(path, payload) {
   const token = getFirebaseAccessToken_();
 
@@ -1975,10 +2062,6 @@ function saveSingleApplication(data) {
   sheet.appendRow(buildRow(headers, application));
   SpreadsheetApp.flush();
   return jsonResponse({status:"success", duplicate:false, applicationId:application["Application ID"], message:"Application saved successfully."});
-}
-
-function doGet() {
-  return jsonResponse({status:"online", message:"InternsForge Google Sheets receiver is working.", time:nowString()});
 }
 
 function syncApplicationsToSheet(applications, updateExisting) {

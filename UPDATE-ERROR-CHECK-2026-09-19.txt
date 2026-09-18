@@ -1,0 +1,37 @@
+InternsForge Update & Error Check — 2026-09-19
+
+Source package:
+INTERNSHIP-LANDING-PAGE-main (3).zip
+
+Checks performed:
+- Code.gs JavaScript syntax check: PASS
+- admin.js syntax check: PASS
+- login.js syntax check: PASS
+- reset-password.js syntax check: PASS
+- functions/index.js syntax check: PASS
+- INTERNSFORGE_FINAL_TRUE_BIDIRECTIONAL_SYNC_2026-09-12.js syntax check: PASS
+
+Issues found and corrected in Code.gs:
+1. Duplicate doGet() definitions.
+   The later legacy doGet() would override the earlier action-aware doGet(),
+   preventing GET actions such as abandoned-application assignment/recovery
+   status/delete from being routed correctly.
+   FIX: merged behavior by removing the duplicate legacy definition.
+
+2. Counselor -> Firebase path could write directly from the counselor copy.
+   FIX: after counselor -> Master synchronization, the Firebase write now
+   reads the freshly-written canonical Master row through
+   syncCanonicalMasterToFirebase_(). This reduces stale-copy overwrites and
+   keeps Master -> Firebase deterministic.
+
+3. Added read-after-write verification for key CRM control fields
+   (Call Status, Assigned To, Remarks, Next Follow-up) and logs mismatches
+   without breaking the synchronization flow.
+
+Important:
+- This is a static code/package check; it cannot authenticate to the user's
+  Firebase project or execute Apps Script triggers from this environment.
+- The existing Firebase service-account setup and Apps Script deployment still
+  need to be present in the user's Google account.
+- No website/Firebase/frontend files were intentionally changed; Code.gs was
+  updated and the rest of the uploaded package was preserved.

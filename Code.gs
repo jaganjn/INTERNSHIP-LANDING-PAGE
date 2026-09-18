@@ -2128,6 +2128,7 @@ function doPost(e) {
     if (data.action === "cleanupAbandonedApplicationDuplicates") return jsonResponse(cleanupAbandonedApplicationDuplicates());
     if (data.action === "repairAndStartAbandonedSync") return jsonResponse(repairAndStartAbandonedSync());
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
+    if (data.action === "verifyCounselorLiveSync") return jsonResponse(verifyCounselorLiveSync(data.counselorName || data.name || ""));
     if (data.action === "removeCounselor") return jsonResponse(removeCounselor(data.counselorName || data.name || ""));
     if (data.action === "health") return jsonResponse({status:"online", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
     return saveSingleApplication(data);
@@ -2528,13 +2529,13 @@ function registerCounselor(name, spreadsheetId) {
   // initialized through the counselor-specific schema, never the generic
   // CRM/abandoned-application schema. This is the permanent guard that
   // prevents Draft ID / Progress / Exit fields from entering counselor leads.
-  initializeCounselorLeadSheet_(leadsSheet, counselorName);
-  assertCounselorLeadSchemaForWrite_(leadsSheet, counselorName);
+  // V15.21: registration is the permanent server-side activation point.
+  // A counselor added from the dashboard must have BOTH the correct sheet
+  // schema and an installable onEdit trigger before they can receive leads.
+  ensureCounselorLiveSync_(targetSpreadsheetId, counselorName);
+  leadsSheet = targetSS.getSheetByName(counselorLeadsSheetName(counselorName)) || leadsSheet;
   leadsSheet.setFrozenRows(1);
   formatHeader(leadsSheet);
-  ensureCallStatusDropdown_(leadsSheet);
-
-  ensureCounselorTrigger(targetSpreadsheetId);
 
   const config = getCounselorConfigSheet();
   const headers = getHeaders(config);
@@ -2755,6 +2756,24 @@ function repairAllCounselorLeadColumnOrders() {
   return results;
 }
 
+/**
+ * V15.21: Explicitly ensure the counselor spreadsheet has the installable
+ * onEdit trigger used for Counselor Sheet -> Master -> Firebase sync.
+ * This is called during registration, so counselors added from the dashboard
+ * are not merely local UI names.
+ */
+function ensureCounselorLiveSync_(spreadsheetId, counselorName) {
+  const id = value(spreadsheetId);
+  if (!id) throw new Error("Counselor spreadsheet ID is missing for " + (counselorName || "counselor") + ".");
+  const ss = SpreadsheetApp.openById(id);
+  const sheet = findCounselorLeadSheet_(ss, counselorName, true);
+  initializeCounselorLeadSheet_(sheet, counselorName);
+  assertCounselorLeadSchemaForWrite_(sheet, counselorName);
+  ensureCallStatusDropdown_(sheet);
+  ensureCounselorTrigger(id);
+  return { spreadsheetId: id, sheetName: sheet.getName(), trigger: true };
+}
+
 function ensureCounselorTrigger(spreadsheetId) {
   const id = value(spreadsheetId);
   if (!id) return;
@@ -2777,6 +2796,21 @@ function ensureCounselorTrigger(spreadsheetId) {
  * Ensures every active counselor spreadsheet in the Counselors
  * registry has an installable onEdit trigger.
  */
+function verifyCounselorLiveSync(counselorName) {
+  const name = normalizeCounselorName(counselorName);
+  if (!name) return { status: "error", message: "Counselor name is required." };
+  const record = getCounselorRecord(name);
+  if (!record || !record.spreadsheetId) {
+    return { status: "error", counselor: name, registered: false, message: "Counselor is not registered in the Counselors sheet." };
+  }
+  try {
+    const sync = ensureCounselorLiveSync_(record.spreadsheetId, name);
+    return { status: "success", counselor: name, registered: true, spreadsheetId: record.spreadsheetId, sheetName: sync.sheetName, trigger: true };
+  } catch (error) {
+    return { status: "error", counselor: name, registered: true, message: error.message || String(error) };
+  }
+}
+
 function ensureAllCounselorTriggers() {
   const counselors = getCounselors();
   let created = 0;

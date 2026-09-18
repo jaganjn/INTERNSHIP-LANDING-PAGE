@@ -768,15 +768,41 @@ function counselorOptions(selected = "", includeUnassigned = true) {
   return `${includeUnassigned ? '<option value="">Unassigned</option>' : ''}${names.map(name => `<option value="${esc(name)}" ${name.toLowerCase() === current.toLowerCase() ? 'selected' : ''}>${esc(name)}</option>`).join("")}<option value="__new__">＋ Add new counselor…</option>`;
 }
 
+async function registerCounselorWithServer(name) {
+  const clean = String(name || "").replace(/\s+/g, " ").trim();
+  if (!clean) return false;
+  try {
+    // IMPORTANT: the dashboard previously kept newly-added counselors only
+    // in localStorage. That meant the Apps Script trigger/registry never knew
+    // about them, so edits made in the counselor spreadsheet could not travel
+    // back to Firebase/Application Management. Register every counselor on
+    // the server before a lead is assigned.
+    await fetch(SHEETS_RECOVERY_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "registerCounselor", counselorName: clean })
+    });
+    return true;
+  } catch (error) {
+    console.warn("Counselor server registration failed:", error);
+    return false;
+  }
+}
+
 function promptForCounselor() {
-  const name = window.prompt("Enter the academic counselor name. A dedicated Google Sheets tab will be created automatically when a lead is assigned.");
+  const name = window.prompt("Enter the academic counselor name. A dedicated Google Spreadsheet and live CRM sync will be configured automatically.");
   if (name === null) return "";
   const clean = rememberCounselor(name);
   if (!clean) {
     showToast("Counselor name required", "Please enter a valid counselor name.", "error", 3500);
     return "";
   }
-  showToast("Counselor added", `${clean} is now available for lead assignment.`, "success", 3500);
+  // Registration is also repeated in assignApplicationToCounselor(), where it
+  // is awaited. This immediate call gives the dashboard a head start while the
+  // final assignment path guarantees ordering.
+  registerCounselorWithServer(clean);
+  showToast("Counselor added", `${clean} is being configured for lead assignment and live status sync.`, "success", 3500);
   renderApplicationCRM();
   return clean;
 }
@@ -804,6 +830,10 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
   const statusEl = el("crmSyncStatus");
   if (statusEl) { statusEl.textContent = `● Assigning ${app.name || "lead"} to ${clean || "Unassigned"}…`; statusEl.className = "crm-syncing"; }
   try {
+    if (clean) {
+      const registered = await registerCounselorWithServer(clean);
+      if (!registered) throw new Error(`Could not configure counselor "${clean}" on the server.`);
+    }
     await db.ref(`submittedApplications/${appId}`).update({ assignedTo: clean });
     await logApplicationActivity(appId, {
       action: "Lead reassigned",

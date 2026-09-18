@@ -1,23 +1,24 @@
-# InternsForge V15.21 — Counselor → Dashboard Live Status Sync
+INTERNSFORGE V15.23 – UNIVERSAL COUNSELOR CRM FIELD SYNC
 
-## Root cause fixed
-The Admin Dashboard's “Add new counselor” flow previously added the counselor only to browser localStorage. It did not register the counselor in the Apps Script `Counselors` registry or install the counselor spreadsheet `onEdit` trigger. Therefore a Call Status changed in a newly-added counselor's sheet could not reliably flow back to Firebase/Application Management.
+This release makes counselor-sheet CRM edits dynamically propagate for every registered counselor:
+Counselor Lead Sheet -> Master Sheet1 -> Firebase -> Application Dashboard.
 
-## Permanent behavior
-1. Dashboard adds counselor.
-2. Browser registers counselor with Apps Script.
-3. Apps Script creates/initializes the dedicated counselor spreadsheet when needed.
-4. Apps Script enforces the canonical 17-column counselor schema.
-5. Apps Script installs `counselorSpreadsheetOnEdit` for that spreadsheet.
-6. When counselor changes Call Status, the installable trigger runs:
-   Counselor Sheet → Master Sheet1 → Firebase → Application Management.
-7. The Admin dashboard's Firebase listener updates immediately.
+Dynamically synchronized fields:
+- Call Status
+- Remarks
+- Assigned To
+- Next Follow-up
+- Name, Phone, Email, College, Department, Year, Domain, State, Communication Language, Start Availability, Application Reason
 
-## Deployment
-Replace `Code.gs` and deploy the existing Web App deployment as a new version.
-Replace `admin.js` and redeploy the dashboard.
+No counselor name is hardcoded. The source counselor is resolved from the registered spreadsheet/counselor configuration.
 
-## Existing counselors
-Run `ensureAllCounselorTriggers()` once after deployment. For a specific registered counselor, `verifyCounselorLiveSync("Name")` can verify/rebuild the trigger.
+V15.23 adds a unique CRM revision to counselor-originated Firebase writes and a unified child_added/child_changed Application Management listener. This prevents the dashboard from missing a counselor-originated update.
 
-Do not manually run `sheetOnEdit` or `counselorSpreadsheetOnEdit`.
+Deployment:
+1. Replace Code.gs in Apps Script.
+2. Save.
+3. Deploy -> Manage deployments -> Edit existing Web App -> select new version -> Deploy.
+4. Replace admin.js in the dashboard project and redeploy the frontend.
+5. Run ensureAllCounselorTriggers() once to ensure every currently registered counselor has the installable onEdit trigger.
+
+Do not manually run counselorSpreadsheetOnEdit().

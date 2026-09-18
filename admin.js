@@ -1325,7 +1325,9 @@ async function saveApplicationCRM() {
     callStatus: el("modalCallStatus").value,
     nextFollowUpAt: toFirebaseDateValue(el("modalFollowUp").value),
     assignedTo: String(el("modalAssignedTo").value || "").trim(),
-    remarks: String(el("modalRemarks").value || "").trim()
+    remarks: String(el("modalRemarks").value || "").trim(),
+    updatedAtMs: Date.now(),
+    syncSource: "admin-dashboard"
   };
   try {
     statusEl.textContent = "Saving…";
@@ -1989,6 +1991,44 @@ function listeners() {
       .then(() => {
         if (statusEl) {
           statusEl.textContent = "● Firebase live • Counselor update synchronized.";
+  // V15.23: deterministic realtime CRM listener. Both child_added and
+  // child_changed are handled so counselor-originated updates are reflected
+  // in Application Management even when the dashboard did not previously
+  // have the child in its local array. Firebase is the realtime UI source;
+  // counselor-sheet changes already passed through Apps Script -> Master.
+  const handleRealtimeApplicationChange = snapshot => {
+    const changed = snapshot.val() || {};
+    const appId = snapshot.key;
+    const localIndex = applications.findIndex(item => String(item.id || item.applicationId) === String(appId));
+
+    if (localIndex >= 0) {
+      applications[localIndex] = { ...applications[localIndex], ...changed, id: appId };
+    } else {
+      applications.push({ ...changed, id: appId });
+    }
+
+    applications.sort((a, b) => asMs(b.submittedAtMs || b.submittedAt || b.timestamp) - asMs(a.submittedAtMs || a.submittedAt || a.timestamp));
+    renderApplications(new Set());
+
+    const statusEl = el("crmSyncStatus");
+    if (statusEl) {
+      const statusText = String(changed.callStatus || "").trim();
+      const source = String(changed.syncSource || "").toLowerCase();
+      statusEl.textContent = source === "counselor-sheet"
+        ? (statusText ? `● Counselor update received • Call Status: ${statusText}` : "● Counselor CRM update received • synced")
+        : (statusText ? `● CRM update received • Call Status: ${statusText}` : "● CRM update received • synced");
+      statusEl.className = "crm-synced";
+    }
+
+    // Counselor-sheet changes have already been written to Master by Apps
+    // Script. Never send those changes back to Sheets from the browser.
+    const source = String(changed.syncSource || "").toLowerCase();
+    if (source === "counselor-sheet") return;
+
+    sendApplicationUpdateToSheets({ id: appId, ...changed })
+      .then(() => {
+        if (statusEl) {
+          statusEl.textContent = "● Firebase live • Dashboard update synchronized.";
           statusEl.className = "crm-synced";
         }
       })
@@ -1996,7 +2036,10 @@ function listeners() {
         console.warn("Realtime CRM Sheets sync failed:", error);
         if (statusEl) { statusEl.textContent = "● Firebase live • Sheets sync needs attention."; statusEl.className = "crm-sync-error"; }
       });
-  });
+  };
+
+  db.ref("submittedApplications").on("child_added", handleRealtimeApplicationChange);
+  db.ref("submittedApplications").on("child_changed", handleRealtimeApplicationChange);
 
   // Application Management: keep a dedicated, fault-tolerant realtime listener.
   // This path is independent of visitor/recovery rendering so a problem in one

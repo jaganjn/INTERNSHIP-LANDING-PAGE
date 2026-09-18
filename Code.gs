@@ -162,11 +162,11 @@ const COUNSELOR_CONFIG = {
   LIST_HEADERS: ["Counselor Name", "Spreadsheet ID", "Active", "Created At"],
   LEADS_SHEET_SUFFIX: "'s Leads",
 
-  // Counselor lead sheets use the SAME physical column order as Master Sheet1.
-  // This prevents Application ID / Name / Phone / etc. from shifting when a
-  // lead is routed from the Admin Dashboard.
+  // Existing counselor files use this physical order (as shown in the
+  // counselor LeadsTable screenshot). Keep this separate from Master Sheet1.
   LEADS_HEADERS: [
     "Timestamp",
+    "Application ID",
     "Name",
     "Phone",
     "Email",
@@ -179,10 +179,9 @@ const COUNSELOR_CONFIG = {
     "Start Availability",
     "Application Reason",
     "Call Status",
-    "Remarks",
-    "Application ID",
     "Next Follow-up",
-    "Assigned To"
+    "Assigned To",
+    "Remarks"
   ]
 };
 
@@ -1694,6 +1693,7 @@ function createAbandonedSheetToFirebaseTrigger() {
   return 'Safe Sheet -> Firebase abandoned mirror installed. Firebase/liveVisitors -> Sheet triggers removed.';
 }
 
+
 /**
  * Firebase -> Google Sheets synchronization for Abandoned Applications.
  *
@@ -1752,26 +1752,19 @@ function syncAbandonedApplicationsFirebaseToSheet() {
 function createAbandonedFirebaseToSheetTrigger() {
   // Backward-compatible function name. The installed trigger is now SAFE:
   // Sheet -> Firebase only. It never rewrites the Abandoned Applications Sheet.
-  ScriptApp.getProjectTriggers().forEach(function(t) {
-    const h = t.getHandlerFunction();
-    if (h === 'syncAbandonedApplicationsFirebaseToSheet' ||
-        h === 'syncAbandonedSourcesToSheet' ||
-        h === 'syncLiveVisitorsToAbandonedApplications') {
-      ScriptApp.deleteTrigger(t);
-    }
-  });
   return createAbandonedSheetToFirebaseTrigger();
 }
 
 function removeAbandonedFirebaseToSheetTrigger() {
   ScriptApp.getProjectTriggers().forEach(function(trigger) {
     const handler = trigger.getHandlerFunction();
-    if (handler === 'syncAbandonedApplicationsFirebaseToSheet' || handler === 'syncAbandonedSourcesToSheet' || handler === 'syncLiveVisitorsToAbandonedApplications' || handler === 'syncAbandonedSheetToFirebaseTrigger' || handler === 'syncAbandonedApplicationsSheetToFirebase') {
+    if (handler === 'syncAbandonedApplicationsFirebaseToSheet' || handler === 'syncAbandonedSourcesToSheet' || handler === 'syncAbandonedSheetToFirebaseTrigger' || handler === 'syncAbandonedApplicationsSheetToFirebase') {
       ScriptApp.deleteTrigger(trigger);
     }
   });
   return 'Abandoned Firebase → Sheet triggers removed.';
 }
+
 function normalizeRecoveryText_(v, max) {
   const text = String(v == null ? "" : v).trim();
   return max ? text.slice(0, max) : text;
@@ -2134,7 +2127,6 @@ function doPost(e) {
     if (data.action === "cleanupAbandonedApplicationDuplicates") return jsonResponse(cleanupAbandonedApplicationDuplicates());
     if (data.action === "repairAndStartAbandonedSync") return jsonResponse(repairAndStartAbandonedSync());
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
-    if (data.action === "verifyCounselorLiveSync") return jsonResponse(verifyCounselorLiveSync(data.counselorName || data.name || ""));
     if (data.action === "removeCounselor") return jsonResponse(removeCounselor(data.counselorName || data.name || ""));
     if (data.action === "health") return jsonResponse({status:"online", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
     return saveSingleApplication(data);
@@ -2300,11 +2292,7 @@ function syncApplicationsToSheet(applications, updateExisting) {
   applications.forEach(raw => {
     if (!raw || typeof raw !== "object") { invalid++; return; }
     const id = value(raw.applicationId || raw.applicationID || raw.id || raw.key);
-    const existingRowNumber = id && existingIds[id] ? existingIds[id] : 0;
-    let existingApp = null;
-    if (existingRowNumber) existingApp = rowValuesToApplicationObject(headers, readManagedRow_(sheet, existingRowNumber, headers.length));
-    const normalizedRaw = normalizeIncomingAssignmentPayload_(raw, existingApp);
-    const app = buildApplicationObject(normalizedRaw, id);
+    const app = buildApplicationObject(raw, id);
      app["Call Status"] = standardizeCallStatus_(app["Call Status"]);
     if (!app.Name || !app.Phone || !app.Email || !app.College || !app.Department || !app.Year || !app.Domain) { invalid++; return; }
 
@@ -2350,19 +2338,14 @@ function updateApplicationInSheet(raw) {
   const sheet = getSheet();
   const headers = getHeaders(sheet);
   const rowNumber = findApplicationId(sheet, headers, id);
-  let current = null;
-  if (rowNumber > 0) {
-    current = rowValuesToApplicationObject(headers, readManagedRow_(sheet, rowNumber, headers.length));
-  }
-  const normalizedRaw = normalizeIncomingAssignmentPayload_(raw, current);
-  const app = buildApplicationObject(normalizedRaw, id);
+  const app = buildApplicationObject(raw, id);
   app["Call Status"] = standardizeCallStatus_(app["Call Status"]);
 
   let previousAssignedTo = "";
 
   if (rowNumber > 0) {
-    const currentRow = readManagedRow_(sheet, rowNumber, headers.length);
-    previousAssignedTo = getAssignedToFromRow(headers, currentRow);
+    const current = readManagedRow_(sheet, rowNumber, headers.length);
+    previousAssignedTo = getAssignedToFromRow(headers, current);
 
     updateRowByApplicationId(sheet, headers, rowNumber, app);
     SpreadsheetApp.flush();
@@ -2531,17 +2514,12 @@ function registerCounselor(name, spreadsheetId) {
       leadsSheet = targetSS.insertSheet(counselorLeadsSheetName(counselorName));
     }
   }
-  // V15.17: every counselor created/registered from the dashboard is
-  // initialized through the counselor-specific schema, never the generic
-  // CRM/abandoned-application schema. This is the permanent guard that
-  // prevents Draft ID / Progress / Exit fields from entering counselor leads.
-  // V15.21: registration is the permanent server-side activation point.
-  // A counselor added from the dashboard must have BOTH the correct sheet
-  // schema and an installable onEdit trigger before they can receive leads.
-  ensureCounselorLiveSync_(targetSpreadsheetId, counselorName);
-  leadsSheet = targetSS.getSheetByName(counselorLeadsSheetName(counselorName)) || leadsSheet;
+  ensureHeaders(leadsSheet);
   leadsSheet.setFrozenRows(1);
   formatHeader(leadsSheet);
+  ensureCallStatusDropdown_(leadsSheet);
+
+  ensureCounselorTrigger(targetSpreadsheetId);
 
   const config = getCounselorConfigSheet();
   const headers = getHeaders(config);
@@ -2666,7 +2644,7 @@ function testCounselorConnection() {
       true
     );
     const sheetName = sheet.getName();
-    initializeCounselorLeadSheet_(sheet, name);
+    ensureHeaders(sheet);
     sheet.setFrozenRows(1);
     formatHeader(sheet);
     ensureCounselorTrigger(record.spreadsheetId);
@@ -2737,49 +2715,6 @@ function getCounselorRecord(name) {
   return null;
 }
 
-function repairAllCounselorLeadColumnOrders() {
-  const counselors = getCounselors();
-  const results = [];
-  counselors.forEach(function(counselor) {
-    const name = normalizeCounselorName(counselor.name);
-    if (!name || !counselor.spreadsheetId) return;
-    try {
-      const ss = SpreadsheetApp.openById(counselor.spreadsheetId);
-      const sheet = findCounselorLeadSheet_(ss, name, false);
-      if (!sheet) {
-        results.push({ counselor: name, status: "skipped", reason: "Lead sheet not found" });
-        return;
-      }
-      initializeCounselorLeadSheet_(sheet, name);
-      // Table metadata is optional; the physical sheet schema is authoritative.
-      updateManagedTableHeaders_(sheet);
-      results.push({ counselor: name, status: "success", sheet: sheet.getName() });
-    } catch (error) {
-      results.push({ counselor: name, status: "error", message: error.message });
-    }
-  });
-  Logger.log(JSON.stringify(results));
-  return results;
-}
-
-/**
- * V15.21: Explicitly ensure the counselor spreadsheet has the installable
- * onEdit trigger used for Counselor Sheet -> Master -> Firebase sync.
- * This is called during registration, so counselors added from the dashboard
- * are not merely local UI names.
- */
-function ensureCounselorLiveSync_(spreadsheetId, counselorName) {
-  const id = value(spreadsheetId);
-  if (!id) throw new Error("Counselor spreadsheet ID is missing for " + (counselorName || "counselor") + ".");
-  const ss = SpreadsheetApp.openById(id);
-  const sheet = findCounselorLeadSheet_(ss, counselorName, true);
-  initializeCounselorLeadSheet_(sheet, counselorName);
-  assertCounselorLeadSchemaForWrite_(sheet, counselorName);
-  ensureCallStatusDropdown_(sheet);
-  ensureCounselorTrigger(id);
-  return { spreadsheetId: id, sheetName: sheet.getName(), trigger: true };
-}
-
 function ensureCounselorTrigger(spreadsheetId) {
   const id = value(spreadsheetId);
   if (!id) return;
@@ -2802,21 +2737,6 @@ function ensureCounselorTrigger(spreadsheetId) {
  * Ensures every active counselor spreadsheet in the Counselors
  * registry has an installable onEdit trigger.
  */
-function verifyCounselorLiveSync(counselorName) {
-  const name = normalizeCounselorName(counselorName);
-  if (!name) return { status: "error", message: "Counselor name is required." };
-  const record = getCounselorRecord(name);
-  if (!record || !record.spreadsheetId) {
-    return { status: "error", counselor: name, registered: false, message: "Counselor is not registered in the Counselors sheet." };
-  }
-  try {
-    const sync = ensureCounselorLiveSync_(record.spreadsheetId, name);
-    return { status: "success", counselor: name, registered: true, spreadsheetId: record.spreadsheetId, sheetName: sync.sheetName, trigger: true };
-  } catch (error) {
-    return { status: "error", counselor: name, registered: true, message: error.message || String(error) };
-  }
-}
-
 function ensureAllCounselorTriggers() {
   const counselors = getCounselors();
   let created = 0;
@@ -3119,518 +3039,200 @@ function diagnoseCounselorTriggers() {
 }
 
 
-function readPhysicalHeaderRow_(sheet) {
-  if (!sheet || sheet.getLastColumn() < 1) return [];
-  try {
-    return sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function(v) {
-      return String(v == null ? "" : v).trim();
-    });
-  } catch (error) {
-    // Fallback for typed Google Sheets Tables. The two supported counselor
-    // layouts are the current Master-order schema and the legacy V15 schema.
-    const width = sheet.getLastColumn();
-    if (width === COUNSELOR_CONFIG.LEADS_HEADERS.length) {
-      return COUNSELOR_CONFIG.LEADS_HEADERS.slice();
-    }
-    return [];
-  }
-}
-
-
-function isLikelyApplicationId_(v) {
-  const s = value(v);
-  return !!s && /^-[A-Za-z0-9_\-]+$/.test(s) === false && (s.length >= 6);
-}
-
-function getMasterApplicationIndex_() {
-  const master = getSheet();
-  const headers = getHeaders(master);
-  const rows = master.getLastRow() >= 2
-    ? master.getRange(2, 1, master.getLastRow() - 1, headers.length).getValues()
-    : [];
-  const byId = {};
-  rows.forEach(function(row, i) {
-    const app = rowValuesToApplicationObject(headers, row);
-    const id = value(app["Application ID"]);
-    if (id) byId[id] = { app: app, row: i + 2 };
-  });
-  return { headers: headers, byId: byId };
-}
-
-function backupCounselorRows_(sheet, values) {
-  if (!values || !values.length) return "";
-  const ss = sheet.getParent();
-  const stamp = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, "yyyyMMdd_HHmmss");
-  let name = (sheet.getName() + " - Repair Backup " + stamp).slice(0, 95);
-  let n = 1;
-  while (ss.getSheetByName(name)) name = (sheet.getName() + " - Repair Backup " + stamp + " " + n++).slice(0, 95);
-  const backup = ss.insertSheet(name);
-  const width = Math.max.apply(null, values.map(function(r){ return r.length; }));
-  backup.getRange(1,1,values.length,width).setValues(values.map(function(r){
-    const x = r.slice(); while (x.length < width) x.push(""); return x;
-  }));
-  return name;
-}
-
-/**
- * Repair a counselor lead sheet whose rows were previously written with the
- * Abandoned Applications (25-column) layout or another shifted layout.
- * Only an Application ID that can be resolved to Master Sheet1 is trusted.
- * Draft IDs are resolved through the persistent abandonedApplications record
- * when that record contains an Application ID. Unresolvable rows are removed
- * from the live counselor sheet after being copied to a timestamped backup.
- */
-function repairCounselorLeadSheetFromMaster_(sheet, counselorName) {
-  if (!sheet) return { repaired: 0, removed: 0, backup: "" };
-  const masterIndex = getMasterApplicationIndex_();
-  const desired = COUNSELOR_CONFIG.LEADS_HEADERS.slice();
-  const lastRow = sheet.getLastRow();
-  const width = Math.max(sheet.getLastColumn(), desired.length);
-  if (lastRow < 2) {
-    if (sheet.getMaxColumns() < desired.length) sheet.insertColumnsAfter(sheet.getMaxColumns(), desired.length - sheet.getMaxColumns());
-    sheet.getRange(1,1,1,desired.length).setValues([desired]);
-    if (sheet.getLastColumn() > desired.length) sheet.deleteColumns(desired.length + 1, sheet.getLastColumn() - desired.length);
-    return { repaired: 0, removed: 0, backup: "" };
-  }
-
-  const values = sheet.getRange(1,1,lastRow,width).getValues();
-  const physicalHeaders = values[0].map(function(v){ return String(v == null ? "" : v).trim(); });
-  const headerMap = {};
-  physicalHeaders.forEach(function(h,i){ const n=normalizeHeader(h); if(n) headerMap[n]=i; });
-
-  const applicationIdIndex = headerMap["applicationid"];
-  const draftIdIndex = headerMap["draftid"];
-  const rowsToWrite = [];
-  const unresolved = [];
-  const seen = {};
-
-  for (let r=1; r<values.length; r++) {
-    const row = values[r];
-    let applicationId = applicationIdIndex !== undefined ? value(row[applicationIdIndex]) : "";
-
-    // Known abandoned-record positional layout: Application ID is column 24
-    // and Draft ID is column 2 (1-based positions in that layout).
-    if (!applicationId && row.length >= 24) applicationId = value(row[23]);
-    let draftId = draftIdIndex !== undefined ? value(row[draftIdIndex]) : "";
-    if (!draftId && row.length >= 2 && /^-[A-Za-z0-9_\-]+$/.test(value(row[1]))) draftId = value(row[1]);
-
-    // If an old row only has Draft ID, resolve it through persistent Firebase.
-    if (!applicationId && draftId) {
-      try {
-        const persistent = firebaseRestGet_('/abandonedApplications/' + encodeURIComponent(draftId));
-        if (persistent && typeof persistent === 'object') applicationId = value(persistent.applicationId || persistent["Application ID"]);
-      } catch (e) {
-        console.warn('Draft ID resolution failed for ' + draftId + ': ' + e.message);
-      }
-    }
-
-    const masterRecord = applicationId ? masterIndex.byId[applicationId] : null;
-    if (!masterRecord) {
-      unresolved.push(row);
-      continue;
-    }
-
-    const assigned = normalizeCounselorName(masterRecord.app["Assigned To"]);
-    if (!assigned || (counselorName && assigned.toLowerCase() !== normalizeCounselorName(counselorName).toLowerCase())) {
-      unresolved.push(row);
-      continue;
-    }
-    if (seen[applicationId]) continue;
-    seen[applicationId] = true;
-    rowsToWrite.push(buildRow(desired, masterRecord.app));
-  }
-
-  // Include a backup whenever malformed/shifted data was encountered.
-  const malformed = values.slice(1).some(function(row){
-    return row.length !== desired.length ||
-      String(row[1] || '').match(/^-[A-Za-z0-9_\-]+$/) ||
-      (applicationIdIndex !== undefined && applicationIdIndex !== 14);
-  });
-  let backup = "";
-  if (malformed || unresolved.length) backup = backupCounselorRows_(sheet, values);
-
-  if (sheet.getMaxColumns() < desired.length) sheet.insertColumnsAfter(sheet.getMaxColumns(), desired.length - sheet.getMaxColumns());
-  sheet.clearContents();
-  if (sheet.getMaxColumns() > desired.length) sheet.deleteColumns(desired.length + 1, sheet.getMaxColumns() - desired.length);
-  sheet.getRange(1,1,1,desired.length).setValues([desired]);
-  if (rowsToWrite.length) sheet.getRange(2,1,rowsToWrite.length,desired.length).setValues(rowsToWrite);
-  SpreadsheetApp.flush();
-
-  return { repaired: rowsToWrite.length, removed: unresolved.length, backup: backup };
-}
-
-/**
- * V15.19 PERMANENT COUNSELOR SHEET INITIALIZER
- * ----------------------------------------------
- * This is the ONLY schema initializer used for counselor lead sheets.
- * It is deliberately independent from CONFIG/ensureHeaders(), because the
- * generic CRM/abandoned workflows have different physical schemas.
- *
- * Every future counselor created from the Admin Dashboard passes through
- * this function before any lead can be routed to the counselor.
- */
-function initializeCounselorLeadSheet_(sheet, counselorName) {
-  if (!sheet) throw new Error("Counselor lead sheet is missing.");
-
-  const desired = COUNSELOR_CONFIG.LEADS_HEADERS.slice();
-  const expectedName = counselorLeadsSheetName(counselorName);
-
-  // If an older generic sheet was selected accidentally, repair it from the
-  // authoritative Master rows before allowing new writes.
-  const lastRow = sheet.getLastRow();
-  const lastColumn = sheet.getLastColumn();
-
-  if (lastRow > 1 || lastColumn !== desired.length) {
-    ensureCounselorLeadSchema_(sheet);
-  }
-
-  // The schema function may intentionally return after repairing existing
-  // rows. Re-read the physical dimensions and force the canonical 17-column
-  // header if necessary.
-  if (sheet.getMaxColumns() < desired.length) {
-    sheet.insertColumnsAfter(sheet.getMaxColumns(), desired.length - sheet.getMaxColumns());
-  }
-  if (sheet.getLastColumn() > desired.length) {
-    sheet.deleteColumns(desired.length + 1, sheet.getLastColumn() - desired.length);
-  }
-
-  sheet.getRange(1, 1, 1, desired.length).setValues([desired]);
-
-  // Remove any stale rows that still look like the 25-column abandoned
-  // payload. For resolvable rows ensureCounselorLeadSchema_ already rebuilt
-  // them from Master; unresolved rows are intentionally not retained.
-  const width = desired.length;
-  const rows = sheet.getLastRow() > 1
-    ? sheet.getRange(2, 1, sheet.getLastRow() - 1, width).getValues()
-    : [];
-  const bad = [];
-  rows.forEach(function(row, index) {
-    if (/^-[A-Za-z0-9_\-]+$/.test(value(row[1]))) bad.push(index + 2);
-  });
-  bad.sort(function(a,b){ return b-a; }).forEach(function(rowNumber){
-    sheet.deleteRow(rowNumber);
-  });
-
-  if (expectedName && sheet.getName() !== expectedName) {
-    // Do not rename legacy LeadsTable/LeadApplications sheets here; routing
-    // intentionally supports those names.
-  }
-
-  SpreadsheetApp.flush();
-  return sheet;
-}
-
-function ensureCounselorLeadSchema_(sheet) {
-  if (!sheet) return;
-  const desired = COUNSELOR_CONFIG.LEADS_HEADERS.slice();
-  const physical = readPhysicalHeaderRow_(sheet);
-  const normalizedPhysical = physical.map(normalizeHeader);
-  const normalizedDesired = desired.map(normalizeHeader);
-
-  const exact = physical.length === desired.length && normalizedDesired.every(function(name, index) {
-    return normalizedPhysical[index] === name;
-  });
-
-  // Even when the header looks correct, older versions could have written a
-  // 25-column Abandoned Applications row underneath it. Detect that condition
-  // and rebuild the sheet from authoritative Master records.
-  let hasExtraColumns = sheet.getLastColumn() > desired.length;
-  let hasMalformedRows = false;
-  if (sheet.getLastRow() > 1) {
-    const width = Math.max(sheet.getLastColumn(), desired.length);
-    const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, width).getValues();
-    hasMalformedRows = rows.some(function(row) {
-      return row.length !== desired.length || /^-[A-Za-z0-9_\-]+$/.test(value(row[1]));
-    });
-  }
-
-  if (exact && !hasExtraColumns && !hasMalformedRows) return;
-
-  // Legacy/shifted/abandoned-layout sheets are repaired by reconstructing each
-  // resolvable lead from Master Sheet1. This prevents any stale raw array from
-  // ever being carried forward into the counselor sheet.
-  if (sheet.getLastRow() > 1 && (!exact || hasExtraColumns || hasMalformedRows)) {
-    const repair = repairCounselorLeadSheetFromMaster_(sheet, sheet.getName().replace(/'s Leads$/i, ''));
-    console.log('Counselor repair for ' + sheet.getName() + ': ' + JSON.stringify(repair));
-    return;
-  }
-
-  if (sheet.getMaxColumns() < desired.length) sheet.insertColumnsAfter(sheet.getMaxColumns(), desired.length - sheet.getMaxColumns());
-  sheet.getRange(1, 1, 1, desired.length).setValues([desired]);
-  if (sheet.getLastColumn() > desired.length) sheet.deleteColumns(desired.length + 1, sheet.getLastColumn() - desired.length);
-}
-
-/**
- * V15.19 WRITE BARRIER
- * --------------------
- * A counselor lead sheet must never accept a raw abandoned-application
- * payload. Before EVERY counselor write we verify the physical schema and
- * self-heal any shifted/25-column rows from authoritative Master data.
- */
-function assertCounselorLeadSchemaForWrite_(sheet, counselorName) {
-  if (!sheet) throw new Error("Counselor lead sheet is missing.");
-
-  const desired = COUNSELOR_CONFIG.LEADS_HEADERS.slice();
-  const physical = readPhysicalHeaderRow_(sheet).map(normalizeHeader);
-  const exact = physical.length === desired.length && desired.every(function(h, i) {
-    return physical[i] === normalizeHeader(h);
-  });
-
-  let malformed = !exact || sheet.getLastColumn() > desired.length;
-
-  if (!malformed && sheet.getLastRow() > 1) {
-    const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, desired.length).getValues();
-    malformed = rows.some(function(row) {
-      return /^-[A-Za-z0-9_\\-]+$/.test(value(row[1])) ||
-        (value(row[1]) && !value(row[14]));
-    });
-  }
-
-  if (malformed) {
-    const repair = repairCounselorLeadSheetFromMaster_(sheet, counselorName || sheet.getName().replace(/'s Leads$/i, ''));
-    console.log("V15.18 counselor write-barrier repair: " + JSON.stringify(repair));
-  }
-
-  // Hard physical schema enforcement after repair. Never trust table metadata.
-  if (sheet.getMaxColumns() < desired.length) {
-    sheet.insertColumnsAfter(sheet.getMaxColumns(), desired.length - sheet.getMaxColumns());
-  }
-  if (sheet.getMaxColumns() > desired.length) {
-    sheet.deleteColumns(desired.length + 1, sheet.getMaxColumns() - desired.length);
-  }
-  sheet.getRange(1, 1, 1, desired.length).setValues([desired]);
-
-  // Final assertion: if a raw Draft ID is still sitting in column B, stop the
-  // write rather than allowing another shifted row to be created.
-  if (sheet.getLastRow() > 1) {
-    const rows = sheet.getRange(2, 1, sheet.getLastRow() - 1, desired.length).getValues();
-    const badRow = rows.findIndex(function(row) {
-      return /^-[A-Za-z0-9_\\-]+$/.test(value(row[1]));
-    });
-    if (badRow >= 0) {
-      throw new Error("Counselor sheet schema validation failed: Draft ID detected in Name column. No lead was written.");
-    }
-  }
-
-  return sheet;
-}
-
 function syncApplicationToCounselorSheet(app, previousAssignedTo) {
-  /*
-   * V15.15 AUTHORITATIVE ASSIGNMENT FIX
-   * -----------------------------------
-   * Never build a counselor lead from a stale Admin/Firebase object.
-   * The Master Sheet1 row identified by Application ID is the canonical
-   * student record. We read that exact row immediately before routing.
-   */
-  app = app || {};
-  const applicationId = value(app["Application ID"] || app.applicationId || app.id);
+  const newAssignedTo =
+    normalizeCounselorName(app["Assigned To"]);
+
+  const oldAssignedTo =
+    normalizeCounselorName(previousAssignedTo);
+
+  const applicationId =
+    value(app["Application ID"]);
+
   if (!applicationId) {
-    return { status: "skipped", reason: "Missing Application ID" };
+    return {
+      status: "skipped",
+      reason: "Missing Application ID"
+    };
   }
 
-  const master = getSheet();
-  const masterHeaders = getHeaders(master);
-  const masterRowNumber = findApplicationId(master, masterHeaders, applicationId);
-  if (!masterRowNumber) {
-    throw new Error("Application ID " + applicationId + " was not found in Master Sheet1. Counselor assignment was not written.");
+  /*
+   * If the admin changed Assigned To in Master Sheet1, remove
+   * the old copy from the previous counselor.
+   */
+  if (
+    oldAssignedTo &&
+    oldAssignedTo.toLowerCase() !==
+      newAssignedTo.toLowerCase()
+  ) {
+    removeApplicationFromCounselorSpreadsheet(
+      oldAssignedTo,
+      applicationId
+    );
   }
 
-  // Canonical record: always read the complete current Master row.
-  const masterRow = master.getRange( masterRowNumber, 1, 1, masterHeaders.length ).getValues()[0];
-  const canonicalApp = rowValuesToApplicationObject(masterHeaders, masterRow);
-  canonicalApp["Application ID"] = applicationId;
-
-  const newAssignedTo = normalizeCounselorName(canonicalApp["Assigned To"] || app["Assigned To"] || "");
-  const oldAssignedTo = normalizeCounselorName(previousAssignedTo || "");
-
-  // Make the routing field canonical as well, without altering other student data.
-  canonicalApp["Assigned To"] = newAssignedTo;
-  canonicalApp["Call Status"] = standardizeCallStatus_(canonicalApp["Call Status"]);
-
-  if (oldAssignedTo && oldAssignedTo.toLowerCase() !== newAssignedTo.toLowerCase()) {
-    removeApplicationFromCounselorSpreadsheet(oldAssignedTo, applicationId);
+  // If the previous assignment was unavailable (for example a pasted/multi-cell
+  // edit has no e.oldValue), remove stale copies from every other counselor.
+  // This prevents duplicate leads after reassignment.
+  if (newAssignedTo && !oldAssignedTo) {
+    removeApplicationFromAllOtherCounselors_(
+      applicationId,
+      newAssignedTo
+    );
   }
 
-  // Always remove stale copies from all other counselors before writing the
-  // authoritative row to the newly selected counselor.
-  if (newAssignedTo) {
-    const cleanup = removeApplicationFromAllOtherCounselors_(applicationId, newAssignedTo);
-    if (cleanup && cleanup.errors && cleanup.errors.length) {
-      throw new Error("Could not remove stale counselor copies: " + cleanup.errors.join(" | "));
-    }
-  } else {
+  /*
+   * If the lead is intentionally UNASSIGNED, remove the lead from
+   * EVERY counselor spreadsheet. Do not rely only on previousAssignedTo
+   * because older versions could have left duplicate/stale copies behind.
+   * The Master Sheet remains the canonical source with Assigned To blank.
+   */
+  if (!newAssignedTo) {
     const cleanup = removeApplicationFromAllCounselorSpreadsheets_(applicationId);
     if (cleanup.errors.length) {
-      throw new Error("Lead was unassigned in Master, but counselor cleanup failed: " + cleanup.errors.join(" | "));
+      throw new Error(
+        "Lead was unassigned in Master, but one or more counselor sheets could not be cleaned: " +
+        cleanup.errors.join(" | ")
+      );
     }
     return {
       status: "success",
       applicationId: applicationId,
       assignedTo: "",
       counselor: null,
-      counselorCleanup: cleanup,
-      source: "Master Sheet1"
+      counselorCleanup: cleanup
     };
   }
 
-  const finalRecord = getCounselorRecord(newAssignedTo);
-  if (!finalRecord || !finalRecord.spreadsheetId) {
-    throw new Error('Counselor "' + newAssignedTo + '" is not configured. Add the counselor and their Spreadsheet ID in the master Counselors sheet first.');
+  const finalRecord =
+    getCounselorRecord(newAssignedTo);
+
+  if (
+    !finalRecord ||
+    !finalRecord.spreadsheetId
+  ) {
+    throw new Error(
+      'Counselor "' +
+        newAssignedTo +
+        '" is not configured. Add the counselor and their Spreadsheet ID in the master Counselors sheet first.'
+    );
   }
 
-  const ss = SpreadsheetApp.openById(finalRecord.spreadsheetId);
-  const sheet = findCounselorLeadSheet_(ss, newAssignedTo, true);
-  if (!sheet) throw new Error("Could not create/find the counselor lead sheet for " + newAssignedTo);
+  const ss =
+    SpreadsheetApp.openById(
+      finalRecord.spreadsheetId
+    );
 
-  // V15.18: hard write barrier. The counselor sheet is validated immediately
-  // before every assignment, so even a stale/old malformed row cannot cause
-  // a new 25-column abandoned payload to be appended.
-  assertCounselorLeadSchemaForWrite_(sheet, newAssignedTo);
-  const headers = COUNSELOR_CONFIG.LEADS_HEADERS.slice();
+  const sheetName =
+    counselorLeadsSheetName(
+      newAssignedTo
+    );
 
-  // Build the counselor row ONLY from the canonical Master record.
-  // Hard invariant: the counselor name is column 17 (Assigned To), never
-  // column 14 (Remarks).
-  if (value(canonicalApp["Remarks"]).trim().toLowerCase() === newAssignedTo.trim().toLowerCase()) {
-    canonicalApp["Remarks"] = "";
+  let sheet =
+    findCounselorLeadSheet_(
+      ss,
+      newAssignedTo,
+      true
+    );
+
+  if (!sheet) {
+    throw new Error(
+      "Could not create/find the counselor lead sheet for " +
+      newAssignedTo
+    );
   }
-  canonicalApp["Assigned To"] = newAssignedTo;
-  const newRow = buildRow(headers, canonicalApp);
-  const rowNumber = findApplicationId(sheet, headers, applicationId);
+
+  ensureHeaders(sheet);
+
+  app["Call Status"] =
+    standardizeCallStatus_(
+      app["Call Status"]
+    );
+
+  const headers =
+    getHeaders(sheet);
+
+  const newRow =
+    buildRow(headers, app);
+
+  const rowNumber =
+    findApplicationId(
+      sheet,
+      headers,
+      applicationId
+    );
 
   if (rowNumber > 0) {
-    // Existing copy: replace the complete lead with the canonical Master row.
-    // This avoids field-by-field mixing of stale dashboard/Firebase data.
-    sheet.getRange(rowNumber, 1, 1, headers.length).setValues([newRow]);
+
+    const current =
+      sheet
+        .getRange(
+          rowNumber,
+          1,
+          1,
+          headers.length
+        )
+        .getValues()[0];
+
+    const next =
+      current.slice();
+
+    headers.forEach(
+      (header, index) => {
+
+        const incoming =
+          newRow[index];
+
+        /*
+         * CRM-controlled fields MUST always mirror Master.
+         * This is especially important for Call Status.
+         */
+        const forceSync =
+          [
+            "Call Status",
+            "Next Follow-up",
+            "Assigned To",
+            "Remarks"
+          ].includes(header);
+
+        if (
+          forceSync ||
+          String(incoming ?? "").trim() !== ""
+        ) {
+          next[index] =
+            incoming ??
+            current[index];
+        }
+      }
+    );
+
+    sheet
+      .getRange(
+        rowNumber,
+        1,
+        1,
+        headers.length
+      )
+      .setValues([next]);
+
   } else {
+
     sheet.appendRow(newRow);
   }
 
   SpreadsheetApp.flush();
+
   return {
     status: "success",
     applicationId: applicationId,
     counselor: newAssignedTo,
-    sheetName: sheet.getName(),
-    row: rowNumber > 0 ? rowNumber : sheet.getLastRow(),
-    callStatus: canonicalApp["Call Status"],
-    source: "Master Sheet1",
-    sourceRow: masterRowNumber
+    sheetName: sheetName,
+    row: rowNumber > 0
+      ? rowNumber
+      : sheet.getLastRow(),
+    callStatus: app["Call Status"]
   };
 }
-
-/**
- * V15.15 one-time repair for existing counselor sheets.
- * For every Application ID found in a counselor sheet, the Master Sheet1
- * record is authoritative. The lead is corrected in its assigned counselor's
- * sheet; stale copies in other counselor sheets are removed.
- */
-function repairAllCounselorLeadRowsFromMaster() {
-  const lock = LockService.getScriptLock();
-  lock.waitLock(30000);
-  try {
-    const result = { status: 'success', counselors: 0, repaired: 0, removed: 0, backups: [], errors: [] };
-    getCounselors().forEach(function(c) {
-      const name = normalizeCounselorName(c.name);
-      const id = value(c.spreadsheetId);
-      if (!name || !id) return;
-      result.counselors++;
-      try {
-        const ss = SpreadsheetApp.openById(id);
-        const sheet = findCounselorLeadSheet_(ss, name, false);
-        if (!sheet) return;
-        const r = repairCounselorLeadSheetFromMaster_(sheet, name);
-        result.repaired += Number(r.repaired || 0);
-        result.removed += Number(r.removed || 0);
-        if (r.backup) result.backups.push(name + ': ' + r.backup);
-      } catch (e) {
-        result.errors.push(name + ': ' + (e.message || e));
-      }
-    });
-    if (result.errors.length) result.status = 'completed_with_errors';
-    SpreadsheetApp.flush();
-    return result;
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-function repairAllCounselorSheetsFromMaster() {
-  const lock = LockService.getScriptLock();
-  lock.waitLock(15000);
-  try {
-    const master = getSheet();
-    const masterHeaders = getHeaders(master);
-    const masterRows = master.getLastRow() >= 2
-      ? master.getRange(2, 1, master.getLastRow() - 1, masterHeaders.length).getValues()
-      : [];
-    const masterById = {};
-    masterRows.forEach((row, i) => {
-      const app = rowValuesToApplicationObject(masterHeaders, row);
-      const id = value(app["Application ID"]);
-      if (id) masterById[id] = { app: app, row: i + 2 };
-    });
-
-    const result = { status: "success", masterApplications: Object.keys(masterById).length, repaired: 0, removedStale: 0, skippedUnassigned: 0, errors: [] };
-    const counselors = getCounselors();
-
-    counselors.forEach(c => {
-      const name = normalizeCounselorName(c.name);
-      if (!name || !value(c.spreadsheetId)) return;
-      try {
-        const ss = SpreadsheetApp.openById(c.spreadsheetId);
-        const sheet = findCounselorLeadSheet_(ss, name, false);
-        if (!sheet) return;
-        ensureCounselorLeadSchema_(sheet);
-        ensureHeaders(sheet);
-        const headers = getHeaders(sheet);
-        const ids = getExistingApplicationIds(sheet, headers);
-        Object.keys(ids).forEach(id => {
-          const masterRecord = masterById[id];
-          if (!masterRecord) {
-            // Unknown/stale lead: remove it rather than risk showing mismatched data.
-            sheet.deleteRow(ids[id]);
-            result.removedStale++;
-            return;
-          }
-          const assigned = normalizeCounselorName(masterRecord.app["Assigned To"]);
-          if (!assigned) {
-            sheet.deleteRow(ids[id]);
-            result.skippedUnassigned++;
-            return;
-          }
-          if (assigned.toLowerCase() !== name.toLowerCase()) {
-            sheet.deleteRow(ids[id]);
-            result.removedStale++;
-          }
-        });
-      } catch (e) {
-        result.errors.push(name + ": " + (e.message || e));
-      }
-    });
-
-    // Now write the authoritative Master rows to their assigned counselors.
-    Object.keys(masterById).forEach(id => {
-      const app = masterById[id].app;
-      const assigned = normalizeCounselorName(app["Assigned To"]);
-      if (!assigned) return;
-      try {
-        const r = syncApplicationToCounselorSheet(app, "");
-        if (r && r.status === "success") result.repaired++;
-      } catch (e) {
-        result.errors.push(id + ": " + (e.message || e));
-      }
-    });
-
-    if (result.errors.length) result.status = "completed_with_errors";
-    SpreadsheetApp.flush();
-    return result;
-  } finally {
-    lock.releaseLock();
-  }
-}
-
 function removeApplicationFromCounselorSpreadsheet(counselorName, applicationId) {
   const record = getCounselorRecord(counselorName);
   if (!record || !record.spreadsheetId) {
@@ -3709,64 +3311,6 @@ function rowValuesToApplicationObject(headers, row) {
 
 function findApplicationRowInSheet(sheet, applicationId) {
   return findApplicationId(sheet, getHeaders(sheet), applicationId);
-}
-
-/**
- * V15.19 ASSIGNMENT/REMARKS FIELD BARRIER
- * ----------------------------------------
- * Dashboard assignment payloads from older clients could occasionally carry
- * the selected counselor in `remarks`, or carry a Draft ID as `name`. Never
- * allow either shape to corrupt the canonical Master/CRM fields.
- */
-function looksLikeDraftId_(v) {
-  return /^-[A-Za-z0-9_\-]+$/.test(value(v));
-}
-
-function isRegisteredCounselorName_(name) {
-  const target = normalizeCounselorName(name).toLowerCase();
-  if (!target) return false;
-  try {
-    return getCounselors().some(function(c) {
-      return normalizeCounselorName(c.name).toLowerCase() === target && value(c.active).toLowerCase() !== 'no';
-    });
-  } catch (e) {
-    console.warn('Counselor registry lookup failed:', e.message || e);
-    return false;
-  }
-}
-
-function normalizeIncomingAssignmentPayload_(raw, existingApp) {
-  const data = Object.assign({}, raw || {});
-  const current = existingApp || {};
-
-  // Older abandoned/application payloads can put Draft ID into `name` while
-  // the actual student name is available as fullName/studentName.
-  if (looksLikeDraftId_(data.name) && !looksLikeDraftId_(data.fullName || data.studentName)) {
-    const fallbackName = value(data.fullName || data.studentName || data['Full Name'] || data['Student Name']);
-    if (fallbackName) data.name = fallbackName;
-  }
-
-  // Hard field rule: counselor names belong ONLY in Assigned To.
-  // If an older dashboard payload put the selected counselor in remarks and
-  // did not send assignedTo, recover that intent server-side.
-  const incomingAssigned = value(data.assignedTo || data.AssignedTo || data['Assigned To']);
-  const incomingRemarks = value(data.remarks || data.remark || data.Remarks || data.Remark);
-  if (!incomingAssigned && incomingRemarks && isRegisteredCounselorName_(incomingRemarks)) {
-    data.assignedTo = incomingRemarks;
-    // Preserve a real existing remark instead of replacing it with the
-    // counselor name. If there is no existing remark, keep it blank.
-    data.remarks = value(current['Remarks']);
-  }
-
-  // If Assigned To is supplied explicitly, never let a duplicate counselor
-  // name in remarks overwrite a real existing note.
-  if (incomingAssigned) {
-    if (incomingRemarks && incomingRemarks.toLowerCase() === incomingAssigned.toLowerCase()) {
-      data.remarks = value(current['Remarks']);
-    }
-  }
-
-  return data;
 }
 
 function buildApplicationObject(data, applicationId) {
@@ -4174,7 +3718,7 @@ function getHeaders(sheet) {
    *
    * Master Sheet1 and every counselor Leads sheet are controlled by
    * this script, so their canonical physical column order is defined
-   * centrally. The actual Master/counselor order is:
+   * centrally in CONFIG. The actual Master order is:
    *
    * Timestamp, Name, Phone, Email, College, Department, Year, Domain,
    * State, Communication Language, Start Availability, Application Reason,

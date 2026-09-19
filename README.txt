@@ -1,21 +1,27 @@
-InternsForge Admin Dashboard - Performance Fix
+INTERNSFORGE ADMIN - APPLICATION MANAGEMENT DELETE VISIBILITY FIX
 
-This update is FRONTEND JS ONLY.
+What was updated:
+- Application Management rows now explicitly expose Open / History / Delete.
+- Delete button is forced visible and clickable.
+- Actions column is sticky on the right so Delete remains visible even when the CRM table is horizontally scrolled.
+- Mobile/tablet action column remains visible.
+- Application modal Delete Application control is preserved.
 
-Optimizations:
-- CRM table uses event delegation instead of adding handlers to every row on every render.
-- Counselor dropdown options are cached per render.
-- Counselor controls are not rebuilt on every CRM refresh.
-- CRM filter dropdowns are only rebuilt when domain/year/counselor data actually changes.
-- Search input is debounced to avoid rebuilding the 100-row table on every keystroke.
-- Visitor polling redraw interval changed from 2 seconds to 5 seconds; realtime child listeners still update immediately when Firebase data changes.
-- Lead assignment refresh avoids rebuilding filter controls unnecessarily.
+Backend preserved:
+- Firebase configuration unchanged.
+- Firebase database paths unchanged.
+- Google Apps Script / Code.gs unchanged.
+- Google Sheets integration unchanged.
+- Application delete flow unchanged.
+- Counselor assignment/data logic unchanged.
 
-NOT CHANGED:
-- Firebase database structure
-- Firebase authentication
-- Google Sheets / Apps Script integration
-- Counselor assignment logic
-- Application submission logic
-- CRM data model
-- APIs / backend functions
+Install:
+1. Replace the existing admin.js with admin.js from this package.
+2. Replace the dashboard CSS file with dashboard.css (use the same CSS filename your admin HTML currently loads).
+3. Deploy to Vercel.
+4. Hard refresh the admin dashboard with Ctrl+Shift+R.
+
+Expected Application Management row:
+Open | History | Delete
+
+The Delete action continues to use the existing deleteSingleApplication() flow.

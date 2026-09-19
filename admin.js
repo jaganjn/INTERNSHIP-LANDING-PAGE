@@ -98,9 +98,6 @@ let counselorNames = [];
 let selectedApplicationIds = new Set();
 let abandonedFilteredRows = [];
 let abandonedApplications = {};
-let crmFilterTimer = 0;
-let visitorRenderTimer = 0;
-let crmDelegationBound = false;
 
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -658,6 +655,9 @@ function renderApplications(newIds = new Set()) {
     return `<div class="chart-day" title="${count} applications"><span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span><small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${count}</small></div>`;
   }).join("");
 
+  renderVisitors();
+  renderReferrals();
+  renderApplicationCRM();
 }
 
 function getCallStatus(app) {
@@ -711,22 +711,6 @@ function populateCrmFilters() {
   domainSelect.value = domains.includes(currentDomain) ? currentDomain : "";
   yearSelect.value = years.includes(currentYear) ? currentYear : "";
   if (counselorSelect) counselorSelect.value = counselorNames.includes(currentCounselor) ? currentCounselor : "";
-}
-
-function scheduleCrmFilter(delay = 140) {
-  window.clearTimeout(crmFilterTimer);
-  crmFilterTimer = window.setTimeout(() => {
-    crmFilterTimer = 0;
-    filterCrmApplications();
-  }, delay);
-}
-
-function queueVisitorRender(delay = 350) {
-  if (visitorRenderTimer) return;
-  visitorRenderTimer = window.setTimeout(() => {
-    visitorRenderTimer = 0;
-    renderVisitors();
-  }, delay);
 }
 
 function filterCrmApplications() {
@@ -830,11 +814,7 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
     });
     app.assignedTo = clean;
     if (statusEl) { statusEl.textContent = `● Lead assigned • ${clean || "Unassigned"}`; statusEl.className = "crm-synced"; }
-
-    // The realtime Firebase listener will reconcile the row. Do not rebuild the
-    // entire CRM table here; that caused the large interaction delay.
-    const visibleSelect = document.querySelector(`.crm-assign-select[data-app-id="${CSS.escape(String(appId))}"]`);
-    if (visibleSelect) visibleSelect.value = clean || "";
+    renderApplicationCRM();
     showToast("Lead assigned", `${app.name || "Student"} → ${clean || "Unassigned"}. The counselor sheet will update automatically.`, "success", 4500);
     return true;
   } catch (error) {
@@ -1021,42 +1001,17 @@ function renderCrmTable(rows) {
       <td><span class="crm-status ${statusClass(status)}">${esc(status)}</span></td>
       <td><span class="follow-pill ${followClass}">${isFollowUpDue(app) ? "⚠ " : ""}${esc(formatFollowUp(app))}</span></td>
       <td><select class="crm-assign-select" data-app-id="${esc(app.id)}" aria-label="Assign ${esc(app.name || "lead")}">${counselorOptions(assigned)}</select></td>
-      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button><button class="crm-history-btn" type="button" data-app-id="${esc(app.id)}" aria-label="View history for ${esc(app.name || "lead")}">History</button><button class="crm-delete-btn" type="button" data-app-id="${esc(app.id)}" aria-label="Delete ${esc(app.name || "lead")}">Delete</button></div></td>
+      <td class="crm-actions-cell"><div class="crm-row-actions" aria-label="Application actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button><button class="crm-history-btn" type="button" data-app-id="${esc(app.id)}" aria-label="View history for ${esc(app.name || "lead")}">History</button><button class="crm-delete-btn" type="button" data-app-id="${esc(app.id)}" data-action="delete" aria-label="Delete ${esc(app.name || "lead")}" title="Delete application">Delete</button></div></td>
     </tr>`;
   }).join("") || '<tr><td colspan="9" class="empty">No applications match your filters.</td></tr>';
 
-  // Row controls use one delegated listener instead of one listener per row/control.
-  // This keeps interaction latency stable even when the CRM contains many leads.
-  if (!crmDelegationBound) {
-    crmDelegationBound = true;
-    body.addEventListener("click", event => {
-      const openBtn = event.target.closest?.(".crm-open-btn");
-      if (openBtn && body.contains(openBtn)) {
-        openApplicationModal(openBtn.dataset.appId);
-        return;
-      }
-      const historyBtn = event.target.closest?.(".crm-history-btn");
-      if (historyBtn && body.contains(historyBtn)) {
-        openApplicationModal(historyBtn.dataset.appId);
-        return;
-      }
-      const deleteBtn = event.target.closest?.(".crm-delete-btn");
-      if (deleteBtn && body.contains(deleteBtn)) {
-        deleteSingleApplication(deleteBtn.dataset.appId);
-      }
-    });
-    body.addEventListener("change", event => {
-      const box = event.target.closest?.(".crm-row-check");
-      if (box && body.contains(box)) {
-        toggleCrmSelection(box.dataset.appId, box.checked);
-        return;
-      }
-      const select = event.target.closest?.(".crm-assign-select");
-      if (select && body.contains(select)) {
-        handleCounselorSelect(select, value => assignApplicationToCounselor(select.dataset.appId, value, "row"));
-      }
-    });
-  }
+  body.querySelectorAll(".crm-open-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
+  body.querySelectorAll(".crm-history-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
+  body.querySelectorAll(".crm-delete-btn").forEach(btn => btn.addEventListener("click", () => deleteSingleApplication(btn.dataset.appId)));
+  body.querySelectorAll(".crm-row-check").forEach(box => box.addEventListener("change", () => toggleCrmSelection(box.dataset.appId, box.checked)));
+  body.querySelectorAll(".crm-assign-select").forEach(select => select.addEventListener("change", () => {
+    handleCounselorSelect(select, value => assignApplicationToCounselor(select.dataset.appId, value, "row"));
+  }));
   updateCrmSelectionUI();
 }
 
@@ -1371,7 +1326,6 @@ async function saveApplicationCRM() {
     await loadApplicationHistory(activeApplicationId);
     showToast("Application updated", `${app.name || "Student"}'s CRM details were saved.`, "success", 3500);
     renderApplications();
-    renderApplicationCRM();
   } catch (error) {
     console.error("CRM update failed:", error);
     statusEl.textContent = "Could not save. Check Firebase permissions.";
@@ -1760,7 +1714,6 @@ async function performFullRefresh() {
     renderApplications();
     renderReferrals();
     renderVisitors();
-    renderApplicationCRM();
     updateStamp("Refreshed");
 
     showToast(
@@ -1952,7 +1905,7 @@ function listeners() {
     const value = snapshot.val();
     if (value) visitors[snapshot.key] = value;
     else delete visitors[snapshot.key];
-    queueVisitorRender();
+    renderVisitors();
   };
 
   visitorRoot.once("value").then(snapshot => {
@@ -2008,10 +1961,8 @@ function listeners() {
       db.ref("publicStats/applicationCount").set(applications.length)
         .catch(error => console.warn("Public application count sync failed:", error));
 
-      // Application changes update the summary and CRM only. Visitor/referral modules
-      // have their own realtime listeners and no longer redraw on every application event.
+      // Render the CRM even if another dashboard workspace subsequently fails.
       renderApplications(newIds);
-      renderApplicationCRM();
     } catch (error) {
       console.error("Application Management render failed:", error);
       const body = el("crmTableBody");
@@ -2035,19 +1986,15 @@ function listeners() {
     renderReferrals();
   });
 
-  window.setInterval(() => queueVisitorRender(0), 5_000);
+  window.setInterval(() => renderVisitors(), 2_000);
   window.setInterval(() => cleanupStale().catch(console.warn), 30_000);
 
-  let referralSearchTimer = 0;
   E.referralSearch?.addEventListener("input", () => {
-    window.clearTimeout(referralSearchTimer);
-    referralSearchTimer = window.setTimeout(() => {
-      const query = E.referralSearch.value.toLowerCase();
-      renderFriends(friendRows.filter(item =>
-        [item.applicantName, item.code, item.applicantCollege, item.applicantDomain]
-          .some(value => String(value || "").toLowerCase().includes(query))
-      ));
-    }, 120);
+    const query = E.referralSearch.value.toLowerCase();
+    renderFriends(friendRows.filter(item =>
+      [item.applicantName, item.code, item.applicantCollege, item.applicantDomain]
+        .some(value => String(value || "").toLowerCase().includes(query))
+    ));
   });
 }
 
@@ -2091,9 +2038,7 @@ function setupUI() {
   el("adminLogoutButton")?.addEventListener("click", logout);
   el("crmRemoveCounselorBtn")?.addEventListener("click", removeCounselorFromCRM);
   el("modalAssignedTo")?.addEventListener("change", event => { if (event.target.value === "__new__") { const name = promptForCounselor(); event.target.innerHTML = counselorOptions(name); event.target.value = name || ""; } });
-  ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmCounselorFilter","crmFollowupFilter"].forEach(id => {
-    el(id)?.addEventListener("input", () => scheduleCrmFilter());
-  });
+  ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmCounselorFilter","crmFollowupFilter"].forEach(id => el(id)?.addEventListener("input", filterCrmApplications));
   el("crmClearFilters")?.addEventListener("click", () => { el("crmSearch").value=""; el("crmStatusFilter").value=""; el("crmDomainFilter").value=""; el("crmYearFilter").value=""; el("crmCounselorFilter").value=""; el("crmFollowupFilter").value=""; filterCrmApplications(); });
   el("closeApplicationModal")?.addEventListener("click", closeApplicationModal);
   el("applicationModal")?.addEventListener("click", event => { if (event.target.id === "applicationModal") closeApplicationModal(); });
@@ -2299,7 +2244,6 @@ async function del(path, message, successText) {
     if (path === "submittedApplications") {
       applications = [];
       renderApplications();
-      renderApplicationCRM();
     }
     if (path === "referrals" || path === "referralJoins") {
       renderReferrals();
@@ -2370,9 +2314,7 @@ async function resetDashboard() {
 
     applications = [];
     renderApplications();
-    renderApplicationCRM();
     renderReferrals();
-    renderVisitors();
 
     showToast("Dashboard reset", "All dashboard data was successfully cleared.", "success", 5000);
     return true;

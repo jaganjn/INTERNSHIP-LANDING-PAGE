@@ -2512,7 +2512,7 @@ console.info('SkillPath guided form build: Final V11');
     stages.forEach((el,i)=>{el.classList.toggle('active',i===active);el.classList.toggle('completed',states[i]&&i<active);});
     lines.forEach((line,i)=>line.classList.toggle('done',states[i]));
   }
-  if(form){['input','change'].forEach(type=>form.addEventListener(type,updateFourProgress));window.setInterval(updateFourProgress,500);updateFourProgress();}
+  if(form){['input','change'].forEach(type=>form.addEventListener(type,updateFourProgress));document.addEventListener('application:stepchange',updateFourProgress);updateFourProgress();}
 
   // Interactive domain details: first tap selects a domain and reveals learning/project/career context; CTA opens the form.
   const list=document.getElementById('domainModalList');
@@ -2560,199 +2560,7 @@ console.info('SkillPath guided form build: Final V11');
   });
 })();
 </script>
-<script id="unified-mobile-motion">
-(function(){
-  'use strict';
-  const media = window.matchMedia('(max-width:600px)');
-  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const controllers = new Set();
-  let domainController = null;
-  let active = false;
 
-  function nearestIndex(track, cards){
-    if(!cards.length) return 0;
-    const trackRect = track.getBoundingClientRect();
-    let best = 0, distance = Infinity;
-    cards.forEach((card, i) => {
-      const cardRect = card.getBoundingClientRect();
-      const targetLeft = cardRect.left - trackRect.left + track.scrollLeft;
-      const d = Math.abs(targetLeft - track.scrollLeft);
-      if(d < distance){ distance = d; best = i; }
-    });
-    return best;
-  }
-
-  function targetFor(track, card){
-    const trackRect = track.getBoundingClientRect();
-    const cardRect = card.getBoundingClientRect();
-    return Math.max(0, track.scrollLeft + (cardRect.left - trackRect.left) - 2);
-  }
-
-  function setupCarousel(track, selector, delay, transition='slide'){
-    if(!track) return null;
-    const cards = [...track.querySelectorAll(selector)];
-    if(cards.length < 2) return null;
-
-    let index = 0;
-    let timer = null;
-    let resumeTimer = null;
-    let paused = false;
-    let visible = true;
-    let destroyed = false;
-    let scrollingByCode = false;
-
-    const setActive = () => {
-      cards.forEach((card, i) => {
-        card.classList.toggle('active', i === index);
-        card.classList.toggle('card-transitioning', i === index);
-        card.dataset.transition = transition;
-      });
-    };
-    const go = next => {
-      if(destroyed || paused || !visible) return;
-      index = (next + cards.length) % cards.length;
-      const left = targetFor(track, cards[index]);
-      scrollingByCode = true;
-      track.scrollTo({left, behavior:'smooth'});
-      setActive();
-      window.setTimeout(() => { scrollingByCode = false; }, 800);
-    };
-    const stop = () => { if(timer) clearInterval(timer); timer = null; };
-    const start = () => {
-      stop();
-      if(destroyed || !active || reduce.matches || cards.length < 2) return;
-      timer = setInterval(() => { if(!paused && visible) go(index + 1); }, delay);
-    };
-    const pause = () => {
-      paused = true;
-      stop();
-      if(resumeTimer) clearTimeout(resumeTimer);
-    };
-    const resume = () => {
-      paused = false;
-      if(resumeTimer) clearTimeout(resumeTimer);
-      resumeTimer = setTimeout(start, 1200);
-    };
-    const onScroll = () => {
-      if(scrollingByCode) return;
-      const next = nearestIndex(track, cards);
-      if(next !== index){ index = next; setActive(); }
-    };
-    const onVisibility = entries => {
-      visible = !!entries[0]?.isIntersecting;
-      if(!visible) stop(); else if(!paused) start();
-    };
-
-    track.addEventListener('pointerdown', pause, {passive:true});
-    track.addEventListener('pointerup', resume, {passive:true});
-    track.addEventListener('pointercancel', resume, {passive:true});
-    track.addEventListener('touchend', resume, {passive:true});
-    track.addEventListener('scroll', onScroll, {passive:true});
-    let observer = null;
-    if('IntersectionObserver' in window){
-      observer = new IntersectionObserver(onVisibility, {threshold:0.12});
-      observer.observe(track);
-    }
-
-    track.scrollLeft = 0;
-    setActive();
-    const api = {
-      reset(){ index=0; track.scrollTo({left:0,behavior:'auto'}); setActive(); if(!paused) start(); },
-      destroy(){
-        destroyed=true; stop(); if(resumeTimer) clearTimeout(resumeTimer); observer?.disconnect();
-        track.removeEventListener('pointerdown', pause); track.removeEventListener('pointerup', resume);
-        track.removeEventListener('pointercancel', resume); track.removeEventListener('touchend', resume);
-        track.removeEventListener('scroll', onScroll);
-      }
-    };
-    controllers.add(api);
-    if(!observer) start();
-    return api;
-  }
-
-  function setupAll(){
-    if(active || !media.matches || reduce.matches) return;
-    active = true;
-    setupCarousel(document.getElementById('studentJourneyScroller'), '.journey-step-card', 3000, 'lift');
-    setupCarousel(document.getElementById('personaTrack'), '.persona-card', 3300, 'zoom');
-    setupCarousel(document.querySelector('.receive-grid'), ':scope > article', 3000, 'fade');
-    setupCarousel(document.querySelector('.project-grid'), ':scope > article', 3300, 'slide');
-    setupCarousel(document.querySelector('.proof-grid'), ':scope > article', 3100, 'blur');
-    setupCarousel(document.querySelector('.how-grid'), ':scope > article', 3200, 'lift');
-    setupCarousel(document.querySelector('.domain-category-preview'), ':scope > .domain-category', 3400, 'zoom');
-    document.querySelectorAll('.domain-card-grid').forEach((grid, i) => setupCarousel(grid, ':scope > .domain-card', 2800 + (i % 3) * 250, ['slide','fade','lift'][i % 3]));
-    setupDomainModal();
-  }
-
-  function teardownAll(){
-    controllers.forEach(c => c.destroy());
-    controllers.clear();
-    domainController?.destroy?.();
-    domainController = null;
-    active = false;
-  }
-
-  function setupDomainModal(){
-    const modal = document.getElementById('domainModal');
-    const list = document.getElementById('domainModalList');
-    if(!modal || !list) return;
-
-    let timer=null, resumeTimer=null, paused=false, visible=true, index=0, destroyed=false;
-    const cards = () => [...list.querySelectorAll('.domain-explorer-card:not([hidden])')];
-    const stop=()=>{if(timer)clearInterval(timer);timer=null};
-    const setActive=()=>cards().forEach((c,i)=>c.classList.toggle('active',i===index));
-    const sync=()=>{
-      const visibleCards=cards();
-      if(!visibleCards.length){index=0;return;}
-      if(index>=visibleCards.length) index=0;
-      let best=0,dist=Infinity;
-      const rect=list.getBoundingClientRect();
-      visibleCards.forEach((c,i)=>{const d=Math.abs((c.getBoundingClientRect().left-rect.left)+list.scrollLeft-list.scrollLeft);if(d<dist){dist=d;best=i;}});
-      index=best; setActive();
-    };
-    const go=()=>{
-      const visibleCards=cards();
-      if(destroyed || paused || !visible || !modal.classList.contains('open') || visibleCards.length<2) return;
-      index=(index+1)%visibleCards.length;
-      const card=visibleCards[index];
-      const rect=list.getBoundingClientRect();
-      const left=Math.max(0,list.scrollLeft+(card.getBoundingClientRect().left-rect.left)-2);
-      list.scrollTo({left,behavior:'smooth'});
-      setActive();
-    };
-    const start=()=>{
-      stop();
-      if(destroyed || !active || reduce.matches || !modal.classList.contains('open')) return;
-      timer=setInterval(go,3000);
-    };
-    const pause=()=>{paused=true;stop();if(resumeTimer)clearTimeout(resumeTimer)};
-    const resume=()=>{paused=false;if(resumeTimer)clearTimeout(resumeTimer);resumeTimer=setTimeout(start,1200)};
-    list.addEventListener('pointerdown',pause,{passive:true});
-    list.addEventListener('pointerup',resume,{passive:true});
-    list.addEventListener('pointercancel',resume,{passive:true});
-    list.addEventListener('touchend',resume,{passive:true});
-    list.addEventListener('scroll',sync,{passive:true});
-
-    const modalObserver = new MutationObserver(()=>{
-      if(modal.classList.contains('open')){ index=0; list.scrollTo({left:0,behavior:'auto'}); setActive(); start(); }
-      else stop();
-    });
-    modalObserver.observe(modal,{attributes:true,attributeFilter:['class']});
-
-
-    domainController={destroy(){
-      destroyed=true; stop(); if(resumeTimer)clearTimeout(resumeTimer); modalObserver.disconnect();
-      list.removeEventListener('pointerdown',pause); list.removeEventListener('pointerup',resume);
-      list.removeEventListener('pointercancel',resume); list.removeEventListener('touchend',resume); list.removeEventListener('scroll',sync);
-    }};
-  }
-
-  function refresh(){ if(media.matches && !reduce.matches) setupAll(); else if(active) teardownAll(); }
-  media.addEventListener?.('change', refresh);
-  reduce.addEventListener?.('change', refresh);
-  refresh();
-})();
-</script>
 
 
 <script id="hero-nav-popup-js">
@@ -2794,7 +2602,7 @@ console.info('SkillPath guided form build: Final V11');
   if(root&&source.length===35){
     root.innerHTML='';
     cats.forEach((cat,ci)=>{
-      const box=document.createElement('article');box.className='domain-category if-reveal';
+      const box=document.createElement('article');box.className='domain-category';
       const head=document.createElement('div');head.className='domain-category-head';
       head.innerHTML=`<span>${cat[2]}</span><div><h3>${cat[0]}</h3><small>${cat[1]} · No prerequisite knowledge required</small></div>`;
       const grid=document.createElement('div');grid.className='domain-card-grid';
@@ -2815,7 +2623,7 @@ console.info('SkillPath guided form build: Final V11');
   const title=popup.querySelector('#ifDomainTitle'),desc=popup.querySelector('#ifDomainDescription'),cat=popup.querySelector('#ifDomainCategory'),apply=popup.querySelector('#ifDomainApply'),orb=popup.querySelector('#ifDomainOrb');
   let selected='';
   const icons=['⌘','AI','ML','◈','PY','JV','☁','⌁','◉','✦','λ','</>','◒','✎','◌','◉','▦','⚙','◇','◫','CAD','▤','◈','⚡','EV','◌','DNA','BIO','↗','₹','⚙','HR','▥','⌁','Ψ','⌬'];
-  function openPremium(name,text,ci,i){selected=name;title.textContent=name;desc.textContent=text;cat.textContent=`${cats[ci][0].toUpperCase()} · DOMAIN ${String(i+1).padStart(2,'0')}`;orb.textContent=icons[i%icons.length];popup.classList.add('open');popup.setAttribute('aria-hidden','false');document.body.classList.add('no-scroll');if(!reduce)popup.querySelector('.if-domain-panel').animate([{transform:'translateY(22px) scale(.97)'},{transform:'none'}],{duration:380,easing:'cubic-bezier(.2,.8,.2,1)'});}
+  function openPremium(name,text,ci,i){selected=name;title.textContent=name;desc.textContent=text;cat.textContent=`${cats[ci][0].toUpperCase()} · DOMAIN ${String(i+1).padStart(2,'0')}`;orb.textContent=icons[i%icons.length];popup.classList.add('open');popup.setAttribute('aria-hidden','false');document.body.classList.add('no-scroll');if(!reduce){popup.classList.remove('if-domain-opening');void popup.offsetWidth;popup.classList.add('if-domain-opening');}}
   function closePremium(){popup.classList.remove('open');popup.setAttribute('aria-hidden','true');document.body.classList.remove('no-scroll');}
   popup.querySelector('.if-domain-close').addEventListener('click',closePremium);popup.querySelector('#ifDomainClose2').addEventListener('click',closePremium);popup.addEventListener('click',e=>{if(e.target===popup)closePremium()});document.addEventListener('keydown',e=>{if(e.key==='Escape'&&popup.classList.contains('open'))closePremium()});
   apply.addEventListener('click',()=>{if(!selected)return;closePremium();if(typeof window.__internsforgeCountApplicationVisitor==='function')window.__internsforgeCountApplicationVisitor();if(typeof window.openApplication==='function')window.openApplication(selected);else document.querySelector('.open-application')?.click();const f=document.getElementById('domain');if(f){f.value=selected;f.dispatchEvent(new Event('change',{bubbles:true}));}});
@@ -2827,5 +2635,47 @@ console.info('SkillPath guided form build: Final V11');
   if(!reduce){document.querySelectorAll('.domain-category').forEach(card=>card.addEventListener('pointermove',e=>{const r=card.getBoundingClientRect();card.style.setProperty('--mx',`${e.clientX-r.left}px`);card.style.setProperty('--my',`${e.clientY-r.top}px`)}));}
 })();
 </script>
+<style id="internsforge-final-performance-fix">
+.if-domain-popup .if-domain-panel{transform:translateY(12px) scale(.985);opacity:0;transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .2s ease;will-change:transform,opacity}
+.if-domain-popup.open .if-domain-panel{transform:none;opacity:1}
+@media(prefers-reduced-motion:reduce){.if-domain-popup .if-domain-panel{transition:none!important}}
+</style>
+<style id="internsforge-domain-visibility-fix">
+/* Premium domain explorer: keep the main catalogue visible and naturally scrollable. */
+.domain-category-preview .domain-category{opacity:1!important;transform:none!important;visibility:visible!important;}
+@media(max-width:600px){
+  .domain-category-preview{display:grid!important;grid-template-columns:1fr!important;overflow:visible!important;scroll-snap-type:none!important;padding:0!important;gap:14px!important;}
+  .domain-category-preview>.domain-category{flex:none!important;width:100%!important;min-width:0!important;max-width:none!important;scroll-snap-align:none!important;}
+  .domain-category-preview .domain-card-grid{display:grid!important;grid-template-columns:1fr!important;overflow:visible!important;scroll-snap-type:none!important;padding:0!important;gap:9px!important;}
+  .domain-category-preview .domain-card-grid>.domain-card{flex:none!important;width:100%!important;min-width:0!important;max-width:none!important;}
+}
+</style>
+<script id="internsforge-domain-visibility-fix-js">
+(function(){
+  const root=document.querySelector('.domain-category-preview');
+  if(!root) return;
+  root.querySelectorAll('.domain-category').forEach(el=>{
+    el.classList.remove('if-reveal','if-delay-1','if-delay-2','if-delay-3','if-delay-4');
+    el.classList.add('if-visible');
+    el.style.opacity='1';
+    el.style.transform='none';
+    el.style.visibility='visible';
+  });
+  // Do not attach the legacy mobile auto-carousel to the domain catalogue.
+  if(window.matchMedia('(max-width:600px)').matches){
+    root.style.overflow='visible';
+    root.querySelectorAll('.domain-category,.domain-card-grid,.domain-card').forEach(el=>{
+      el.style.scrollSnapAlign='none';
+    });
+  }
+})();
+</script>
+<style id="internsforge-final-layout-fix">
+@media(max-width:600px){
+  .conversion-domains{overflow:visible!important}
+  .domain-category-preview{overflow:visible!important;touch-action:pan-y!important}
+  .domain-category-preview,.domain-card-grid{scroll-snap-type:none!important}
+}
+</style>
 </body>
 </html>

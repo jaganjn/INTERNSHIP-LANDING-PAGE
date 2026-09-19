@@ -1010,12 +1010,165 @@ body.module-modal-open{overflow:hidden}
   }
 }
 
+/* =========================================================
+   V3.5 — MOBILE ADMIN COLOR / CONTRAST FIX
+   Fixes dark KPI numbers inherited from desktop light-theme styles.
+   Mobile-only; desktop remains unchanged.
+   ========================================================= */
+@media (max-width:700px){
+  .admin-page .crm-metrics article{
+    background:linear-gradient(145deg,rgba(13,30,51,.98),rgba(7,19,33,.99)) !important;
+    border-color:rgba(72,166,239,.22) !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 8px 22px rgba(0,0,0,.16) !important;
+  }
+  .admin-page .crm-metrics article span{
+    color:#9eb4d0 !important;
+    font-weight:800 !important;
+    letter-spacing:.055em !important;
+  }
+  .admin-page .crm-metrics article strong{
+    color:#f3f7ff !important;
+    -webkit-text-fill-color:#f3f7ff !important;
+    text-shadow:0 1px 10px rgba(93,160,255,.10);
+  }
+  .admin-page .crm-metrics article:nth-child(1) strong{color:#f3f7ff !important;-webkit-text-fill-color:#f3f7ff !important}
+  .admin-page .crm-metrics article:nth-child(2) strong{color:#dce8f8 !important;-webkit-text-fill-color:#dce8f8 !important}
+  .admin-page .crm-metrics article:nth-child(3) strong{color:#f5f8ff !important;-webkit-text-fill-color:#f5f8ff !important}
+  .admin-page .crm-metrics article:nth-child(4) strong{color:#62e6b0 !important;-webkit-text-fill-color:#62e6b0 !important}
+  .admin-page .crm-metrics article:nth-child(5) strong{color:#a992ff !important;-webkit-text-fill-color:#a992ff !important}
+  .admin-page .crm-metrics article:nth-child(6) strong{color:#64e4b0 !important;-webkit-text-fill-color:#64e4b0 !important}
+}
 
-/* === Application Management: always-visible Delete action === */
-.crm-table th:last-child,.crm-table td:last-child{position:sticky;right:0;z-index:4;background:#fff;box-shadow:-8px 0 18px rgba(30,45,75,.07);}
-.crm-table th:last-child{background:#f7f9fd;z-index:5;}
-.crm-actions-cell{min-width:190px!important;width:190px;}
-.crm-row-actions{display:flex!important;align-items:center;justify-content:flex-start;gap:6px;white-space:nowrap;min-width:180px;}
-.crm-row-actions button{display:inline-flex!important;align-items:center;justify-content:center;visibility:visible!important;opacity:1!important;flex:0 0 auto;}
-.crm-delete-btn{display:inline-flex!important;visibility:visible!important;opacity:1!important;min-width:58px!important;font-weight:800!important;}
-@media(max-width:700px){.crm-table th:last-child,.crm-table td:last-child{min-width:185px!important;width:185px!important;}.crm-actions-cell{min-width:185px!important;width:185px;}.crm-row-actions{min-width:175px;}}
+@media (max-width:390px){
+  .admin-page .crm-metrics article span{font-size:7.3px !important}
+  .admin-page .crm-metrics article strong{font-size:17px !important}
+}
+
+/* =========================================================
+   V3.6 — MOBILE CRM ALIGNMENT / OVERFLOW FIX
+   Mobile-only. Desktop remains unchanged.
+   ========================================================= */
+@media (max-width:700px){
+  html,
+  body.admin-page{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    overflow-x:hidden !important;
+  }
+
+  .admin-page .app-shell,
+  .admin-page .workspace,
+  .admin-page main{
+    width:100%;
+    max-width:none;
+    min-width:0;
+    box-sizing:border-box;
+  }
+
+  .admin-page .workspace{margin:0 !important;}
+  .admin-page main{padding-left:7px !important;padding-right:7px !important;}
+
+  /* CRM section stays inside the viewport */
+  .admin-page .crm-section{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    margin-left:0;
+    margin-right:0;
+    overflow:visible;
+  }
+
+  /* Search + filters: equal columns with no intrinsic-width overflow */
+  .admin-page .crm-toolbar{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+    gap:8px;
+    padding:10px !important;
+    overflow:visible;
+  }
+
+  .admin-page .crm-search{
+    width:100%;
+    min-width:0 !important;
+    max-width:100%;
+    grid-column:1 / -1 !important;
+    box-sizing:border-box;
+  }
+
+  .admin-page .crm-search input{
+    min-width:0 !important;
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  .admin-page .crm-toolbar select,
+  .admin-page #crmClearFilters{
+    width:100%;
+    min-width:0 !important;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  .admin-page .crm-toolbar select{
+    padding-left:11px !important;
+    padding-right:30px !important;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* Keep the filter card visually centered */
+  .admin-page .crm-toolbar,
+  .admin-page .crm-assignment-toolbar,
+  .admin-page .crm-table-wrap{
+    margin-left:auto;
+    margin-right:auto;
+  }
+
+  /* Assignment controls use the same safe grid behavior */
+  .admin-page .crm-assignment-toolbar{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    box-sizing:border-box;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important;
+  }
+
+  .admin-page .crm-assignment-toolbar select,
+  .admin-page .crm-assignment-toolbar .primary-action{
+    width:100%;
+    min-width:0 !important;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  /* Prevent long names/IDs from pushing the page sideways */
+  .admin-page .crm-section *{
+    min-width:0;
+  }
+
+  .admin-page .crm-table-wrap{
+    width:100%;
+    max-width:100%;
+  }
+}
+
+@media (max-width:390px){
+  .admin-page main{padding-left:6px !important;padding-right:6px !important;}
+  .admin-page .crm-toolbar{padding:9px !important;gap:7px;}
+  .admin-page .crm-toolbar select,
+  .admin-page #crmClearFilters{font-size:8.5px !important;}
+}
+
+/* === 2026-09-19 Application Management action visibility hardening === */
+#applicationCRM .crm-table-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}
+#applicationCRM .crm-row-actions{display:flex!important;align-items:center!important;gap:6px!important;white-space:nowrap!important;min-width:max-content!important;}
+#applicationCRM .crm-open-btn,#applicationCRM .crm-history-btn,#applicationCRM .crm-delete-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:relative!important;}
+#applicationCRM .crm-delete-btn{border:1px solid #f0c9cf!important;background:#fff5f6!important;color:#c83d4b!important;border-radius:9px!important;padding:7px 10px!important;font-weight:800!important;cursor:pointer!important;}
+#applicationCRM .crm-delete-btn:hover{background:#ffe8eb!important;border-color:#e89aa4!important;}
+@media(max-width:700px){#applicationCRM .crm-row-actions{gap:5px!important;}#applicationCRM .crm-open-btn,#applicationCRM .crm-history-btn,#applicationCRM .crm-delete-btn{min-height:34px!important;padding:7px 9px!important;}}

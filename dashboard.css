@@ -1165,10 +1165,194 @@ body.module-modal-open{overflow:hidden}
   .admin-page #crmClearFilters{font-size:8.5px !important;}
 }
 
-/* === 2026-09-19 Application Management action visibility hardening === */
-#applicationCRM .crm-table-wrap{overflow-x:auto!important;-webkit-overflow-scrolling:touch!important;}
-#applicationCRM .crm-row-actions{display:flex!important;align-items:center!important;gap:6px!important;white-space:nowrap!important;min-width:max-content!important;}
-#applicationCRM .crm-open-btn,#applicationCRM .crm-history-btn,#applicationCRM .crm-delete-btn{display:inline-flex!important;align-items:center!important;justify-content:center!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;position:relative!important;}
-#applicationCRM .crm-delete-btn{border:1px solid #f0c9cf!important;background:#fff5f6!important;color:#c83d4b!important;border-radius:9px!important;padding:7px 10px!important;font-weight:800!important;cursor:pointer!important;}
-#applicationCRM .crm-delete-btn:hover{background:#ffe8eb!important;border-color:#e89aa4!important;}
-@media(max-width:700px){#applicationCRM .crm-row-actions{gap:5px!important;}#applicationCRM .crm-open-btn,#applicationCRM .crm-history-btn,#applicationCRM .crm-delete-btn{min-height:34px!important;padding:7px 9px!important;}}
+/* =========================================================
+   V3.9.1 — OPERATIONS OVERVIEW REDESIGN
+   Full-width responsive dashboard for the live operations cockpit.
+   UI only; no data/backend behavior changed.
+   ========================================================= */
+#mobileOperationsCockpit{
+  width:100%;
+  max-width:none;
+  min-width:0;
+  display:grid;
+  grid-template-columns:repeat(12,minmax(0,1fr));
+  gap:16px;
+  margin:0 0 24px;
+}
+#mobileOperationsCockpit > *{min-width:0}
+#mobileOperationsCockpit .mo-status-strip{
+  grid-column:1/-1;
+  min-height:46px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 14px;
+  border:1px solid rgba(72,166,239,.18);
+  border-radius:14px;
+  background:linear-gradient(90deg,rgba(12,29,49,.92),rgba(9,22,39,.82));
+  box-shadow:0 8px 30px rgba(0,0,0,.12);
+}
+#mobileOperationsCockpit .mo-status-strip>i,
+#mobileOperationsCockpit .mo-bottom-health i{
+  width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:#32e59a;
+  box-shadow:0 0 0 5px rgba(50,229,154,.08),0 0 18px rgba(50,229,154,.5);
+}
+#mobileOperationsCockpit .mo-status-strip div{flex:1;min-width:0}
+#mobileOperationsCockpit .mo-status-strip strong{display:block;color:#eef5ff;font-size:11px;font-weight:800}
+#mobileOperationsCockpit .mo-status-strip span{display:block;margin-top:2px;color:#7f94b1;font-size:9px}
+#mobileOperationsCockpit .mo-status-strip time{color:#8da1bd;font-size:9px;white-space:nowrap}
+
+#mobileOperationsCockpit .mo-hero-card{
+  grid-column:1/-1;
+  position:relative;
+  min-height:154px;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  padding:26px 28px;
+  border:1px solid rgba(73,150,255,.2);
+  border-radius:20px;
+  background:
+    radial-gradient(circle at 78% 40%,rgba(91,86,255,.22),transparent 25%),
+    radial-gradient(circle at 58% 0%,rgba(35,188,255,.13),transparent 32%),
+    linear-gradient(135deg,#0b1a30,#091423 72%);
+  box-shadow:0 18px 50px rgba(0,0,0,.2),inset 0 1px 0 rgba(255,255,255,.035);
+}
+#mobileOperationsCockpit .mo-hero-card::after{
+  content:"";position:absolute;inset:auto -10% -75% 35%;height:220px;
+  background:radial-gradient(circle,rgba(69,113,255,.17),transparent 64%);pointer-events:none;
+}
+#mobileOperationsCockpit .mo-hero-copy{position:relative;z-index:1;max-width:720px}
+#mobileOperationsCockpit .mo-kicker{display:block;color:#6f9bca;font-size:9px;font-weight:900;letter-spacing:.16em;text-transform:uppercase}
+#mobileOperationsCockpit .mo-hero-card h2{margin:8px 0 7px;color:#f7faff;font:800 28px/1.05 Manrope,Inter,sans-serif;letter-spacing:-.03em}
+#mobileOperationsCockpit .mo-hero-card p{margin:0;color:#91a5c0;font-size:11px;line-height:1.55}
+#mobileOperationsCockpit .mo-hero-orbit{
+  position:relative;z-index:1;width:104px;height:104px;flex:0 0 104px;display:grid;place-items:center;
+  border-radius:50%;border:1px solid rgba(104,144,255,.32);
+  background:radial-gradient(circle,rgba(81,103,255,.22),rgba(10,21,39,.92) 62%);
+  box-shadow:0 0 0 9px rgba(86,106,255,.035),0 0 45px rgba(72,91,255,.16),inset 0 0 35px rgba(61,119,255,.1);
+}
+#mobileOperationsCockpit .mo-hero-orbit::before,#mobileOperationsCockpit .mo-hero-orbit::after{
+  content:"";position:absolute;border:1px solid rgba(75,170,255,.15);border-radius:50%;inset:-10px;transform:rotate(25deg)
+}
+#mobileOperationsCockpit .mo-hero-orbit::after{inset:-18px;transform:rotate(-35deg);border-color:rgba(142,88,255,.12)}
+#mobileOperationsCockpit .mo-hero-orbit b{font:800 25px Manrope;color:#fff;line-height:1}
+#mobileOperationsCockpit .mo-hero-orbit small{position:absolute;bottom:20px;color:#7890ae;font-size:6px;letter-spacing:.14em;font-weight:900}
+#mobileOperationsCockpit .mo-hero-orbit span{position:absolute;top:8px;right:18px;width:5px;height:5px;border-radius:50%;background:#4bd6ff;box-shadow:0 0 12px #4bd6ff}
+
+#mobileOperationsCockpit .mo-priority-grid{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:12px;
+}
+#mobileOperationsCockpit .mo-priority-card{
+  min-height:96px;display:flex;align-items:center;gap:12px;text-align:left;padding:15px;
+  border:1px solid #1d304c;border-radius:15px;background:linear-gradient(145deg,#0e1c31,#0a1526);
+  color:#fff;cursor:pointer;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+#mobileOperationsCockpit .mo-priority-card:hover{transform:translateY(-2px);border-color:#355987;box-shadow:0 12px 28px rgba(0,0,0,.18)}
+#mobileOperationsCockpit .mo-priority-card>span{width:34px;height:34px;display:grid;place-items:center;flex:0 0 34px;border-radius:10px;background:rgba(77,131,255,.12);color:#77a0ff;font-size:15px}
+#mobileOperationsCockpit .mo-priority-card.success>span{background:rgba(33,199,134,.11);color:#3be0a0}
+#mobileOperationsCockpit .mo-priority-card.violet>span{background:rgba(139,92,246,.13);color:#aa88ff}
+#mobileOperationsCockpit .mo-priority-card.urgent{border-color:rgba(244,173,46,.25)}
+#mobileOperationsCockpit .mo-priority-card.urgent>span{background:rgba(244,173,46,.12);color:#f4b43f}
+#mobileOperationsCockpit .mo-priority-card div{min-width:0}
+#mobileOperationsCockpit .mo-priority-card small{display:block;color:#8195b1;font-size:8px;font-weight:800;letter-spacing:.07em}
+#mobileOperationsCockpit .mo-priority-card strong{display:block;margin-top:4px;color:#f7faff;font:800 22px Manrope}
+#mobileOperationsCockpit .mo-priority-card em{display:block;margin-top:2px;color:#627a99;font-size:8px;font-style:normal}
+
+#mobileOperationsCockpit .mo-section{
+  min-width:0;padding:18px;border:1px solid #1b2d47;border-radius:17px;
+  background:linear-gradient(145deg,rgba(13,27,46,.98),rgba(8,19,33,.98));
+  box-shadow:0 12px 34px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.025);
+}
+#mobileOperationsCockpit .mo-section:nth-of-type(4){grid-column:span 7}
+#mobileOperationsCockpit .mo-section:nth-of-type(5){grid-column:span 5}
+#mobileOperationsCockpit .mo-section:nth-of-type(6){grid-column:span 7}
+#mobileOperationsCockpit .mo-split-grid{grid-column:span 5;display:grid;grid-template-columns:1fr;gap:12px}
+#mobileOperationsCockpit .mo-split-grid .mo-section{width:100%}
+#mobileOperationsCockpit .mo-actions-panel{grid-column:1/-1}
+#mobileOperationsCockpit .mo-bottom-health{grid-column:1/-1}
+#mobileOperationsCockpit .mo-section-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+#mobileOperationsCockpit .mo-section-head h3{margin:5px 0 0;color:#f5f8ff;font:800 15px Manrope}
+#mobileOperationsCockpit .mo-link-btn{border:1px solid #2a4163;border-radius:8px;padding:7px 10px;background:#12233c;color:#9bb4d5;font:800 9px Inter;cursor:pointer}
+#mobileOperationsCockpit .mo-link-btn:hover{border-color:#607dff;color:#fff}
+#mobileOperationsCockpit .mo-live-pill,#mobileOperationsCockpit .mo-trend-total{color:#54e2a7;background:rgba(33,199,134,.08);border:1px solid rgba(33,199,134,.14);border-radius:99px;padding:6px 9px;font-size:8px;white-space:nowrap}
+
+#mobileOperationsCockpit .mo-funnel{display:grid;gap:12px}
+#mobileOperationsCockpit .mo-funnel-row{display:grid;grid-template-columns:1.3fr 40px 38px;gap:9px;align-items:center}
+#mobileOperationsCockpit .mo-funnel-row>span{color:#bdcbe0;font-size:9px;display:flex;align-items:center;gap:7px}
+#mobileOperationsCockpit .mo-funnel-dot{width:7px;height:7px;border-radius:50%;background:#5d7dff;display:inline-block;box-shadow:0 0 10px rgba(93,125,255,.35)}
+#mobileOperationsCockpit .mo-funnel-dot.interested{background:#31d89a}.mo-funnel-dot.paid{background:#f2b33e}.mo-funnel-dot.enrolled{background:#a278ff}
+#mobileOperationsCockpit .mo-funnel-row>b{color:#f2f6ff;text-align:right;font-size:10px}
+#mobileOperationsCockpit .mo-funnel-row>em{color:#8297b4;text-align:right;font-size:8px;font-style:normal}
+#mobileOperationsCockpit .mo-funnel-row>div{grid-column:1/-1;height:6px;border-radius:99px;background:#14253d;overflow:hidden}
+#mobileOperationsCockpit .mo-funnel-row>div>span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#3f72ff,#785cff)}
+#mobileOperationsCockpit .mo-insight-line{display:flex;justify-content:space-between;gap:10px;margin-top:15px;padding-top:12px;border-top:1px solid #1a2b44;color:#7187a4;font-size:8px}
+#mobileOperationsCockpit .mo-insight-line b{color:#dce7f8}
+
+#mobileOperationsCockpit .mo-mini-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+#mobileOperationsCockpit .mo-mini-stats>div{padding:12px;border:1px solid #1b2c46;border-radius:12px;background:#0b1728}
+#mobileOperationsCockpit .mo-mini-stats span,#mobileOperationsCockpit .mo-mini-stats small{display:block;color:#7187a4;font-size:8px}
+#mobileOperationsCockpit .mo-mini-stats strong{display:block;color:#f5f8ff;font:800 22px Manrope;margin:4px 0}
+#mobileOperationsCockpit .mo-mini-stats small{color:#526985}
+
+#mobileOperationsCockpit .mo-trend-chart{height:145px;display:flex;align-items:flex-end;gap:10px;padding:8px 4px 0;border-bottom:1px solid #1a2b44}
+#mobileOperationsCockpit .mo-trend-day{flex:1;min-width:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:5px}
+#mobileOperationsCockpit .mo-trend-bar{width:100%;max-width:34px;height:100px;display:flex;align-items:flex-end;justify-content:center;background:linear-gradient(180deg,rgba(59,101,163,.06),rgba(59,101,163,.015));border-radius:7px 7px 0 0}
+#mobileOperationsCockpit .mo-trend-bar span{display:block;width:100%;border-radius:6px 6px 2px 2px;background:linear-gradient(180deg,#6686ff,#385ee5);box-shadow:0 -5px 18px rgba(67,103,255,.2)}
+#mobileOperationsCockpit .mo-trend-day strong{font-size:9px;color:#dfe8f7}.mo-trend-day small{font-size:8px;color:#667d9b}
+
+#mobileOperationsCockpit .mo-rank-list,#mobileOperationsCockpit .mo-domain-list{display:grid;gap:8px}
+#mobileOperationsCockpit .mo-rank{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:9px;padding:9px;border:1px solid #1a2b44;border-radius:10px;background:#0b1728}
+#mobileOperationsCockpit .mo-rank>span{width:28px;height:28px;display:grid;place-items:center;border-radius:8px;background:rgba(82,111,255,.12);color:#91a7ff;font-size:10px;font-weight:900}
+#mobileOperationsCockpit .mo-rank strong,#mobileOperationsCockpit .mo-domain-row span{display:block;color:#dce6f5;font-size:9px}
+#mobileOperationsCockpit .mo-rank small{display:block;color:#5e7592;font-size:7px;margin-top:2px}.mo-rank>b{font-size:8px;color:#7d9cff}
+#mobileOperationsCockpit .mo-domain-row{display:grid;grid-template-columns:1fr 28px;gap:7px;align-items:center}
+#mobileOperationsCockpit .mo-domain-row>b{text-align:right;color:#dbe6f6;font-size:9px}
+#mobileOperationsCockpit .mo-domain-row>div{grid-column:1/-1;height:5px;border-radius:99px;background:#14253d;overflow:hidden}
+#mobileOperationsCockpit .mo-domain-row i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#31c9a0,#5d7dff)}
+#mobileOperationsCockpit .mo-empty{padding:15px;text-align:center;color:#607793;font-size:9px;border:1px dashed #233956;border-radius:10px}
+
+#mobileOperationsCockpit .mo-tool-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+#mobileOperationsCockpit .mo-tool-grid button{min-height:76px;text-align:left;padding:11px;border:1px solid #1b2d47;border-radius:12px;background:#0b1728;color:#fff;cursor:pointer;transition:.18s ease}
+#mobileOperationsCockpit .mo-tool-grid button:hover{transform:translateY(-2px);border-color:#385b8d;background:#0e1d32}
+#mobileOperationsCockpit .mo-tool-grid span{display:block;color:#7e9cff;font-size:14px;margin-bottom:8px}
+#mobileOperationsCockpit .mo-tool-grid b{display:block;font-size:9px}.mo-tool-grid small{display:block;margin-top:3px;color:#607793;font-size:7px}
+#mobileOperationsCockpit .mo-bottom-health{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 13px;border:1px solid rgba(33,199,134,.13);border-radius:12px;background:rgba(17,48,42,.32);color:#61dca8;font-size:9px}
+#mobileOperationsCockpit .mo-bottom-health span{display:flex;align-items:center;gap:8px}.mo-bottom-health small{color:#657e9a;font-size:8px}
+
+@media(max-width:1100px){
+  #mobileOperationsCockpit .mo-section:nth-of-type(4),#mobileOperationsCockpit .mo-section:nth-of-type(5),#mobileOperationsCockpit .mo-section:nth-of-type(6),#mobileOperationsCockpit .mo-split-grid{grid-column:1/-1}
+  #mobileOperationsCockpit .mo-split-grid{grid-template-columns:1fr 1fr}
+  #mobileOperationsCockpit .mo-tool-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:700px){
+  #mobileOperationsCockpit{display:block;margin-bottom:18px}
+  #mobileOperationsCockpit>*{margin-bottom:10px}
+  #mobileOperationsCockpit .mo-status-strip{min-height:42px;padding:9px 11px}
+  #mobileOperationsCockpit .mo-hero-card{min-height:145px;padding:20px;gap:14px;border-radius:17px}
+  #mobileOperationsCockpit .mo-hero-card h2{font-size:23px}
+  #mobileOperationsCockpit .mo-hero-orbit{width:82px;height:82px;flex-basis:82px}
+  #mobileOperationsCockpit .mo-hero-orbit b{font-size:20px}
+  #mobileOperationsCockpit .mo-priority-grid{grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+  #mobileOperationsCockpit .mo-priority-card{min-height:88px;padding:11px;gap:8px}
+  #mobileOperationsCockpit .mo-priority-card>span{width:30px;height:30px;flex-basis:30px}
+  #mobileOperationsCockpit .mo-section{padding:13px;border-radius:14px}
+  #mobileOperationsCockpit .mo-split-grid{display:block}
+  #mobileOperationsCockpit .mo-split-grid .mo-section{margin-bottom:10px}
+  #mobileOperationsCockpit .mo-tool-grid{grid-template-columns:repeat(2,1fr)}
+  #mobileOperationsCockpit .mo-trend-chart{height:125px}
+}
+@media(max-width:420px){
+  #mobileOperationsCockpit .mo-hero-card{align-items:flex-start}
+  #mobileOperationsCockpit .mo-hero-orbit{width:68px;height:68px;flex-basis:68px}
+  #mobileOperationsCockpit .mo-hero-orbit b{font-size:17px}
+  #mobileOperationsCockpit .mo-hero-orbit small{bottom:12px}
+  #mobileOperationsCockpit .mo-priority-card strong{font-size:18px}
+  #mobileOperationsCockpit .mo-priority-card small{font-size:7px}
+  #mobileOperationsCockpit .mo-priority-card em{font-size:7px}
+}

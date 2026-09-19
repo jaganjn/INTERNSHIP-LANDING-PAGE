@@ -1137,12 +1137,43 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 }
 </style>
 
+
+<style id="internsforge-logo-redesign-2026">
+/* New InternsForge wordmark — crisp SVG, never stretched. */
+.site-header .brand{
+  display:flex;
+  align-items:center;
+  flex:0 0 auto;
+  min-width:0;
+  gap:0;
+}
+.site-header .brand-mark{
+  display:block !important;
+  width:210px !important;
+  height:auto !important;
+  max-width:none !important;
+  min-width:0 !important;
+  aspect-ratio:520 / 112;
+  object-fit:contain;
+  object-position:left center;
+  flex:0 0 auto;
+  border-radius:0 !important;
+  transform:none !important;
+}
+@media (max-width:1050px){
+  .site-header .brand-mark{width:184px !important;}
+}
+@media (max-width:600px){
+  .site-header .brand-mark{width:164px !important;}
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 <header class="site-header">
   <a class="brand" href="#home" aria-label="InternsForge home">
-    <img class="brand-mark" src="skillpath-mark.png" alt="InternsForge">
+    <img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge">
     <span class="brand-tagline">LEARN · BUILD · GROW</span>
   </a>
   <details class="hero-nav-menu" id="heroNavMenu">
@@ -1510,7 +1541,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 </main>
 
 <footer id="contact">
-  <a class="footer-brand" href="#home"><img class="brand-mark" src="skillpath-mark.png" alt=""><span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span></a>
+  <a class="footer-brand" href="#home"><img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge"><span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span></a>
   <p>Practical learning and career preparation for students.</p>
   <div><small>© 2026 InternsForge Internship Programme</small><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a></nav></div>
   <button id="backToTop" type="button" aria-label="Back to top">↑</button>

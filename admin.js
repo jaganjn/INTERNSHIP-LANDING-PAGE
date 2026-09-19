@@ -99,6 +99,13 @@ let selectedApplicationIds = new Set();
 let abandonedFilteredRows = [];
 let abandonedApplications = {};
 
+// Performance guards: keep Firebase updates and expensive DOM work off the hot input/click path.
+let crmFilterTimer = 0;
+let visitorRenderTimer = 0;
+let mobileCockpitTimer = 0;
+let crmDelegationBound = false;
+let abandonedFilterTimer = 0;
+
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
 }[char]));
@@ -301,6 +308,30 @@ function visitorCard(visitor, inactive = false) {
 }
 
 
+function scheduleCrmFilter(delay = 120) {
+  window.clearTimeout(crmFilterTimer);
+  crmFilterTimer = window.setTimeout(() => {
+    crmFilterTimer = 0;
+    filterCrmApplications();
+  }, delay);
+}
+
+function queueVisitorRender(delay = 220) {
+  if (visitorRenderTimer) return;
+  visitorRenderTimer = window.setTimeout(() => {
+    visitorRenderTimer = 0;
+    renderVisitors();
+  }, delay);
+}
+
+function queueMobileCockpitRender(delay = 120) {
+  if (mobileCockpitTimer) return;
+  mobileCockpitTimer = window.setTimeout(() => {
+    mobileCockpitTimer = 0;
+    renderMobileOperationsCockpit();
+  }, delay);
+}
+
 function recoveryStoreRows() {
   const liveByDraft = {};
   Object.values(visitors).forEach(v => { if (v.draftId) liveByDraft[String(v.draftId)] = v; });
@@ -480,15 +511,15 @@ function updateAbandonedRecoveryStatus(recordId, status) {
 
 function setupAbandonedDashboardActions() {
   ['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id => el(id)?.addEventListener('input',()=>renderAbandonedDashboard(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})))));
-  el('abClearFilters')?.addEventListener('click',()=>{['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id=>{const n=el(id);if(n)n.value='';});renderAbandonedDashboard(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})));});
+  el('abClearFilters')?.addEventListener('click',()=>{['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id=>{const n=el(id);if(n)n.value='';});renderAbandonedDashboard();});
   el('refreshAbandonedButton')?.addEventListener('click', async () => {
-    renderVisitors();
+    queueVisitorRender(0);
     try {
       await fetch(SHEETS_RECOVERY_ENDPOINT, {
         method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'},
         body:JSON.stringify({action:'syncAbandonedApplicationsNow'}), keepalive:true
       });
-      setTimeout(() => renderVisitors(), 1200);
+      setTimeout(() => queueVisitorRender(0), 1200);
     } catch (error) {
       console.warn('Abandoned applications sync request failed:', error);
     }
@@ -563,7 +594,7 @@ function renderVisitors() {
   renderRecoveryCenter(rows);
   renderAbandonedDashboard(rows);
   updateStamp();
-  renderMobileOperationsCockpit();
+  queueMobileCockpitRender();
 }
 
 async function cleanupStale({ removeAbandoned = false } = {}) {
@@ -655,9 +686,6 @@ function renderApplications(newIds = new Set()) {
     return `<div class="chart-day" title="${count} applications"><span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span><small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${count}</small></div>`;
   }).join("");
 
-  renderVisitors();
-  renderReferrals();
-  renderApplicationCRM();
 }
 
 function getCallStatus(app) {
@@ -777,7 +805,7 @@ function promptForCounselor() {
     return "";
   }
   showToast("Counselor added", `${clean} is now available for lead assignment.`, "success", 3500);
-  renderApplicationCRM();
+  populateCrmCounselorControls();
   return clean;
 }
 
@@ -813,8 +841,11 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
       summary: `Lead assignment changed from ${old || "Unassigned"} to ${clean || "Unassigned"}`
     });
     app.assignedTo = clean;
+    const visibleSelect = document.querySelector(`.crm-assign-select[data-app-id="${CSS.escape(String(appId))}"]`);
+    if (visibleSelect) visibleSelect.value = clean || "";
     if (statusEl) { statusEl.textContent = `● Lead assigned • ${clean || "Unassigned"}`; statusEl.className = "crm-synced"; }
-    renderApplicationCRM();
+    updateCrmSelectionUI();
+    queueMobileCockpitRender(0);
     showToast("Lead assigned", `${app.name || "Student"} → ${clean || "Unassigned"}. The counselor sheet will update automatically.`, "success", 4500);
     return true;
   } catch (error) {
@@ -956,7 +987,6 @@ function populateCrmCounselorControls() {
 }
 
 function renderApplicationCRM() {
-  loadCounselorNames();
   populateCrmFilters();
   const counts = {not:0, due:0, interested:0, selected:0, joined:0};
   applications.forEach(app => {
@@ -976,7 +1006,6 @@ function renderApplicationCRM() {
   el("crmSelected").textContent = counts.selected;
   el("crmJoined").textContent = counts.joined;
   filterCrmApplications();
-  renderMobileOperationsCockpit();
 }
 
 function statusClass(status) {
@@ -1001,17 +1030,34 @@ function renderCrmTable(rows) {
       <td><span class="crm-status ${statusClass(status)}">${esc(status)}</span></td>
       <td><span class="follow-pill ${followClass}">${isFollowUpDue(app) ? "⚠ " : ""}${esc(formatFollowUp(app))}</span></td>
       <td><select class="crm-assign-select" data-app-id="${esc(app.id)}" aria-label="Assign ${esc(app.name || "lead")}">${counselorOptions(assigned)}</select></td>
-      <td class="crm-actions-cell"><div class="crm-row-actions" aria-label="Application actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button><button class="crm-history-btn" type="button" data-app-id="${esc(app.id)}" aria-label="View history for ${esc(app.name || "lead")}">History</button><button class="crm-delete-btn" type="button" data-app-id="${esc(app.id)}" data-action="delete" aria-label="Delete ${esc(app.name || "lead")}" title="Delete application">Delete</button></div></td>
+      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button><button class="crm-history-btn" type="button" data-app-id="${esc(app.id)}" aria-label="View history for ${esc(app.name || "lead")}">History</button><button class="crm-delete-btn" type="button" data-app-id="${esc(app.id)}" aria-label="Delete ${esc(app.name || "lead")}">Delete</button></div></td>
     </tr>`;
   }).join("") || '<tr><td colspan="9" class="empty">No applications match your filters.</td></tr>';
 
-  body.querySelectorAll(".crm-open-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
-  body.querySelectorAll(".crm-history-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
-  body.querySelectorAll(".crm-delete-btn").forEach(btn => btn.addEventListener("click", () => deleteSingleApplication(btn.dataset.appId)));
-  body.querySelectorAll(".crm-row-check").forEach(box => box.addEventListener("change", () => toggleCrmSelection(box.dataset.appId, box.checked)));
-  body.querySelectorAll(".crm-assign-select").forEach(select => select.addEventListener("change", () => {
-    handleCounselorSelect(select, value => assignApplicationToCounselor(select.dataset.appId, value, "row"));
-  }));
+  // One delegated listener replaces hundreds of row-level listeners on every CRM render.
+  if (!crmDelegationBound) {
+    crmDelegationBound = true;
+    body.addEventListener("click", event => {
+      const openBtn = event.target.closest(".crm-open-btn,.crm-history-btn");
+      if (openBtn && body.contains(openBtn)) {
+        openApplicationModal(openBtn.dataset.appId);
+        return;
+      }
+      const deleteBtn = event.target.closest(".crm-delete-btn");
+      if (deleteBtn && body.contains(deleteBtn)) deleteSingleApplication(deleteBtn.dataset.appId);
+    });
+    body.addEventListener("change", event => {
+      const box = event.target.closest(".crm-row-check");
+      if (box && body.contains(box)) {
+        toggleCrmSelection(box.dataset.appId, box.checked);
+        return;
+      }
+      const select = event.target.closest(".crm-assign-select");
+      if (select && body.contains(select)) {
+        handleCounselorSelect(select, value => assignApplicationToCounselor(select.dataset.appId, value, "row"));
+      }
+    });
+  }
   updateCrmSelectionUI();
 }
 
@@ -1305,27 +1351,27 @@ async function saveApplicationCRM() {
     Object.assign(app, updates);
     if (updates.assignedTo) rememberCounselor(updates.assignedTo);
 
-    if (changes.length) {
-      for (const change of changes) {
-        await logApplicationActivity(activeApplicationId, {
+    const activityWrites = changes.length
+      ? changes.map(change => logApplicationActivity(activeApplicationId, {
           action: "CRM field updated",
           field: change.field,
           oldValue: change.oldValue,
           newValue: change.newValue,
           summary: `${change.field} updated from dashboard`
-        });
-      }
-    } else {
-      await logApplicationActivity(activeApplicationId, {
-        action: "CRM saved",
-        summary: "CRM record saved without field changes."
-      });
-    }
+        }))
+      : [logApplicationActivity(activeApplicationId, {
+          action: "CRM saved",
+          summary: "CRM record saved without field changes."
+        })];
+    await Promise.all(activityWrites);
 
     statusEl.textContent = "✓ Saved to Firebase • Sheets sync sent.";
-    await loadApplicationHistory(activeApplicationId);
-    showToast("Application updated", `${app.name || "Student"}'s CRM details were saved.`, "success", 3500);
     renderApplications();
+    renderApplicationCRM();
+    queueMobileCockpitRender(0);
+    showToast("Application updated", `${app.name || "Student"}'s CRM details were saved.`, "success", 3500);
+    // History is secondary UI; load it after the save path has returned control to the dashboard.
+    window.setTimeout(() => loadApplicationHistory(activeApplicationId).catch(() => {}), 0);
   } catch (error) {
     console.error("CRM update failed:", error);
     statusEl.textContent = "Could not save. Check Firebase permissions.";
@@ -1714,6 +1760,8 @@ async function performFullRefresh() {
     renderApplications();
     renderReferrals();
     renderVisitors();
+    renderApplicationCRM();
+    queueMobileCockpitRender(0);
     updateStamp("Refreshed");
 
     showToast(
@@ -1905,23 +1953,23 @@ function listeners() {
     const value = snapshot.val();
     if (value) visitors[snapshot.key] = value;
     else delete visitors[snapshot.key];
-    renderVisitors();
+    queueVisitorRender();
   };
 
   visitorRoot.once("value").then(snapshot => {
     visitors = snapshot.val() || {};
-    renderVisitors();
+    queueVisitorRender(0);
   }).catch(console.warn);
   visitorRoot.on("child_added", applyVisitor);
   visitorRoot.on("child_changed", applyVisitor);
   visitorRoot.on("child_removed", snapshot => {
     delete visitors[snapshot.key];
-    renderVisitors();
+    queueVisitorRender();
   });
 
   db.ref("abandonedApplications").on("value", snapshot => {
     abandonedApplications = snapshot.val() || {};
-    renderVisitors();
+    queueVisitorRender();
   });
 
   db.ref("publicStats/applicationVisitorCount").on("value", snapshot => {
@@ -1961,8 +2009,10 @@ function listeners() {
       db.ref("publicStats/applicationCount").set(applications.length)
         .catch(error => console.warn("Public application count sync failed:", error));
 
-      // Render the CRM even if another dashboard workspace subsequently fails.
+      // Update only application-dependent UI. Visitor/recovery/referral modules have their own listeners.
       renderApplications(newIds);
+      renderApplicationCRM();
+      queueMobileCockpitRender();
     } catch (error) {
       console.error("Application Management render failed:", error);
       const body = el("crmTableBody");
@@ -1986,15 +2036,18 @@ function listeners() {
     renderReferrals();
   });
 
-  window.setInterval(() => renderVisitors(), 2_000);
+  window.setInterval(() => queueVisitorRender(0), 5_000);
   window.setInterval(() => cleanupStale().catch(console.warn), 30_000);
 
   E.referralSearch?.addEventListener("input", () => {
     const query = E.referralSearch.value.toLowerCase();
-    renderFriends(friendRows.filter(item =>
-      [item.applicantName, item.code, item.applicantCollege, item.applicantDomain]
-        .some(value => String(value || "").toLowerCase().includes(query))
-    ));
+    window.clearTimeout(E.referralSearch._timer);
+    E.referralSearch._timer = window.setTimeout(() => {
+      renderFriends(friendRows.filter(item =>
+        [item.applicantName, item.code, item.applicantCollege, item.applicantDomain]
+          .some(value => String(value || "").toLowerCase().includes(query))
+      ));
+    }, 100);
   });
 }
 
@@ -2038,7 +2091,7 @@ function setupUI() {
   el("adminLogoutButton")?.addEventListener("click", logout);
   el("crmRemoveCounselorBtn")?.addEventListener("click", removeCounselorFromCRM);
   el("modalAssignedTo")?.addEventListener("change", event => { if (event.target.value === "__new__") { const name = promptForCounselor(); event.target.innerHTML = counselorOptions(name); event.target.value = name || ""; } });
-  ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmCounselorFilter","crmFollowupFilter"].forEach(id => el(id)?.addEventListener("input", filterCrmApplications));
+  ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmCounselorFilter","crmFollowupFilter"].forEach(id => el(id)?.addEventListener("input", () => scheduleCrmFilter()));
   el("crmClearFilters")?.addEventListener("click", () => { el("crmSearch").value=""; el("crmStatusFilter").value=""; el("crmDomainFilter").value=""; el("crmYearFilter").value=""; el("crmCounselorFilter").value=""; el("crmFollowupFilter").value=""; filterCrmApplications(); });
   el("closeApplicationModal")?.addEventListener("click", closeApplicationModal);
   el("applicationModal")?.addEventListener("click", event => { if (event.target.id === "applicationModal") closeApplicationModal(); });
@@ -2244,6 +2297,8 @@ async function del(path, message, successText) {
     if (path === "submittedApplications") {
       applications = [];
       renderApplications();
+      renderApplicationCRM();
+      queueMobileCockpitRender(0);
     }
     if (path === "referrals" || path === "referralJoins") {
       renderReferrals();
@@ -2314,7 +2369,9 @@ async function resetDashboard() {
 
     applications = [];
     renderApplications();
+    renderApplicationCRM();
     renderReferrals();
+    queueMobileCockpitRender(0);
 
     showToast("Dashboard reset", "All dashboard data was successfully cleared.", "success", 5000);
     return true;

@@ -1,0 +1,58 @@
+InternsForge Admin Dashboard — Complete Performance Audit
+Date: 2026-09-19
+
+SOURCE AUDITED
+- InternsForge-V14-admin-FULL-CORRECTED.js
+- 123,560 bytes / 2,711 lines
+- JavaScript syntax check passed before and after patch.
+
+ROOT CAUSES FOUND
+1. Firebase live visitor child events called renderVisitors() immediately.
+2. renderVisitors() rebuilt visitor, recovery, abandoned-dashboard and mobile cockpit UI together.
+3. A 2-second interval rebuilt the visitor workspace continuously.
+4. submittedApplications realtime updates called renderApplications(), which previously cascaded into visitor, referral and full CRM renders.
+5. CRM rendering attached separate event listeners to every visible row after every table rebuild.
+6. CRM search/filter inputs rendered the table on every keystroke.
+7. Referral search rendered on every keystroke.
+8. Abandoned-application filters rendered on every keystroke.
+9. Counselor assignment re-rendered the entire CRM after a single assignment.
+10. CRM save waited through sequential activity writes and a history reload before returning UI control.
+
+PATCHES APPLIED
+- Added debounced CRM filtering.
+- Added batched visitor rendering with a short queue and reduced periodic refresh frequency from 2s to 5s.
+- Replaced per-row CRM listeners with one delegated click/change listener on the CRM table body.
+- Separated application rendering from visitor/recovery/referral rendering.
+- Application realtime updates now refresh only application-dependent modules.
+- Added queued mobile cockpit rendering.
+- Debounced abandoned-dashboard filters.
+- Debounced referral search.
+- Single counselor assignment updates the visible row instead of rebuilding the whole CRM.
+- CRM save activity writes are sent in parallel, and history refresh is deferred until after the main save UI returns.
+- Delete/reset application paths explicitly refresh the CRM after clearing applications.
+
+BACKEND SAFETY
+- No Firebase configuration changed.
+- No Firebase database paths changed.
+- No Firebase rules changed.
+- No authentication code changed.
+- No Google Apps Script / Code.gs changed.
+- No Google Sheets endpoint changed.
+- No application submission flow changed.
+- No counselor data structure changed.
+- This package replaces frontend admin JavaScript only.
+
+VALIDATION
+- node --check passed.
+- Verified old per-row CRM listener block is removed.
+- Verified old 2-second renderVisitors interval is removed.
+- Verified direct CRM input listener is removed.
+- Verified renderApplications no longer cascades into visitor/referral/CRM rendering.
+
+DEPLOYMENT
+1. Back up the current admin.js.
+2. Replace only the existing admin.js with the packaged admin.js.
+3. Deploy the frontend.
+4. Open the admin dashboard.
+5. Hard refresh: Ctrl + Shift + R.
+6. Test: CRM search, filters, Open, History, Delete, counselor assignment, bulk assignment, Save, Refresh, Export, logout, abandoned actions.

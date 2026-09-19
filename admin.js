@@ -1,11 +1,4 @@
 
-function normalizePhoneKey(phone) {
-  const digits = String(phone || '').replace(/\D/g, '');
-  if (!digits) return '';
-  return digits.length > 10 ? digits.slice(-10) : digits;
-}
-
-
 document.body.style.visibility = "hidden";
 
 const ACTIVE_MS = 90_000;
@@ -41,6 +34,13 @@ const CALL_STATUS_ALIASES = {
   "Joined": "Enrolled",
   "Not Reachable": "Not Picking"
 };
+
+function normalizePhoneKey(phone) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (!digits) return "";
+  // Normalize common Indian phone formats to the last 10 digits.
+  return digits.length > 10 ? digits.slice(-10) : digits;
+}
 
 function normalizeCallStatus(status) {
   const raw = String(status || "").trim();
@@ -98,8 +98,9 @@ let counselorNames = [];
 let selectedApplicationIds = new Set();
 let abandonedFilteredRows = [];
 let abandonedApplications = {};
-let abandonedSelectBusy = false;
-let abandonedRenderQueued = false;
+let crmFilterTimer = 0;
+let visitorRenderTimer = 0;
+let crmDelegationBound = false;
 
 const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
@@ -405,34 +406,6 @@ function renderRecoveryCenter(rows) {
   }).join('') : '<p class="empty">No incomplete applications in the recent recovery window.</p>';
 }
 
-function abandonedRecoveryOptions(current) {
-  const options = ["Needs Follow-up", "Contacted", "Recovered", "Submitted / Recovered"];
-  const value = String(current || "Needs Follow-up");
-  return options.map(option => `<option value="${esc(option)}"${option === value ? " selected" : ""}>${esc(option)}</option>`).join("");
-}
-
-function renderAbandonedDashboardSafely(rows) {
-  // Do not replace the table DOM while a Recovery/Assigned To select is open
-  // or focused. Replacing <tbody> closes the native select immediately, which
-  // is why the dropdown appeared to disappear when users clicked it.
-  const active = document.activeElement;
-  if (active && active.closest && active.closest('#abandonedTableBody select[data-ab-recovery], #abandonedTableBody select[data-ab-assign]')) {
-    abandonedRenderQueued = true;
-    return;
-  }
-  abandonedRenderQueued = false;
-  renderAbandonedDashboard(rows);
-}
-
-function flushAbandonedRender() {
-  if (!abandonedRenderQueued) return;
-  if (abandonedSelectBusy) return;
-  const active = document.activeElement;
-  if (active && active.closest && active.closest('#abandonedTableBody select[data-ab-recovery], #abandonedTableBody select[data-ab-assign]')) return;
-  abandonedRenderQueued = false;
-  renderAbandonedDashboard([]);
-}
-
 function renderAbandonedDashboard(rows) {
   const stored = dedupeRecoveryRows(recoveryStoreRows()).filter(v => Number(v.formProgress || 0) > 0);
   const recoveredRows = stored.filter(v => ['Recovered','Submitted / Recovered'].includes(String(v.recoveryStatus || '')));
@@ -477,148 +450,40 @@ function renderAbandonedDashboard(rows) {
       <td><div class="abandoned-progress"><div class="abandoned-progress-track"><span style="width:${progress}%"></span></div><b>${progress}%</b> · Step ${esc(v.currentStep || '1')}</div></td>
       <td><span class="abandoned-type ${colourClass}">${esc(exit)}</span><br><small class="abandoned-muted">${esc(v.exitReason || v.currentField || '—')}</small></td>
       <td>${esc(fmt(v.leftAt || v.abandonedAt || v.lastActive))}</td>
-      <td><select class="crm-assign-select abandoned-recovery-select" data-ab-recovery="${esc(v.id)}" aria-label="Recovery status">${abandonedRecoveryOptions(status)}</select></td>
-      <td><select class="crm-assign-select abandoned-assign-select" data-ab-assign="${esc(v.id)}" aria-label="Assign abandoned application">${counselorOptions(v.assignedTo || '')}</select></td>
-      <td><div class="crm-row-actions abandoned-action"><button class="crm-open-btn" type="button" data-ab-open="${esc(v.id)}">Open</button><button class="crm-history-btn" type="button" data-ab-history="${esc(v.id)}">History</button><button class="crm-delete-btn" type="button" data-ab-delete="${esc(v.id)}">Delete</button></div></td>
+      <td><span class="abandoned-recovery">${esc(status)}</span></td>
+      <td><div class="abandoned-action"><button type="button" data-ab-view="${esc(v.id)}">View</button>${phone ? `<button type="button" data-ab-wa="${esc(wa)}">WhatsApp</button>` : ''}<button type="button" data-ab-contact="${esc(v.id)}">Contacted</button></div></td>
     </tr>`;
-  }).join('') : '<tr><td colspan="9" class="empty">No abandoned applications match the current filters.</td></tr>';
+  }).join('') : '<tr><td colspan="8" class="empty">No abandoned applications match the current filters.</td></tr>';
   const count = el('abResultCount'); if(count) count.textContent = `${filtered.length} of ${all.length} abandoned applications`;
 }
 
-async function callRecoveryEndpoint(action, payload = {}) {
-  const params = new URLSearchParams({ action, ...payload });
-  const url = `${SHEETS_RECOVERY_ENDPOINT}?${params.toString()}`;
-  const response = await fetch(url, { method: 'GET', cache: 'no-store' });
-  if (!response.ok) throw new Error(`Recovery service returned HTTP ${response.status}.`);
-  const data = await response.json();
-  return data;
-}
-
-async function assignAbandonedApplication(recordId, counselor) {
+function updateAbandonedRecoveryStatus(recordId, status) {
   const stored = abandonedApplications[recordId];
   const live = Object.values(visitors).find(v => String(v.draftId || '') === String(recordId));
   const v = stored || live;
-  if (!v) return false;
-  const clean = String(counselor || '').trim();
-  if (clean === '__new__') return false;
-  if (clean) rememberCounselor(clean);
-  const old = String(v.assignedTo || '').trim();
-  if (old === clean) return true;
-  const draftId = String(v.draftId || recordId).trim();
-  if (!draftId) {
-    showToast('Assignment failed', 'This abandoned application has no Draft ID.', 'error', 5000);
-    return false;
-  }
-
-  try {
-    // IMPORTANT: Do not write abandonedApplications directly from the browser.
-    // The Firebase rules may intentionally deny client writes. Route the
-    // assignment through the Apps Script service account instead, which also
-    // updates the durable Google Sheet in the same operation.
-    const result = await callRecoveryEndpoint('updateAbandonedApplicationAssignment', {
-      draftId: draftId,
-      assignedTo: clean
-    });
-    if (!result || result.status !== 'success') {
-      throw new Error(result?.message || 'The assignment could not be saved.');
-    }
-
-    // Optimistic local update keeps the dashboard responsive immediately.
-    if (abandonedApplications[recordId]) abandonedApplications[recordId].assignedTo = clean;
-    if (live) live.assignedTo = clean;
-
-    // Keep the activity trail when an Application ID exists. Failure here
-    // must not make a successful assignment look like it failed.
-    if (v.applicationId) {
-      logApplicationActivity(v.applicationId, {
-        action:'Lead reassigned',
-        field:'Assigned To',
-        oldValue:old || '',
-        newValue:clean || '',
-        summary:`Abandoned lead assignment changed from ${old || 'Unassigned'} to ${clean || 'Unassigned'}`
-      }).catch(() => {});
-    }
-
-    showToast('Lead assigned', `${(v.fieldData || v).name || 'Applicant'} → ${clean || 'Unassigned'}.`, 'success', 4000);
-    return true;
-  } catch (error) {
-    console.error('Abandoned lead assignment failed:', error);
-    showToast('Assignment failed', error?.message || 'Unable to assign this abandoned application.', 'error', 6000);
-    return false;
-  }
-}
-
-async function deleteAbandonedApplication(v) {
-  const d=v?.fieldData||v||{};
-  const draftId=String(v?.draftId||v?.id||'').trim();
-  if(!draftId){ showToast('Delete failed','This abandoned record has no Draft ID.','error',5000); return; }
-  const name=String(d.name||v?.name||'this applicant').trim();
-  if(!confirm(`Delete abandoned application for ${name}?\n\nDraft ID: ${draftId}\n\nThis will remove the recovery record from Firebase and the Abandoned Applications sheet.`)) return;
-  try {
-    const result = await callRecoveryEndpoint('deleteAbandonedApplication', {draftId:draftId});
-    if (!result || !['success','completed_with_errors'].includes(result.status)) {
-      throw new Error(result?.message || 'The abandoned application could not be deleted.');
-    }
-    const recoveryId=draftId.replace(/[.#$\[\]\/]/g,'_');
-    await db.ref(`abandonedApplications/${recoveryId}`).remove();
-    const liveId=Object.entries(visitors).find(([,x])=>String(x.draftId||'')===draftId)?.[0];
-    if(liveId) await db.ref(`liveVisitors/${liveId}`).update({recoveryStatus:'Deleted'});
-    showToast('Abandoned application deleted',`${name} was removed from recovery records.`,'success',4500);
-  } catch(error) {
-    console.error('Delete abandoned application failed:',error);
-    showToast('Delete failed',error?.message||'Unable to delete this abandoned application.','error',7000);
-  }
-}
-
-function showAbandonedHistory(v) {
-  const d=v?.fieldData||v||{};
-  const lines=[
-    ['Started',fmt(v.startedAt||v.createdAt||v.recordedAt)],
-    ['Last active',fmt(v.lastActive||v.leftAt||v.updatedAtMs)],
-    ['Current step',v.currentStep||'—'],
-    ['Progress',`${Number(v.formProgress ?? v.progress ?? 0)}%`],
-    ['Last field',v.currentField||v.lastField||'—'],
-    ['Exit type',v.exitType||v.lastAction||'—'],
-    ['Exit reason',v.exitReason||'—'],
-    ['Recovery status',v.recoveryStatus||'Needs Follow-up'],
-    ['Application ID',v.applicationId||'Not submitted']
-  ];
-  alert(`Recovery History\n\n${lines.map(([label,value])=>`${label}: ${value}`).join('\n')}`);
-}
-
-async function updateAbandonedRecoveryStatus(recordId, status) {
-  const stored = abandonedApplications[recordId];
-  const live = Object.values(visitors).find(v => String(v.draftId || '') === String(recordId));
-  const v = stored || live;
-  if (!v) return false;
-  const clean = String(status || 'Needs Follow-up').trim();
-  const draftId = String(v.draftId || recordId).trim();
-  if (!draftId) {
-    showToast('Recovery update failed', 'This abandoned application has no Draft ID.', 'error', 5000);
-    return false;
-  }
-  const previous = String(v.recoveryStatus || 'Needs Follow-up');
-  if (previous === clean) return true;
-  const select = document.querySelector(`[data-ab-recovery=\"${CSS.escape(String(recordId))}\"]`);
-  try {
-    const response = await callRecoveryEndpoint('updateAbandonedRecoveryStatus', {draftId, recoveryStatus:clean});
-    if (!response || response.status !== 'success') {
-      throw new Error(response?.message || 'The recovery status could not be saved.');
-    }
-    if (abandonedApplications[recordId]) abandonedApplications[recordId].recoveryStatus = clean;
-    if (live) live.recoveryStatus = clean;
-    showToast('Recovery updated', `${(v.fieldData || v).name || 'Applicant'} → ${clean}.`, 'success', 3500);
-    return true;
-  } catch (error) {
-    if (select) select.value = previous;
-    showToast('Recovery update failed', error?.message || 'Unable to update recovery status.', 'error', 6000);
-    return false;
-  }
+  if (!v) return;
+  const d = v.fieldData || v;
+  const draftId = v.draftId || recordId;
+  v.recoveryStatus = status;
+  if (abandonedApplications[recordId]) abandonedApplications[recordId].recoveryStatus = status;
+  renderAbandonedDashboard([]);
+  const payload = {
+    action:'saveAbandonedApplication', draftId, startedAt:v.startedAt || '', lastActive:new Date().toISOString(),
+    name:d.name||'', phone:d.phone||'', email:d.email||'', college:d.college||'', department:d.department||'', year:d.year||'', domain:d.domain||'', state:d.state||'',
+    communicationLanguage:d.communicationLanguage||'', startAvailability:d.startAvailability||'', applicationReason:d.applicationReason||'',
+    progress:Number(v.formProgress ?? v.progress ?? 0), currentStep:v.currentStep||1, lastField:v.currentField||v.lastField||'',
+    exitType:v.exitType || (String(v.lastAction||'').toLowerCase().includes('cancel')?'Cancelled Application':'Left Page'),
+    exitReason:v.exitReason||'', referral:v.referral||'', device:v.device||'', recoveryStatus:status, applicationId:v.applicationId||''
+  };
+  fetch(SHEETS_RECOVERY_ENDPOINT,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),keepalive:true}).catch(console.warn);
+  const liveId = Object.entries(visitors).find(([,x]) => String(x.draftId || '') === String(draftId))?.[0];
+  if (liveId) db.ref(`liveVisitors/${liveId}`).update({recoveryStatus:status});
+  db.ref(`abandonedApplications/${String(draftId).replace(/[.#$\[\]\/]/g,'_')}`).update({recoveryStatus:status,updatedAtMs:Date.now()}).catch(console.warn);
 }
 
 function setupAbandonedDashboardActions() {
-  ['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id => el(id)?.addEventListener('input',()=>renderAbandonedDashboardSafely(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})))));
-  el('abClearFilters')?.addEventListener('click',()=>{['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id=>{const n=el(id);if(n)n.value='';});renderAbandonedDashboardSafely(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})));});
+  ['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id => el(id)?.addEventListener('input',()=>renderAbandonedDashboard(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})))));
+  el('abClearFilters')?.addEventListener('click',()=>{['abSearch','abTypeFilter','abIntentFilter','abRecoveryFilter'].forEach(id=>{const n=el(id);if(n)n.value='';});renderAbandonedDashboard(Object.entries(visitors).map(([k,v])=>({id:k,...v,state:sessionState(v,Date.now())})));});
   el('refreshAbandonedButton')?.addEventListener('click', async () => {
     renderVisitors();
     try {
@@ -632,72 +497,15 @@ function setupAbandonedDashboardActions() {
     }
   });
   el('exportAbandonedButton')?.addEventListener('click',()=>{
-    const rows=abandonedFilteredRows; const headers=['Name','Phone','Email','College','Department','Year','Domain','Progress %','Current Step','Exit Type','Exit Reason','Last Active','Recovery Status','Assigned To','Draft ID'];
-    const csv=[headers,...rows.map(v=>{const d=v.fieldData||{};return[d.name||v.name||'',d.phone||v.phone||'',d.email||v.email||'',d.college||v.college||'',d.department||v.department||'',d.year||v.year||'',d.domain||v.domain||'',v.formProgress||0,v.currentStep||'',v.exitType||'',v.exitReason||'',v.leftAt||v.lastActive||'',v.recoveryStatus||'Needs Follow-up',v.assignedTo||'',v.draftId||v.id||''];})].map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const rows=abandonedFilteredRows; const headers=['Name','Phone','Email','College','Department','Year','Domain','Progress %','Current Step','Exit Type','Exit Reason','Last Active','Recovery Status','Draft ID'];
+    const csv=[headers,...rows.map(v=>{const d=v.fieldData||{};return[d.name||v.name||'',d.phone||v.phone||'',d.email||v.email||'',d.college||v.college||'',d.department||v.department||'',d.year||v.year||'',d.domain||v.domain||'',v.formProgress||0,v.currentStep||'',v.exitType||'',v.exitReason||'',v.leftAt||v.lastActive||'',v.recoveryStatus||'Needs Follow-up',v.draftId||v.id||''];})].map(r=>r.map(x=>`"${String(x??'').replace(/"/g,'""')}"`).join(',')).join('\n');
     const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download=`internsforge-abandoned-${new Date().toISOString().slice(0,10)}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
   });
-  el('abandonedTableBody')?.addEventListener('change',async e=>{
-    const recovery=e.target.closest('[data-ab-recovery]');
-    if(recovery){
-      abandonedSelectBusy = true;
-      const recordId=recovery.dataset.abRecovery;
-      const v=abandonedApplications[recordId] || Object.values(visitors).find(x=>String(x.draftId||'')===String(recordId));
-      const previous=String(v?.recoveryStatus || 'Needs Follow-up');
-      try {
-        const ok=await updateAbandonedRecoveryStatus(recordId,recovery.value);
-        if(!ok) recovery.value=previous;
-      } finally {
-        abandonedSelectBusy = false;
-        setTimeout(flushAbandonedRender, 0);
-      }
-      return;
-    }
-    const assign=e.target.closest('[data-ab-assign]');
-    if(assign){
-      abandonedSelectBusy = true;
-      const previous=String((abandonedApplications[assign.dataset.abAssign] || Object.values(visitors).find(x=>String(x.draftId||'')===String(assign.dataset.abAssign)))?.assignedTo || '');
-      try {
-        const value=handleCounselorSelect(assign, clean => assignAbandonedApplication(assign.dataset.abAssign, clean));
-        if(value === '__new__') assign.value=previous;
-      } finally {
-        // Keep the selected control alive through any realtime Firebase redraw.
-        // The final render happens only after the selection interaction completes.
-        abandonedSelectBusy = false;
-        setTimeout(flushAbandonedRender, 0);
-      }
-    }
-  });
-  el('abandonedTableBody')?.addEventListener('focusin', e=>{
-    const select=e.target.closest?.('[data-ab-recovery],[data-ab-assign]');
-    if(select) abandonedSelectBusy = true;
-  });
-  el('abandonedTableBody')?.addEventListener('focusout', e=>{
-    const select=e.target.closest?.('[data-ab-recovery],[data-ab-assign]');
-    if(select){
-      abandonedSelectBusy = false;
-      setTimeout(flushAbandonedRender, 0);
-    }
-  });
   el('abandonedTableBody')?.addEventListener('click',e=>{
-    const open=e.target.closest('[data-ab-open]'), history=e.target.closest('[data-ab-history]'), del=e.target.closest('[data-ab-delete]');
-    const getRecord = id => abandonedApplications[id] || Object.values(visitors).find(x=>String(x.draftId||'')===String(id));
-    if(open){
-      const v=getRecord(open.dataset.abOpen);
-      if(v){
-        const d=v.fieldData||v;
-        alert(`Abandoned Application\n\nName: ${d.name||'—'}\nPhone: ${d.phone||'—'}\nEmail: ${d.email||'—'}\nCollege: ${d.college||'—'}\nDepartment: ${d.department||'—'}\nYear: ${d.year||'—'}\nDomain: ${d.domain||'—'}\nProgress: ${v.formProgress ?? v.progress ?? 0}%\nStep: ${v.currentStep||'—'}\nExit: ${v.exitType||v.lastAction||'—'}\nExit reason: ${v.exitReason||'—'}\nRecovery: ${v.recoveryStatus||'Needs Follow-up'}\nLast Active: ${fmt(v.leftAt||v.lastActive||v.updatedAtMs)}`);
-      }
-      return;
-    }
-    if(history){
-      const v=getRecord(history.dataset.abHistory);
-      if(v) showAbandonedHistory(v);
-      return;
-    }
-    if(del){
-      const v=getRecord(del.dataset.abDelete);
-      if(v) deleteAbandonedApplication(v);
-    }
+    const view=e.target.closest('[data-ab-view]'), wa=e.target.closest('[data-ab-wa]'), contact=e.target.closest('[data-ab-contact]');
+    if(wa){window.open(wa.dataset.abWa,'_blank','noopener');return;}
+    if(contact){updateAbandonedRecoveryStatus(contact.dataset.abContact,'Contacted');return;}
+    if(view){const v=abandonedApplications[view.dataset.abView] || Object.values(visitors).find(x=>String(x.draftId||'')===String(view.dataset.abView));if(v){const d=v.fieldData||v;alert(`Abandoned Application\n\nName: ${d.name||'—'}\nPhone: ${d.phone||'—'}\nEmail: ${d.email||'—'}\nCollege: ${d.college||'—'}\nDomain: ${d.domain||'—'}\nProgress: ${v.formProgress ?? v.progress ?? 0}%\nStep: ${v.currentStep||'—'}\nExit: ${v.exitType||v.lastAction||'—'}\nLast Active: ${fmt(v.leftAt||v.lastActive||v.updatedAtMs)}`);}}
   });
 }
 
@@ -756,7 +564,7 @@ function renderVisitors() {
 
   E.visitorList.innerHTML = activeMarkup + inactiveMarkup;
   renderRecoveryCenter(rows);
-  renderAbandonedDashboardSafely(rows);
+  renderAbandonedDashboard(rows);
   updateStamp();
   renderMobileOperationsCockpit();
 }
@@ -850,9 +658,6 @@ function renderApplications(newIds = new Set()) {
     return `<div class="chart-day" title="${count} applications"><span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span><small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${count}</small></div>`;
   }).join("");
 
-  renderVisitors();
-  renderReferrals();
-  renderApplicationCRM();
 }
 
 function getCallStatus(app) {
@@ -908,6 +713,22 @@ function populateCrmFilters() {
   if (counselorSelect) counselorSelect.value = counselorNames.includes(currentCounselor) ? currentCounselor : "";
 }
 
+function scheduleCrmFilter(delay = 140) {
+  window.clearTimeout(crmFilterTimer);
+  crmFilterTimer = window.setTimeout(() => {
+    crmFilterTimer = 0;
+    filterCrmApplications();
+  }, delay);
+}
+
+function queueVisitorRender(delay = 350) {
+  if (visitorRenderTimer) return;
+  visitorRenderTimer = window.setTimeout(() => {
+    visitorRenderTimer = 0;
+    renderVisitors();
+  }, delay);
+}
+
 function filterCrmApplications() {
   const q = String(el("crmSearch")?.value || "").trim().toLowerCase();
   const status = normalizeCallStatus(el("crmStatusFilter")?.value || "");
@@ -941,8 +762,7 @@ function loadCounselorNames() {
   let stored = [];
   try { stored = JSON.parse(localStorage.getItem(COUNSELOR_STORAGE_KEY) || "[]"); } catch (_) {}
   const assigned = applications.map(app => String(app?.assignedTo || "").trim()).filter(Boolean);
-  const abandonedAssigned = Object.values(abandonedApplications || {}).map(app => String(app?.assignedTo || "").trim()).filter(Boolean);
-  counselorNames = [...new Set([...stored, ...assigned, ...abandonedAssigned].map(v => String(v || "").trim()).filter(Boolean))]
+  counselorNames = [...new Set([...stored, ...assigned].map(v => String(v || "").trim()).filter(Boolean))]
     .sort((a,b) => a.localeCompare(b));
   try { localStorage.setItem(COUNSELOR_STORAGE_KEY, JSON.stringify(counselorNames)); } catch (_) {}
 }
@@ -1010,7 +830,11 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
     });
     app.assignedTo = clean;
     if (statusEl) { statusEl.textContent = `● Lead assigned • ${clean || "Unassigned"}`; statusEl.className = "crm-synced"; }
-    renderApplicationCRM();
+
+    // The realtime Firebase listener will reconcile the row. Do not rebuild the
+    // entire CRM table here; that caused the large interaction delay.
+    const visibleSelect = document.querySelector(`.crm-assign-select[data-app-id="${CSS.escape(String(appId))}"]`);
+    if (visibleSelect) visibleSelect.value = clean || "";
     showToast("Lead assigned", `${app.name || "Student"} → ${clean || "Unassigned"}. The counselor sheet will update automatically.`, "success", 4500);
     return true;
   } catch (error) {
@@ -1197,70 +1021,43 @@ function renderCrmTable(rows) {
       <td><span class="crm-status ${statusClass(status)}">${esc(status)}</span></td>
       <td><span class="follow-pill ${followClass}">${isFollowUpDue(app) ? "⚠ " : ""}${esc(formatFollowUp(app))}</span></td>
       <td><select class="crm-assign-select" data-app-id="${esc(app.id)}" aria-label="Assign ${esc(app.name || "lead")}">${counselorOptions(assigned)}</select></td>
-      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">View</button>${app.phone ? `<button class="crm-whatsapp-btn" type="button" data-app-wa-id="${esc(app.id)}">WhatsApp</button>` : ''}<button class="crm-contacted-btn" type="button" data-app-contact-id="${esc(app.id)}">Contacted</button></div></td>
+      <td><div class="crm-row-actions"><button class="crm-open-btn" type="button" data-app-id="${esc(app.id)}">Open</button><button class="crm-history-btn" type="button" data-app-id="${esc(app.id)}" aria-label="View history for ${esc(app.name || "lead")}">History</button><button class="crm-delete-btn" type="button" data-app-id="${esc(app.id)}" aria-label="Delete ${esc(app.name || "lead")}">Delete</button></div></td>
     </tr>`;
   }).join("") || '<tr><td colspan="9" class="empty">No applications match your filters.</td></tr>';
 
-  body.querySelectorAll(".crm-open-btn").forEach(btn => btn.addEventListener("click", () => openApplicationModal(btn.dataset.appId)));
-  body.querySelectorAll(".crm-whatsapp-btn").forEach(btn => btn.addEventListener("click", () => {
-    const app = applications.find(item => item.id === btn.dataset.appWaId);
-    if (app) openApplicationWhatsApp(app);
-  }));
-  body.querySelectorAll(".crm-contacted-btn").forEach(btn => btn.addEventListener("click", () => {
-    markApplicationContacted(btn.dataset.appContactId);
-  }));
-  body.querySelectorAll(".crm-row-check").forEach(box => box.addEventListener("change", () => toggleCrmSelection(box.dataset.appId, box.checked)));
-  body.querySelectorAll(".crm-assign-select").forEach(select => select.addEventListener("change", () => {
-    handleCounselorSelect(select, value => assignApplicationToCounselor(select.dataset.appId, value, "row"));
-  }));
-  updateCrmSelectionUI();
-}
-
-function normalizeIndianPhoneForCRM(phone) {
-  let digits = String(phone || "").replace(/\D/g, "");
-  if (digits.length === 10) digits = "91" + digits;
-  else if (digits.length === 11 && digits.startsWith("0")) digits = "91" + digits.slice(1);
-  return digits;
-}
-
-function buildApplicationWhatsAppMessage(app) {
-  const name = app?.name || "Student";
-  const domain = app?.domain || "your selected domain";
-  return `Hi ${name},\n\nThis is InternsForge regarding your internship application.\n\nYour Chosen Domain: ${domain}\n\nWe’re reaching out regarding the InternsForge Internship Program 2026, where you can gain practical experience, work on real-time projects, develop industry-relevant skills, and build your career profile.\n\nIf you’re interested in proceeding with your ${domain} internship, please reply “INTERESTED” and our team will guide you through the next steps.\n\nInternsForge 2026\nLearn • Build • Experience • Grow`;
-}
-
-function openApplicationWhatsApp(app) {
-  const digits = normalizeIndianPhoneForCRM(app?.phone);
-  if (digits.length < 10) {
-    showToast("WhatsApp unavailable", "Please check this student's phone number before opening WhatsApp.", "error", 5000);
-    return;
-  }
-  const message = encodeURIComponent(buildApplicationWhatsAppMessage(app));
-  window.open(`https://wa.me/${digits}?text=${message}`, "_blank", "noopener,noreferrer");
-}
-
-async function markApplicationContacted(id) {
-  const app = applications.find(item => item.id === id);
-  if (!app) return;
-  try {
-    const before = {...app};
-    const updates = {callStatus: "Connected"};
-    await db.ref(`submittedApplications/${id}`).update(updates);
-    Object.assign(app, updates);
-    await sendApplicationUpdateToSheets(app);
-    await logApplicationActivity(id, {
-      action: "Application contacted",
-      field: "callStatus",
-      oldValue: getCallStatus(before),
-      newValue: "Connected",
-      summary: "Applicant marked as Contacted from Application Management"
+  // Row controls use one delegated listener instead of one listener per row/control.
+  // This keeps interaction latency stable even when the CRM contains many leads.
+  if (!crmDelegationBound) {
+    crmDelegationBound = true;
+    body.addEventListener("click", event => {
+      const openBtn = event.target.closest?.(".crm-open-btn");
+      if (openBtn && body.contains(openBtn)) {
+        openApplicationModal(openBtn.dataset.appId);
+        return;
+      }
+      const historyBtn = event.target.closest?.(".crm-history-btn");
+      if (historyBtn && body.contains(historyBtn)) {
+        openApplicationModal(historyBtn.dataset.appId);
+        return;
+      }
+      const deleteBtn = event.target.closest?.(".crm-delete-btn");
+      if (deleteBtn && body.contains(deleteBtn)) {
+        deleteSingleApplication(deleteBtn.dataset.appId);
+      }
     });
-    showToast("Applicant contacted", `${app.name || "Student"} is now marked as Connected.`, "success", 3500);
-    renderApplications();
-  } catch (error) {
-    console.error("Mark contacted failed:", error);
-    showToast("Update failed", error?.message || "Unable to mark this applicant as Contacted.", "error", 6500);
+    body.addEventListener("change", event => {
+      const box = event.target.closest?.(".crm-row-check");
+      if (box && body.contains(box)) {
+        toggleCrmSelection(box.dataset.appId, box.checked);
+        return;
+      }
+      const select = event.target.closest?.(".crm-assign-select");
+      if (select && body.contains(select)) {
+        handleCounselorSelect(select, value => assignApplicationToCounselor(select.dataset.appId, value, "row"));
+      }
+    });
   }
+  updateCrmSelectionUI();
 }
 
 async function sendApplicationDeleteToSheets(app) {
@@ -1574,6 +1371,7 @@ async function saveApplicationCRM() {
     await loadApplicationHistory(activeApplicationId);
     showToast("Application updated", `${app.name || "Student"}'s CRM details were saved.`, "success", 3500);
     renderApplications();
+    renderApplicationCRM();
   } catch (error) {
     console.error("CRM update failed:", error);
     statusEl.textContent = "Could not save. Check Firebase permissions.";
@@ -1962,6 +1760,7 @@ async function performFullRefresh() {
     renderApplications();
     renderReferrals();
     renderVisitors();
+    renderApplicationCRM();
     updateStamp("Refreshed");
 
     showToast(
@@ -2153,7 +1952,7 @@ function listeners() {
     const value = snapshot.val();
     if (value) visitors[snapshot.key] = value;
     else delete visitors[snapshot.key];
-    renderVisitors();
+    queueVisitorRender();
   };
 
   visitorRoot.once("value").then(snapshot => {
@@ -2209,8 +2008,10 @@ function listeners() {
       db.ref("publicStats/applicationCount").set(applications.length)
         .catch(error => console.warn("Public application count sync failed:", error));
 
-      // Render the CRM even if another dashboard workspace subsequently fails.
+      // Application changes update the summary and CRM only. Visitor/referral modules
+      // have their own realtime listeners and no longer redraw on every application event.
       renderApplications(newIds);
+      renderApplicationCRM();
     } catch (error) {
       console.error("Application Management render failed:", error);
       const body = el("crmTableBody");
@@ -2234,15 +2035,19 @@ function listeners() {
     renderReferrals();
   });
 
-  window.setInterval(() => renderVisitors(), 2_000);
+  window.setInterval(() => queueVisitorRender(0), 5_000);
   window.setInterval(() => cleanupStale().catch(console.warn), 30_000);
 
+  let referralSearchTimer = 0;
   E.referralSearch?.addEventListener("input", () => {
-    const query = E.referralSearch.value.toLowerCase();
-    renderFriends(friendRows.filter(item =>
-      [item.applicantName, item.code, item.applicantCollege, item.applicantDomain]
-        .some(value => String(value || "").toLowerCase().includes(query))
-    ));
+    window.clearTimeout(referralSearchTimer);
+    referralSearchTimer = window.setTimeout(() => {
+      const query = E.referralSearch.value.toLowerCase();
+      renderFriends(friendRows.filter(item =>
+        [item.applicantName, item.code, item.applicantCollege, item.applicantDomain]
+          .some(value => String(value || "").toLowerCase().includes(query))
+      ));
+    }, 120);
   });
 }
 
@@ -2286,7 +2091,9 @@ function setupUI() {
   el("adminLogoutButton")?.addEventListener("click", logout);
   el("crmRemoveCounselorBtn")?.addEventListener("click", removeCounselorFromCRM);
   el("modalAssignedTo")?.addEventListener("change", event => { if (event.target.value === "__new__") { const name = promptForCounselor(); event.target.innerHTML = counselorOptions(name); event.target.value = name || ""; } });
-  ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmCounselorFilter","crmFollowupFilter"].forEach(id => el(id)?.addEventListener("input", filterCrmApplications));
+  ["crmSearch","crmStatusFilter","crmDomainFilter","crmYearFilter","crmCounselorFilter","crmFollowupFilter"].forEach(id => {
+    el(id)?.addEventListener("input", () => scheduleCrmFilter());
+  });
   el("crmClearFilters")?.addEventListener("click", () => { el("crmSearch").value=""; el("crmStatusFilter").value=""; el("crmDomainFilter").value=""; el("crmYearFilter").value=""; el("crmCounselorFilter").value=""; el("crmFollowupFilter").value=""; filterCrmApplications(); });
   el("closeApplicationModal")?.addEventListener("click", closeApplicationModal);
   el("applicationModal")?.addEventListener("click", event => { if (event.target.id === "applicationModal") closeApplicationModal(); });
@@ -2492,6 +2299,7 @@ async function del(path, message, successText) {
     if (path === "submittedApplications") {
       applications = [];
       renderApplications();
+      renderApplicationCRM();
     }
     if (path === "referrals" || path === "referralJoins") {
       renderReferrals();
@@ -2562,7 +2370,9 @@ async function resetDashboard() {
 
     applications = [];
     renderApplications();
+    renderApplicationCRM();
     renderReferrals();
+    renderVisitors();
 
     showToast("Dashboard reset", "All dashboard data was successfully cleared.", "success", 5000);
     return true;

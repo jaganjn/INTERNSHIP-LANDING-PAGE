@@ -1080,6 +1080,63 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 }
 .application-exit-actions button:active{transform:translateY(1px) scale(.995)}
 </style>
+
+<style id="internsforge-logo-rectification-2026">
+/* Logo rectification: preserve the supplied 470x100 wordmark aspect ratio. */
+.site-header .brand{
+  flex:0 0 auto;
+  min-width:0;
+  width:auto;
+  max-width:none;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.site-header .brand-mark{
+  display:block;
+  flex:0 0 auto;
+  width:160px !important;
+  height:auto !important;
+  aspect-ratio:470 / 100;
+  max-width:none !important;
+  min-width:0;
+  object-fit:contain;
+  object-position:center;
+  border-radius:0;
+  transform-origin:left center;
+}
+.site-header .brand-tagline{
+  flex:0 0 auto;
+  line-height:1;
+  white-space:nowrap;
+}
+
+/* Never let flexbox squeeze the wordmark. */
+.site-header .brand img{
+  align-self:center;
+}
+
+@media (min-width:1051px){
+  .site-header .brand-mark{
+    width:160px !important;
+  }
+}
+
+@media (max-width:1050px){
+  .site-header .brand-mark{
+    width:138px !important;
+    height:auto !important;
+  }
+}
+
+@media (max-width:600px){
+  .site-header .brand-mark{
+    width:126px !important;
+    height:auto !important;
+  }
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>

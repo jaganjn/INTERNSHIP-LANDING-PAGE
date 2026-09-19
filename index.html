@@ -760,13 +760,333 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 }
 </style>
 
+
+<style id="internsforge-nav-marquee-redesign-2026">
+/* =========================================================
+   NAVBAR + TECHNOLOGY MARQUEE REFINEMENT
+   Visual/frontend only. Existing JS hooks are preserved.
+   ========================================================= */
+
+/* Brand: use the actual InternsForge wordmark at a readable size */
+.site-header{
+  max-width:1320px;
+  padding:10px 14px 10px 18px;
+  gap:22px;
+  border-radius:20px;
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(30,55,95,.11);
+  box-shadow:0 12px 34px rgba(22,35,63,.08);
+}
+.site-header.scrolled{
+  top:6px;
+  background:rgba(255,255,255,.97);
+  box-shadow:0 18px 50px rgba(22,35,63,.13);
+}
+.brand{
+  flex:0 0 auto;
+  min-width:190px;
+  gap:8px;
+  align-items:center;
+}
+.brand-mark{
+  width:132px;
+  height:28px;
+  object-fit:contain;
+  object-position:left center;
+  border-radius:0;
+}
+.brand-tagline{
+  display:block;
+  margin-top:1px;
+  font:700 7px/1 Inter,sans-serif;
+  letter-spacing:1.35px;
+  color:#7a879b;
+  white-space:nowrap;
+}
+
+/* Desktop navigation: visible links instead of the old Explore-only dropdown */
+.hero-nav-menu{
+  margin-left:auto !important;
+  position:relative;
+  z-index:140;
+}
+.hero-nav-menu>summary{
+  display:none !important;
+}
+.hero-nav-dropdown{
+  position:static !important;
+  width:auto !important;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  display:flex !important;
+  align-items:center;
+  gap:4px;
+}
+.hero-nav-dropdown button{
+  position:relative;
+  border:0;
+  background:transparent;
+  color:#52627a;
+  text-align:center;
+  padding:10px 11px;
+  border-radius:10px;
+  font:700 12px Inter,sans-serif;
+  cursor:pointer;
+  transition:color .22s ease,background .22s ease,transform .22s ease;
+}
+.hero-nav-dropdown button:after{
+  content:"";
+  position:absolute;
+  left:11px;
+  right:11px;
+  bottom:4px;
+  height:2px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#246bfd,#7047eb);
+  transform:scaleX(0);
+  transform-origin:center;
+  transition:transform .22s ease;
+}
+.hero-nav-dropdown button:hover{
+  color:#1f49b7;
+  background:#f3f6ff;
+  transform:translateY(-1px);
+}
+.hero-nav-dropdown button:hover:after{
+  transform:scaleX(1);
+}
+.hero-nav-dropdown .nav-apply-item{
+  display:none !important;
+}
+.header-cta{
+  flex:0 0 auto;
+  min-height:48px;
+  padding:0 18px;
+  border-radius:13px;
+  background:linear-gradient(100deg,#111d34,#18294b);
+  color:#fff;
+  box-shadow:0 10px 26px rgba(17,29,52,.16);
+  transition:transform .22s ease,box-shadow .22s ease,background .22s ease;
+}
+.header-cta:hover{
+  transform:translateY(-2px);
+  background:linear-gradient(100deg,#172747,#24417b);
+  box-shadow:0 15px 32px rgba(17,29,52,.22);
+}
+
+/* Scrolled-state polish */
+@media (min-width:1051px){
+  .site-header.scrolled .brand-mark{transform:scale(.96);transform-origin:left center}
+  .site-header.scrolled .hero-nav-dropdown button{padding-top:9px;padding-bottom:9px}
+  .site-header.scrolled .header-cta{min-height:45px}
+}
+
+/* Technology ecosystem marquee */
+.ecosystem{
+  overflow:hidden;
+}
+.marquee-viewport{
+  position:relative;
+  overflow:hidden;
+  padding:3px 0 5px;
+  mask-image:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 6%,#000 94%,transparent 100%);
+}
+.marquee-track{
+  display:flex;
+  width:max-content;
+  will-change:transform;
+  animation:marquee 24s linear infinite !important;
+}
+.marquee-group{
+  display:flex;
+  gap:14px;
+  padding-right:14px;
+  align-items:stretch;
+}
+.marquee-group figure{
+  position:relative;
+  width:166px;
+  height:76px;
+  margin:0;
+  padding:11px 18px;
+  border:1px solid #e2e8f2;
+  border-radius:15px;
+  background:linear-gradient(180deg,#fbfcff,#f5f7fb);
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  flex:0 0 166px;
+  transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+}
+.marquee-group figure:hover{
+  transform:translateY(-3px);
+  border-color:#c9d5e8;
+  box-shadow:0 10px 26px rgba(26,45,82,.10);
+}
+.marquee-group img{
+  width:100%;
+  height:100%;
+  max-width:118px;
+  max-height:40px;
+  object-fit:contain;
+  object-position:center;
+}
+.logo-fallback{
+  color:#1d2a3e;
+}
+.adobe-wordmark{
+  font:800 27px/1 Arial,Helvetica,sans-serif;
+  letter-spacing:-1.2px;
+  color:#ed1c24;
+}
+.logo-error{
+  display:none !important;
+}
+.marquee-viewport:before,
+.marquee-viewport:after{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:56px;
+  z-index:2;
+  pointer-events:none;
+}
+.marquee-viewport:before{
+  left:0;
+  background:linear-gradient(90deg,#fff,transparent);
+}
+.marquee-viewport:after{
+  right:0;
+  background:linear-gradient(270deg,#fff,transparent);
+}
+.ecosystem-title span{
+  color:#16253d;
+}
+.ecosystem-title small{
+  color:#73839b;
+}
+.brand-disclaimer{
+  color:#7b889b;
+}
+
+/* Pause the technology strip while interacting */
+.marquee-viewport:hover .marquee-track{
+  animation-play-state:paused !important;
+}
+
+@media (max-width:1050px){
+  .site-header{
+    max-width:none;
+    margin-left:12px;
+    margin-right:12px;
+    padding:9px 11px 9px 13px;
+  }
+  .brand{
+    min-width:0;
+  }
+  .brand-mark{
+    width:118px;
+    height:25px;
+  }
+  .brand-tagline{
+    display:none;
+  }
+  .hero-nav-menu{
+    margin-left:auto !important;
+  }
+  .hero-nav-menu>summary{
+    display:flex !important;
+    align-items:center;
+    gap:8px;
+    padding:10px 13px;
+    border:1px solid rgba(22,40,72,.12);
+    border-radius:12px;
+    background:#fff;
+    color:#25334b;
+    font-size:12px;
+    font-weight:800;
+    box-shadow:0 8px 24px rgba(17,29,52,.08);
+  }
+  .hero-nav-dropdown{
+    position:absolute !important;
+    right:0 !important;
+    top:calc(100% + 8px) !important;
+    width:220px !important;
+    padding:7px !important;
+    border:1px solid rgba(22,40,72,.1) !important;
+    border-radius:15px !important;
+    background:#fff !important;
+    box-shadow:0 24px 60px rgba(20,38,70,.18) !important;
+    display:grid !important;
+    gap:3px !important;
+  }
+  .hero-nav-dropdown .nav-apply-item{
+    display:block !important;
+  }
+}
+@media (max-width:600px){
+  .site-header{
+    margin:7px 8px;
+    top:7px;
+    border-radius:16px;
+  }
+  .brand-mark{
+    width:105px;
+    height:23px;
+  }
+  .header-cta{
+    min-height:43px;
+    padding:0 12px;
+    font-size:11px;
+  }
+  .hero-nav-menu>summary{
+    width:43px;
+    height:43px;
+    padding:0;
+    justify-content:center;
+    font-size:0;
+  }
+  .hero-nav-menu>summary .nav-menu-icon{
+    font-size:15px;
+  }
+  .hero-nav-menu>summary span:not(.nav-menu-icon),
+  .hero-nav-menu>summary b{
+    display:none;
+  }
+  .marquee-group figure{
+    width:136px;
+    height:62px;
+    flex-basis:136px;
+  }
+  .marquee-group img{
+    max-width:96px;
+    max-height:32px;
+  }
+  .adobe-wordmark{font-size:23px}
+}
+</style>
+
+
+<style id="application-exit-response-fix-2026">
+.application-exit-actions button{
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .14s ease,box-shadow .14s ease,background .14s ease;
+}
+.application-exit-actions button:active{transform:translateY(1px) scale(.995)}
+</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 <header class="site-header">
   <a class="brand" href="#home" aria-label="InternsForge home">
-    <img class="brand-mark" src="skillpath-mark.png" alt="">
-    <span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span>
+    <img class="brand-mark" src="skillpath-mark.png" alt="InternsForge">
+    <span class="brand-tagline">LEARN · BUILD · GROW</span>
   </a>
   <details class="hero-nav-menu" id="heroNavMenu">
     <summary aria-label="Open site navigation"><span class="nav-menu-icon">☰</span><span>Explore</span><b>⌄</b></summary>
@@ -830,10 +1150,10 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
   <div class="ecosystem-title"><span>TOOLS AND TECHNOLOGY ECOSYSTEMS USED ACROSS SELECTED TRACKS</span><small>Exposure varies by domain</small></div>
   <div class="marquee-viewport"><div class="marquee-track">
     <div class="marquee-group">
-      <figure><img src="microsoft.png" alt="Microsoft" loading="lazy"></figure><figure><img src="ibm.png" alt="IBM" loading="lazy"></figure><figure><img src="cisco.png" alt="Cisco" loading="lazy"></figure><figure><img src="adobe.png" alt="Adobe" loading="lazy"></figure><figure><img src="autodesk.png" alt="Autodesk" loading="lazy"></figure><figure><img src="google.png" alt="Google" loading="lazy"></figure>
+      <figure><img src="microsoft.png" alt="Microsoft" loading="lazy" onerror="this.classList.add('logo-error')"></figure><figure><img src="ibm.png" alt="IBM" loading="lazy" onerror="this.classList.add('logo-error')"></figure><figure><img src="cisco.png" alt="Cisco" loading="lazy" onerror="this.classList.add('logo-error')"></figure><figure class="logo-fallback"><span class="adobe-wordmark">Adobe</span></figure><figure><img src="autodesk.png" alt="Autodesk" loading="lazy" onerror="this.classList.add('logo-error')"></figure><figure><img src="google.png" alt="Google" loading="lazy" onerror="this.classList.add('logo-error')"></figure>
     </div>
     <div class="marquee-group" aria-hidden="true">
-      <figure><img src="microsoft.png" alt="" loading="lazy"></figure><figure><img src="ibm.png" alt="" loading="lazy"></figure><figure><img src="cisco.png" alt="" loading="lazy"></figure><figure><img src="adobe.png" alt="" loading="lazy"></figure><figure><img src="autodesk.png" alt="" loading="lazy"></figure><figure><img src="google.png" alt="" loading="lazy"></figure>
+      <figure><img src="microsoft.png" alt="" loading="lazy"></figure><figure><img src="ibm.png" alt="" loading="lazy"></figure><figure><img src="cisco.png" alt="" loading="lazy"></figure><figure class="logo-fallback" aria-hidden="true"><span class="adobe-wordmark">Adobe</span></figure><figure><img src="autodesk.png" alt="" loading="lazy"></figure><figure><img src="google.png" alt="" loading="lazy"></figure>
     </div>
   </div></div>
   <p class="brand-disclaimer">Brand names and logos belong to their respective owners. Their appearance describes relevant tools or ecosystems and does not by itself imply sponsorship, employment or partnership.</p>
@@ -2458,11 +2778,20 @@ console.info('SkillPath guided form build: Final V11');
 
   function disarmModalHistory(){ modalHistoryArmed = false; }
 
-  async function performCloseApplication(reason = 'Student cancelled the application', exitType = 'Cancelled Application', afterClose = null){
+  function performCloseApplication(reason = 'Student cancelled the application', exitType = 'Cancelled Application', afterClose = null){
+    // Close the UI immediately. Recovery/network work must never block the button.
+    // This keeps Leave/Continue/Back interactions responsive even on slow networks.
     const hadData = recoveryHasMeaningfulData();
     if (hadData) {
-      saveDraft();
-      await sendRecoverySnapshot(exitType, reason, true);
+      try { saveDraft(); } catch (error) { console.warn('Draft save failed:', error); }
+      try {
+        const recoveryPromise = sendRecoverySnapshot(exitType, reason, true);
+        if (recoveryPromise && typeof recoveryPromise.catch === 'function') {
+          recoveryPromise.catch(error => console.warn('Recovery snapshot failed after closing:', error));
+        }
+      } catch (error) {
+        console.warn('Recovery snapshot could not start:', error);
+      }
     }
     updateVisitor({ currentField: hadData ? 'Application closed' : 'Viewing page', lastAction: hadData ? `${exitType}: ${reason}` : 'Returned to landing page', exitType: hadData ? exitType : '', exitReason: hadData ? reason : '', status: hadData ? 'abandoned' : 'online', presence: hadData ? 'inactive' : 'active', hasStartedFilling: hadData, formProgress: hadData ? calculateProgress() : 0 });
     applicationFormOpen = false;
@@ -2474,11 +2803,19 @@ console.info('SkillPath guided form build: Final V11');
     else window.scrollTo({top:restoreScroll,behavior:'instant'});
   }
 
-  async function clearApplicationAfterConfirmation(){
+  function clearApplicationAfterConfirmation(){
+    // Clear the visible application immediately; recovery logging runs in the background.
     const hadData = recoveryHasMeaningfulData();
     if (hadData) {
-      saveDraft();
-      await sendRecoverySnapshot('Application Cleared', 'Student selected Clear application / Start over', true);
+      try { saveDraft(); } catch (error) { console.warn('Draft save failed:', error); }
+      try {
+        const recoveryPromise = sendRecoverySnapshot('Application Cleared', 'Student selected Clear application / Start over', true);
+        if (recoveryPromise && typeof recoveryPromise.catch === 'function') {
+          recoveryPromise.catch(error => console.warn('Recovery snapshot failed after clear:', error));
+        }
+      } catch (error) {
+        console.warn('Recovery snapshot could not start:', error);
+      }
       updateVisitor({ currentField: 'Application cleared', lastAction: 'Student cleared application', exitType: 'Application Cleared', exitReason: 'Student selected Clear application / Start over', status: 'abandoned', presence: 'inactive', hasStartedFilling: true, formProgress: calculateProgress() });
     }
     clearDraft(true);

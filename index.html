@@ -621,6 +621,141 @@ html{background:var(--if-bg);scroll-behavior:smooth}body{margin:0;background:rad
 @media(max-width:1050px){.primary-nav{display:none}.site-header{margin:10px 14px!important}.mobile-menu{display:block!important;margin-left:auto;position:relative}.mobile-menu summary{list-style:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid #dde4e4;cursor:pointer}.mobile-menu summary::-webkit-details-marker{display:none}.mobile-menu>div{position:absolute;right:0;top:50px;width:230px;background:#fff;border:1px solid var(--if-line);border-radius:18px;padding:9px;box-shadow:0 25px 60px rgba(16,36,58,.15)}.mobile-menu a,.mobile-menu button{display:block;width:100%;text-align:left;padding:12px;border:0;background:transparent;color:var(--if-ink);text-decoration:none;font-weight:750;border-radius:10px}.mobile-menu button{background:var(--if-teal);color:#fff;text-align:center;margin-top:5px}.hero{grid-template-columns:1fr!important;padding-top:35px!important}.hero-art{min-height:560px}.domain-toolbar{grid-template-columns:1fr}.domain-explorer-trigger{justify-content:center}}
 @media(max-width:700px){.site-header{top:7px!important;margin:7px 8px!important}.brand{min-width:0}.brand strong{font-size:18px!important}.header-actions .nav-search,.header-actions .nav-login{display:none}.header-cta{padding:0 15px;font-size:12px}.hero{padding:30px 18px!important;min-height:0!important}.hero h1{font-size:50px!important;letter-spacing:-3px!important}.hero-lead{font-size:16px!important}.hero-checks{display:grid;gap:9px}.hero-actions{display:grid!important;grid-template-columns:1fr}.fact-row{grid-template-columns:repeat(2,1fr)!important}.hero-art{min-height:470px;border-radius:28px!important}.career-panel{left:5%;right:5%;top:10%;bottom:10%;padding:20px}.growth-core{width:150px;height:150px}.growth-core strong{font-size:42px}.growth-path{left:15px;right:15px;bottom:20px;grid-template-columns:auto 1fr;gap:6px 8px}.growth-path span:nth-of-type(2),.growth-path span:nth-of-type(3){display:none}.growth-path b:nth-of-type(2),.growth-path b:nth-of-type(3){display:none}.hero-note{padding:10px 11px}.hero-note small{font-size:9px}.note-one{top:22%;right:3%}.note-two{top:42%;left:2%}.note-three{bottom:14%;right:3%}.hero-student{right:8%;width:220px;height:320px;transform:scale(.8);transform-origin:bottom right}.trust-strip{padding:0 18px 20px!important;grid-template-columns:1fr 1fr!important}.trust-strip article{border-right:0!important;border-bottom:1px solid var(--if-line)!important}.trust-strip article:first-child{border-radius:18px 0 0 0}.trust-strip article:nth-child(2){border-radius:0 18px 0 0}.trust-strip article:nth-child(3){border-radius:0 0 0 18px}.trust-strip article:last-child{border-radius:0 0 18px 0}.domain-section{padding:75px 18px 20px!important}.domain-heading h2{font-size:42px!important;letter-spacing:-2px!important}.domain-toolbar{padding:12px}.domain-card-grid{grid-template-columns:1fr!important}.domain-category{padding:16px!important}.domain-category-head{align-items:flex-start!important;flex-wrap:wrap}.category-apply{width:100%;margin-left:57px}.process-section,.proof-section,.faq-section{padding:75px 18px!important}.final-cta{padding:65px 18px!important}.proof-grid,.how-grid{grid-template-columns:1fr!important}}
 </style>
+
+<style id="internsforge-final-hero-image-fix">
+/* FINAL VISUAL PASS — image-led hero + readable contrast */
+:root{
+  --if-ink:#10243a;
+  --if-muted:#5f7282;
+  --if-teal:#08a88f;
+  --if-teal-dark:#087c70;
+  --if-orange:#f28a3d;
+  --if-cream:#fbfaf6;
+  --if-mint:#e8f8f3;
+}
+
+/* Hero becomes a clean editorial split layout */
+.hero{
+  background:
+    radial-gradient(circle at 8% 10%,rgba(8,168,143,.10),transparent 28%),
+    radial-gradient(circle at 92% 18%,rgba(242,138,61,.10),transparent 25%),
+    #fbfaf6 !important;
+  color:var(--if-ink) !important;
+}
+.hero-copy{position:relative;z-index:2}
+.hero h1{
+  color:#10243a !important;
+  letter-spacing:-.055em;
+}
+.hero h1 span{
+  background:linear-gradient(90deg,#079f8a 0%,#21aa7e 42%,#f28a3d 100%) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  color:transparent !important;
+}
+.hero-lead{color:#5b7082 !important}
+.hero-checks span{color:#24394a !important}
+.hero-actions .secondary-btn{color:#10243a !important;background:#fff !important}
+.hero .fact-row{border-color:rgba(16,36,58,.12) !important}
+.hero .fact-row b{color:#10243a !important}
+.hero .fact-row small{color:#718290 !important}
+
+/* Use the supplied artwork exactly as the hero visual */
+.hero-image-art{
+  position:relative !important;
+  overflow:hidden !important;
+  min-height:0 !important;
+  aspect-ratio:846 / 768 !important;
+  background:#e8f8f3 !important;
+  border-radius:36px !important;
+  border:1px solid rgba(16,36,58,.08) !important;
+  box-shadow:0 28px 70px rgba(16,36,58,.13) !important;
+}
+.hero-career-image{
+  display:block !important;
+  width:100% !important;
+  height:100% !important;
+  object-fit:cover !important;
+  object-position:center !important;
+}
+.hero-image-overlay{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.65);
+}
+
+/* Make the rest of the page use the same readable theme */
+.section-heading h2,
+.application-intro h2{
+  color:#10243a !important;
+}
+.section-heading p,
+.application-intro p{
+  color:#5f7282 !important;
+}
+.section-heading.inverted h2{
+  color:#f7fbff !important;
+  text-shadow:0 1px 0 rgba(0,0,0,.18);
+}
+.section-heading.inverted p{
+  color:#a9bfd1 !important;
+}
+.section-heading.inverted>span{color:#17c4a5 !important}
+
+/* Project section: navy surface, high contrast */
+.project-section{
+  background:#071827 !important;
+}
+.project-section .project-grid article{
+  background:#10273a !important;
+  border:1px solid rgba(173,211,226,.15) !important;
+}
+.project-section .project-grid article h3{color:#f5fbff !important}
+.project-section .project-grid article p,
+.project-section .project-grid article li{color:#a9bfd1 !important}
+.project-section .project-grid article>span,
+.project-section .project-grid article>small{color:#22c7a9 !important}
+.project-section .project-icon{color:#fff !important}
+
+/* Domain area — cream with dark readable text */
+.domain-section{
+  background:#f4fbf8 !important;
+}
+.domain-heading h2{color:#10243a !important}
+.domain-heading p{color:#5f7282 !important}
+.domain-card{
+  background:#fff !important;
+  border-color:rgba(16,36,58,.10) !important;
+}
+.domain-card strong{color:#10243a !important}
+.domain-card small{color:#718290 !important}
+.domain-card>b{color:#08a88f !important}
+.domain-category{
+  background:rgba(255,255,255,.78) !important;
+  border-color:rgba(16,36,58,.08) !important;
+}
+
+/* Avoid white text on light cards */
+.trust-strip{background:#fff !important}
+.trust-strip article{background:#fff !important}
+.trust-strip article strong{color:#10243a !important}
+.trust-strip article small{color:#718290 !important}
+
+/* Mobile hero image */
+@media (max-width:760px){
+  .hero{background:#fbfaf6 !important}
+  .hero-image-art{
+    width:100% !important;
+    aspect-ratio:846 / 768 !important;
+    border-radius:26px !important;
+    margin-top:12px;
+  }
+  .hero-career-image{object-fit:cover !important}
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -668,18 +803,9 @@ html{background:var(--if-bg);scroll-behavior:smooth}body{margin:0;background:rad
     </div>
   </div>
 
-  <div class="hero-art" aria-label="InternsForge career growth visual">
-    <div class="hero-art-glow glow-a"></div><div class="hero-art-glow glow-b"></div>
-    <div class="hero-note note-one"><span class="note-icon">✦</span><span><b>Learn</b><small>Industry-relevant skills</small></span></div>
-    <div class="hero-note note-two"><span class="note-icon blue">◆</span><span><b>Build</b><small>Real-world projects</small></span></div>
-    <div class="hero-note note-three"><span class="note-icon orange">↗</span><span><b>Get Ready</b><small>Placement preparation</small></span></div>
-    <div class="career-panel">
-      <div class="panel-top"><span>YOUR CAREER GROWTH</span><b>LIVE</b></div>
-      <div class="growth-lines"><i></i><i></i><i></i></div>
-      <div class="growth-core"><small>BUILD YOUR</small><strong>EDGE</strong><span>SKILLS · PROJECTS · CONFIDENCE</span></div>
-      <div class="growth-path"><span>01</span><b>Choose a domain</b><span>02</span><b>Build evidence</b><span>03</span><b>Grow your profile</b></div>
-    </div>
-    <div class="hero-student" aria-hidden="true"><div class="student-shadow"></div><div class="student-avatar"></div><div class="student-hair"></div><div class="student-shirt"></div><div class="student-laptop"></div></div>
+  <div class="hero-art hero-image-art" aria-label="InternsForge career growth visual">
+    <img class="hero-career-image" src="hero-career-growth.png" alt="InternsForge career growth: learn, build and get ready" loading="eager" decoding="async">
+    <div class="hero-image-overlay" aria-hidden="true"></div>
   </div>
 </section>
 

@@ -2972,6 +2972,164 @@ body.application-modal-open .application-card.wizard-shell .application-close:ho
 }
 </style>
 
+
+<style id="internsforge-v12-form-gap-fix">
+/* =========================================================
+   V12 — APPLICATION FORM GAP FIX
+   The previous side rail reserved 246px but was not rendering
+   reliably. The application now uses the complete card width.
+   ========================================================= */
+
+/* Hide the problematic side rail. */
+.app-journey-rail{
+  display:none!important;
+}
+
+/* Full-width application content. */
+body.application-modal-open .application-card.wizard-shell{
+  width:min(1080px,calc(100vw - 40px))!important;
+  max-width:1080px!important;
+  padding:0!important;
+}
+
+/* Remove the old 246px offset from every application layer. */
+body.application-modal-open .application-card.wizard-shell>.wizard-backdrop,
+body.application-modal-open .application-card.wizard-shell>.form-celebration,
+body.application-modal-open .application-card.wizard-shell>.typing-aura{
+  left:0!important;
+  right:0!important;
+  width:100%!important;
+}
+
+body.application-modal-open .application-card.wizard-shell>.wizard-head,
+body.application-modal-open .application-card.wizard-shell>.wizard-hero,
+body.application-modal-open .application-card.wizard-shell>.application-progress-four,
+body.application-modal-open .application-card.wizard-shell>form,
+body.application-modal-open .application-card.wizard-shell>.secure,
+body.application-modal-open .application-card.wizard-shell>#message,
+body.application-modal-open .application-card.wizard-shell>.draft-banner{
+  margin-left:0!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+}
+
+/* Consistent horizontal content edge. */
+body.application-modal-open .application-card.wizard-shell>.wizard-head{
+  padding-left:30px!important;
+  padding-right:30px!important;
+  padding-top:26px!important;
+}
+
+body.application-modal-open .application-card.wizard-shell>.wizard-hero{
+  margin-left:24px!important;
+  margin-right:24px!important;
+  width:calc(100% - 48px)!important;
+}
+
+body.application-modal-open .application-card.wizard-shell>.application-progress-four{
+  margin-left:28px!important;
+  margin-right:28px!important;
+  width:calc(100% - 56px)!important;
+}
+
+body.application-modal-open .application-card.wizard-shell>form{
+  height:calc(100% - 272px)!important;
+  padding:0 28px 30px!important;
+  overflow:auto!important;
+}
+
+body.application-modal-open .application-card.wizard-shell>.secure{
+  margin-left:28px!important;
+  margin-right:28px!important;
+  width:calc(100% - 56px)!important;
+}
+
+body.application-modal-open .application-card.wizard-shell>.draft-banner{
+  margin-left:24px!important;
+  margin-right:24px!important;
+  width:calc(100% - 48px)!important;
+}
+
+/* Give the application a subtle full-canvas visual instead of a blank rail. */
+body.application-modal-open .application-card.wizard-shell{
+  background:
+    radial-gradient(circle at 85% 8%,rgba(124,58,237,.045),transparent 25%),
+    linear-gradient(180deg,#fbfcff 0%,#f7f9fd 100%)!important;
+}
+
+/* Improve top progress balance now that the form is full width. */
+body.application-modal-open .application-progress-four{
+  display:flex!important;
+  align-items:center!important;
+  gap:9px!important;
+}
+
+body.application-modal-open .application-progress-four>i{
+  flex:1!important;
+  min-width:18px!important;
+}
+
+/* Mobile stays edge-to-edge inside the application modal. */
+@media(max-width:820px){
+  body.application-modal-open .application-card.wizard-shell{
+    width:100%!important;
+    max-width:680px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.wizard-head{
+    padding-left:16px!important;
+    padding-right:16px!important;
+    padding-top:17px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.wizard-hero{
+    margin-left:12px!important;
+    margin-right:12px!important;
+    width:calc(100% - 24px)!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.application-progress-four{
+    margin-left:12px!important;
+    margin-right:12px!important;
+    width:calc(100% - 24px)!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>form{
+    height:calc(100% - 250px)!important;
+    padding-left:12px!important;
+    padding-right:12px!important;
+    padding-bottom:22px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.draft-banner{
+    margin-left:12px!important;
+    margin-right:12px!important;
+    width:calc(100% - 24px)!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.secure{
+    margin-left:12px!important;
+    margin-right:12px!important;
+    width:calc(100% - 24px)!important;
+  }
+}
+
+@media(max-width:480px){
+  body.application-modal-open .application-card.wizard-shell>.wizard-head{
+    padding-left:13px!important;
+    padding-right:13px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.wizard-hero{
+    margin-left:9px!important;
+    margin-right:9px!important;
+    width:calc(100% - 18px)!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.application-progress-four{
+    margin-left:9px!important;
+    margin-right:9px!important;
+    width:calc(100% - 18px)!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>form{
+    padding-left:9px!important;
+    padding-right:9px!important;
+  }
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>

@@ -2464,16 +2464,63 @@ body{
 }
 </style>
 
+
+<style id="internsforge-v10-logo-scale">
+.site-header .brand{
+  flex:0 0 auto!important;
+  min-width:0!important;
+  width:auto!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:0!important;
+}
+.site-header .brand-mark{
+  display:block!important;
+  width:190px!important;
+  height:auto!important;
+  min-width:190px!important;
+  max-width:none!important;
+  object-fit:contain!important;
+  object-position:left center!important;
+}
+.site-header .brand:hover .brand-mark{
+  transform:scale(1.025)!important;
+}
+.site-header{gap:18px!important}
+.site-header .desktop-nav{gap:18px!important}
+
+@media(max-width:1050px){
+  .site-header .brand-mark{
+    width:165px!important;
+    min-width:165px!important;
+  }
+}
+@media(max-width:600px){
+  .site-header{
+    min-height:62px!important;
+    padding:8px 8px 8px 12px!important;
+  }
+  .site-header .brand-mark{
+    width:145px!important;
+    min-width:145px!important;
+  }
+  .site-header .mobile-nav{margin-left:auto!important}
+  .mobile-nav summary{width:43px!important;height:43px!important}
+}
+@media(max-width:370px){
+  .site-header .brand-mark{
+    width:128px!important;
+    min-width:128px!important;
+  }
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 <header class="site-header">
   <a class="brand" href="#home" aria-label="InternsForge home">
-    <img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge">
-    <span class="brand-copy">
-      <strong>InternsForge</strong>
-      <small>FORGE YOUR FUTURE</small>
-    </span>
+    <img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge — Learn, Build, Grow">
   </a>
 
   <nav class="desktop-nav" aria-label="Primary navigation">

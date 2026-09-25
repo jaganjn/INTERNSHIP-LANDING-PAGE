@@ -17,9 +17,9 @@
   </g>
 
   <text x="78" y="57" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="800" letter-spacing="-1.4">
-    <tspan fill="#14243d">Interns</tspan><tspan fill="#13a995">Forge</tspan>
+    <tspan fill="#f4f7ff">Interns</tspan><tspan fill="#13a995">Forge</tspan>
   </text>
-  <text x="80" y="84" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3.1" fill="#71809a">
+  <text x="80" y="84" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3.1" fill="#9aa9c3">
     LEARN · BUILD · GROW
   </text>
 </svg>

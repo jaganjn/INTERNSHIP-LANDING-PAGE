@@ -5,8 +5,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#071426">
-<title>InternsForge — Online Internship Programme 2026</title>
-<meta name="description" content="Apply for InternsForge's 2026 online internship programme. Build practical projects, develop career skills and prepare for placements across 35 career domains.">
+<title>InternsForge | Forge Your Future — Projects, Skills & Career Readiness</title>
+<meta name="description" content="Forge your future with practical projects, guided learning and career-readiness pathways across 35 internship domains. Explore your path and start your application.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
@@ -1169,42 +1169,136 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 </style>
 
 
-<style id="iforge-redesign">
+<style id="internsforge-2026-frontdoor-redesign">
 :root{
---if-bg:#050816;--if-surface:#0f172a;--if-accent:#7c3aed;--if-cyan:#06b6d4;
+  --if-bg:#050816;
+  --if-bg2:#091126;
+  --if-panel:#0d1730;
+  --if-panel2:#111d3c;
+  --if-accent:#7c3aed;
+  --if-accent2:#06b6d4;
+  --if-text:#f7f9ff;
+  --if-muted:#99a9c8;
+  --if-line:rgba(255,255,255,.10);
 }
-.if-hero{background:radial-gradient(circle at top,#1e1b4b,#050816);color:#fff;padding:120px 24px 100px;text-align:center}
-.if-hero h1{font-size:clamp(42px,7vw,78px);line-height:1.05;max-width:1000px;margin:auto;font-weight:900}
-.if-hero p{max-width:760px;margin:24px auto;font-size:20px;opacity:.9}
-.if-btn{display:inline-block;padding:16px 28px;border-radius:14px;text-decoration:none;font-weight:800;margin:8px}
-.if-primary{background:#7c3aed;color:#fff}
-.if-secondary{border:1px solid rgba(255,255,255,.2);color:#fff}
-.if-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;max-width:1100px;margin:40px auto}
-.if-card{background:rgba(255,255,255,.05);padding:22px;border-radius:18px;backdrop-filter:blur(8px)}
+body{background:#f6f8fc;color:#12213d}
+.site-header{
+  max-width:1280px;
+  padding:10px 14px 10px 16px;
+  background:rgba(5,8,22,.78);
+  border-color:rgba(255,255,255,.10);
+  box-shadow:0 12px 45px rgba(4,8,25,.20);
+}
+.brand strong{color:#fff}
+.brand small,.brand-tagline{color:#93a5c9!important}
+.desktop-nav a{color:#b7c3da}
+.header-cta{background:linear-gradient(120deg,#7c3aed,#2563eb);box-shadow:0 10px 30px rgba(92,70,228,.30)}
+.if-hero-v2{
+  max-width:none;
+  width:100%;
+  margin:0;
+  padding:90px max(24px,calc((100% - 1280px)/2)) 84px;
+  grid-template-columns:minmax(0,1fr) minmax(480px,620px);
+  gap:72px;
+  min-height:760px;
+  background:
+    radial-gradient(circle at 15% 15%,rgba(124,58,237,.28),transparent 34%),
+    radial-gradient(circle at 86% 32%,rgba(6,182,212,.17),transparent 28%),
+    linear-gradient(135deg,#050816 0%,#071024 54%,#10163a 100%);
+  overflow:hidden;
+  position:relative;
+}
+.if-hero-v2:before{
+  content:"";position:absolute;inset:auto -10% -32% -10%;height:360px;
+  background:radial-gradient(ellipse at center,rgba(124,58,237,.20),transparent 65%);
+  filter:blur(22px);
+}
+.if-hero-copy-v2{position:relative;z-index:2;align-self:center}
+.if-eyebrow-v2{background:rgba(124,58,237,.11);border:1px solid rgba(164,135,255,.24);color:#b9a7ff}
+.if-hero-copy-v2 .hero-lead{color:#aab7cf;max-width:700px}
+.if-hero-copy-v2 h1{color:#f8fbff;max-width:850px;font-size:clamp(50px,6.1vw,86px);line-height:1.0;letter-spacing:-4px}
+.if-hero-copy-v2 h1 span{background:linear-gradient(90deg,#fff,#b7a5ff 45%,#61e8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.if-primary-v2{background:linear-gradient(110deg,#7c3aed,#2563eb 70%,#06b6d4);border:0;min-width:210px}
+.if-secondary-v2{background:rgba(255,255,255,.035);color:#eef3ff;border-color:rgba(255,255,255,.15)}
+.if-proof-v2 span{color:#9fb1cf}
+.hero-mini-line{display:flex;align-items:center;gap:13px;margin:24px 0 8px;color:#7185a7;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+.hero-mini-line b{color:#fff;font-size:10px;margin-right:4px}
+.if-hero-v2 .fact-row{border-color:rgba(255,255,255,.09)}
+.if-hero-v2 .fact-row b{color:#fff}
+.if-hero-v2 .fact-row small{color:#8192af}
+.if-hero-art-v2{
+  min-height:600px;height:600px;
+  border-radius:38px;
+  background:linear-gradient(180deg,rgba(10,22,49,.95),rgba(6,12,28,.95));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 30px 110px rgba(0,0,0,.38);
+  overflow:hidden;
+}
+.if-noise{position:absolute;inset:0;opacity:.08;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");pointer-events:none}
+.if-art-top{position:absolute;z-index:6;left:24px;right:24px;top:20px;display:flex;justify-content:space-between;color:#7f90b2;font-size:10px;letter-spacing:1.25px}
+.if-art-top i{font-style:normal;color:#52e7ac}
+.if-portrait-shell{position:absolute;z-index:2;left:50%;top:45%;transform:translate(-50%,-50%);width:80%;max-width:500px;filter:drop-shadow(0 30px 40px rgba(0,0,0,.35))}
+.if-portrait-shell:after{content:"";position:absolute;inset:16% 4% 5%;border-radius:45px;background:linear-gradient(145deg,rgba(124,58,237,.26),rgba(6,182,212,.06));z-index:-1;filter:blur(20px)}
+.if-portrait-shell img{width:100%;border-radius:28px;mix-blend-mode:screen;opacity:.95}
+.if-floating{
+  position:absolute;z-index:7;padding:12px 14px 12px 12px;border:1px solid rgba(156,170,218,.16);
+  background:rgba(9,18,42,.80);backdrop-filter:blur(14px);border-radius:16px;color:#fff;
+  box-shadow:0 18px 42px rgba(0,0,0,.24);min-width:170px;animation:ifFloat 5.5s ease-in-out infinite
+}
+.if-floating b,.if-floating small{display:block}.if-floating b{font-size:11px;letter-spacing:1px}.if-floating small{font-size:9px;color:#8498bb;margin-top:3px}
+.if-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#7c3aed;box-shadow:0 0 0 5px rgba(124,58,237,.12);margin-right:8px}
+.if-f1{left:18px;top:100px}.if-f2{right:18px;top:155px;animation-delay:-1s}.if-f3{left:24px;bottom:132px;animation-delay:-2s}
+.if-score-card{
+  position:absolute;z-index:7;right:18px;bottom:34px;width:230px;padding:17px;border-radius:18px;
+  border:1px solid rgba(255,255,255,.13);background:linear-gradient(135deg,rgba(20,30,65,.93),rgba(13,19,44,.93));
+  box-shadow:0 18px 42px rgba(0,0,0,.28)
+}
+.if-score-card small,.if-score-card em{display:block;color:#8193b4;font-size:9px;letter-spacing:1.1px;font-style:normal}
+.if-score-card strong{display:block;color:#fff;font:800 15px Manrope;margin:5px 0 11px}.if-score-bar{height:7px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden}.if-score-bar span{display:block;width:74%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#7c3aed,#06b6d4)}.if-score-card em{margin-top:9px;letter-spacing:0}
+.if-orbit{position:absolute;z-index:1;border:1px solid rgba(123,146,226,.10);border-radius:50%;left:50%;top:46%;translate:-50% -50%;pointer-events:none}.if-orbit.o1{width:82%;height:72%}.if-orbit.o2{width:62%;height:55%;border-color:rgba(6,182,212,.10)}
+@keyframes ifFloat{50%{transform:translateY(-8px)}} 
+.trust-strip{max-width:1240px;margin:18px auto;padding:0 20px}
+.trust-strip article{border-radius:18px;background:#fff;box-shadow:0 8px 28px rgba(22,39,73,.06)}
+.ecosystem{max-width:1240px;border-radius:24px;margin-top:22px}
+.if-role-section{padding:100px max(20px,calc((100% - 1200px)/2));background:linear-gradient(180deg,#050816,#081126);color:#fff;position:relative;overflow:hidden}
+.if-role-section:before{content:"";position:absolute;width:500px;height:500px;border-radius:50%;background:rgba(124,58,237,.13);filter:blur(80px);left:-180px;top:30px}
+.if-shell{position:relative;z-index:1;max-width:1200px;margin:0 auto}
+.if-heading-on-dark h2{color:#f8fbff}.if-heading-on-dark p{color:#99a9c8}.if-heading-on-dark>span{color:#7f95ff}
+.if-role-layout{display:grid;grid-template-columns:360px minmax(0,1fr);gap:22px}
+.if-role-list{display:grid;gap:10px}
+.if-role-card{appearance:none;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.035);color:#fff;border-radius:18px;padding:16px;display:grid;grid-template-columns:42px 1fr 20px;align-items:center;text-align:left;gap:12px;cursor:pointer;transition:.25s}
+.if-role-card:hover{background:rgba(255,255,255,.065);transform:translateX(3px)}
+.if-role-card.active{background:linear-gradient(135deg,rgba(124,58,237,.22),rgba(37,99,235,.15));border-color:rgba(153,126,255,.35);box-shadow:inset 0 0 0 1px rgba(134,107,255,.09)}
+.if-role-icon{width:42px;height:42px;border-radius:14px;display:grid;place-items:center;background:rgba(255,255,255,.08);color:#a999ff;font-size:20px}
+.if-role-card b,.if-role-card small{display:block}.if-role-card b{font-size:13px}.if-role-card small{color:#8497ba;font-size:10px;margin-top:3px}.if-role-card strong{color:#7689ad}
+.if-role-detail{min-height:330px;padding:32px;border-radius:24px;border:1px solid rgba(255,255,255,.09);background:linear-gradient(145deg,rgba(21,30,62,.88),rgba(11,18,38,.92));box-shadow:0 26px 70px rgba(0,0,0,.24)}
+.if-role-kicker{font-size:10px;letter-spacing:1.5px;color:#7f95ff;font-weight:800}.if-role-detail h3{font-size:40px;line-height:1.04;margin:10px 0;color:#fff}.if-role-detail>p{color:#9caaca;max-width:760px;font-size:15px}.if-detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:24px 0}.if-detail-grid div{padding:15px;border-radius:15px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)}.if-detail-grid span{display:block;font-size:9px;letter-spacing:1px;color:#7889a8;margin-bottom:6px}.if-detail-grid b{font-size:11px;color:#eef3ff}.if-role-footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:22px}.if-role-footer>span{color:#7f90ae;font-size:10px}.if-inline-apply{min-height:48px;padding:0 17px}
+.if-proof-stack{padding:100px max(20px,calc((100% - 1200px)/2));background:#f6f8fc}
+.if-proof-head{max-width:760px}
+.if-proof-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.if-proof-grid article{min-height:270px;padding:28px;border-radius:22px;border:1px solid #dfe5f0;background:#fff;box-shadow:0 12px 40px rgba(25,44,79,.06);position:relative;overflow:hidden}
+.if-proof-grid article:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;right:-80px;bottom:-80px;background:radial-gradient(circle,rgba(124,58,237,.12),transparent 70%)}
+.if-proof-grid article>span{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#f0ebff;color:#6f48df;font-weight:800;font-size:11px}.if-proof-grid h3{font-size:27px;margin:30px 0 10px}.if-proof-grid p{color:#68778f;font-size:14px;max-width:320px}.if-proof-grid b{display:inline-block;margin-top:20px;padding:8px 10px;border-radius:999px;background:#f3f6fb;color:#52627d;font-size:9px;letter-spacing:.8px}
+.application-zone{background:#fff}
+.receive-section,.project-section,.fit-section,.student-persona-section,.domain-section,.process-section,.proof-section,.faq-section{scroll-margin-top:90px}
+.project-section,.proof-section,.domain-section{background:#071024!important}
+.final-cta{margin:0;background:linear-gradient(125deg,#0b122b,#111c44 48%,#0b2a3d);color:#fff;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;gap:30px;padding:72px max(20px,calc((100% - 1200px)/2))}
+.final-cta span{font-size:10px;letter-spacing:1.5px;color:#7f95ff;font-weight:800}.final-cta h2{font-size:44px;line-height:1.08;margin:8px 0}.final-cta p{color:#98a8c5;margin:0}.final-cta .open-application{border:0;border-radius:13px;padding:16px 22px;background:linear-gradient(110deg,#7c3aed,#2563eb);color:#fff;font-weight:800;box-shadow:0 15px 35px rgba(72,63,206,.28);cursor:pointer}
+@media(max-width:1000px){
+  .if-hero-v2{grid-template-columns:1fr;min-height:auto;padding-top:64px}.if-hero-art-v2{min-height:500px;height:500px}.if-role-layout{grid-template-columns:1fr}.if-detail-grid{grid-template-columns:1fr}.if-proof-grid{grid-template-columns:1fr 1fr}.final-cta{flex-direction:column;align-items:flex-start}.final-cta h2{font-size:36px}
+}
+@media(max-width:700px){
+  .site-header{top:5px;margin:8px 10px}.hero-nav-menu{display:none!important}.mobile-menu{display:block!important}.if-hero-v2{padding:70px 18px 48px;gap:28px}.if-hero-copy-v2 h1{font-size:48px;letter-spacing:-2.6px}.if-hero-art-v2{min-height:430px;height:430px;border-radius:26px}.if-portrait-shell{width:90%;top:43%}.if-floating{min-width:132px;padding:10px}.if-floating b{font-size:10px}.if-f1{left:10px;top:76px}.if-f2{right:8px;top:120px}.if-f3{left:10px;bottom:95px}.if-score-card{width:195px;right:8px;bottom:18px}.hero-mini-line{gap:8px;font-size:8px}.trust-strip{grid-template-columns:1fr 1fr;padding:0 12px}.if-role-section,.if-proof-stack{padding:70px 16px}.if-role-detail{padding:22px}.if-role-detail h3{font-size:32px}.if-role-footer{flex-direction:column;align-items:flex-start}.if-proof-grid{grid-template-columns:1fr}.final-cta{padding:58px 20px}.final-cta h2{font-size:32px}
+}
 </style>
 
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
-<section class="if-hero">
-<h1>Your Degree Gets You Qualified.<br>Your Projects Get You Hired.</h1>
-<p>Forge your future through guided projects, career pathways, portfolio building and industry-focused learning experiences.</p>
-<div>
-<a href="#applicationSection" class="if-btn if-primary">Start Your Journey</a>
-<a href="#domains" class="if-btn if-secondary">Explore Career Paths</a>
-</div>
-<div class="if-grid">
-<div class="if-card"><strong>Career Paths</strong><br>AI, Data, Cloud, Cyber & More</div>
-<div class="if-card"><strong>Build Mode</strong><br>Create portfolio-ready projects</div>
-<div class="if-card"><strong>Mentorship</strong><br>Learn with structured guidance</div>
-<div class="if-card"><strong>Career Readiness</strong><br>Interview & portfolio preparation</div>
-</div>
-</section>
-
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
 <header class="site-header">
   <a class="brand" href="#home" aria-label="InternsForge home">
     <img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge">
-    <span class="brand-tagline">LEARN · BUILD · GROW</span>
+    <span class="brand-tagline">FORGE YOUR FUTURE</span>
   </a>
   <details class="hero-nav-menu" id="heroNavMenu">
     <summary aria-label="Open site navigation"><span class="nav-menu-icon">☰</span><span>Explore</span><b>⌄</b></summary>
@@ -1218,42 +1312,47 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
       <button type="button" class="nav-apply-item open-application">Start Application <span>→</span></button>
     </div>
   </details>
-  <button class="header-cta open-application" type="button">Apply in 60 Seconds <span>↗</span></button>
+  <button class="header-cta open-application" type="button">Start Your Journey <span>↗</span></button>
   <details class="mobile-menu" aria-hidden="true"><summary>☰</summary></details>
 </header>
 
 <main>
-<section class="hero" id="home">
-  <div class="hero-copy">
-    <div class="eyebrow"><i></i> 2026 ONLINE INTERNSHIP PROGRAMME</div>
-    <h1>Build real projects. <span>Become career ready.</span></h1>
-    <p class="hero-lead">A guided online programme for students from 1st year to final year across any degree or department. Choose a career track, complete practical work and strengthen your profile before placements.</p>
+<section class="hero if-hero-v2" id="home">
+  <div class="hero-copy if-hero-copy-v2">
+    <div class="eyebrow if-eyebrow-v2"><i></i> 2026 · FUTURE SKILLS INTERNSHIP & CAREER ACCELERATOR</div>
+    <h1>Your degree gets you qualified.<br><span>Your projects make your skills visible.</span></h1>
+    <p class="hero-lead">Choose a career direction, build practical work, strengthen your portfolio and prepare for the next stage of your career — through a guided online internship experience.</p>
     <div class="hero-actions">
-      <button class="primary-btn open-application" type="button">Apply in 60 Seconds <span>→</span></button>
-      <a class="secondary-btn" href="#projects">See Sample Projects</a>
+      <button class="primary-btn if-primary-v2 open-application" type="button">Start Your Journey <span>→</span></button>
+      <a class="secondary-btn if-secondary-v2" href="#roleExplorer">Explore Career Paths</a>
     </div>
-    <div class="hero-proof"><span>✓ No resume needed initially</span><span>✓ Mobile-friendly form</span><span>✓ Application reference provided</span></div>
+    <div class="hero-proof if-proof-v2">
+      <span>✓ Guided online application</span>
+      <span>✓ 35 career domains</span>
+      <span>✓ Practical project focus</span>
+    </div>
+    <div class="hero-mini-line">
+      <span><b>01</b> Choose</span><span>→</span><span><b>02</b> Build</span><span>→</span><span><b>03</b> Show</span>
+    </div>
     <div class="fact-row" aria-label="Programme facts">
       <article><b>35</b><small>Career domains</small></article>
       <article><b id="liveApplicationCount">—</b><small>Students applied</small></article>
-      <article><b>1st–Final</b><small>All years eligible</small></article>
-      <article><b>2–3 Months</b><small>Programme duration</small></article>
+      <article><b>1st–Final</b><small>All years welcome</small></article>
+      <article><b>2–3 Months</b><small>Typical duration</small></article>
     </div>
   </div>
 
-  <div class="hero-art" aria-label="Career readiness journey">
-    <div class="student-floaters" aria-hidden="true">
-      <div class="student-float s1"><span class="student-cap"></span><span class="student-head"></span><span class="student-body"></span><span class="student-book"></span></div>
-      <div class="student-float s2"><span class="student-cap"></span><span class="student-head"></span><span class="student-body"></span><span class="student-book"></span></div>
-      <div class="student-float s3"><span class="student-cap"></span><span class="student-head"></span><span class="student-body"></span><span class="student-book"></span></div>
+  <div class="hero-art if-hero-art-v2" aria-label="Forge your future visual">
+    <div class="if-noise"></div>
+    <div class="if-art-top"><span>INTERNFORGE / CAREER SYSTEM</span><i>● LIVE</i></div>
+    <div class="if-portrait-shell">
+      <img src="hero-career-growth.png" alt="Student exploring a career growth path" loading="eager">
     </div>
-    <div class="visual-top"><span>YOUR CAREER READINESS MAP</span><i>ACTIVE</i></div>
-    <div class="career-core"><div class="core-rings"></div><strong>CAREER</strong><b>READY</b><small>PROJECTS · SKILLS · CONFIDENCE</small></div>
-    <article class="orbit-card card-one"><img src="feature-realtime-projects.svg" alt=""><span><b>Build</b><small>Practical projects</small></span></article>
-    <article class="orbit-card card-two"><img src="feature-certification.svg" alt=""><span><b>Validate</b><small>Completion credentials</small></span></article>
-    <article class="orbit-card card-three"><img src="feature-career-mentorship.svg" alt=""><span><b>Improve</b><small>Guided learning</small></span></article>
-    <article class="orbit-card card-four"><img src="feature-placement-preparation.svg" alt=""><span><b>Prepare</b><small>Resume and interviews</small></span></article>
-    <div class="visual-grid"></div>
+    <div class="if-floating if-f1"><span class="if-dot"></span><b>LEARN</b><small>Industry-ready skills</small></div>
+    <div class="if-floating if-f2"><span class="if-dot"></span><b>BUILD</b><small>Real project output</small></div>
+    <div class="if-floating if-f3"><span class="if-dot"></span><b>SHOW</b><small>Portfolio evidence</small></div>
+    <div class="if-score-card"><small>CAREER READINESS</small><strong>Build → Prove → Progress</strong><div class="if-score-bar"><span></span></div><em>Structured around practical progress</em></div>
+    <div class="if-orbit o1"></div><div class="if-orbit o2"></div>
   </div>
 </section>
 
@@ -1275,6 +1374,63 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
     </div>
   </div></div>
   <p class="brand-disclaimer">Brand names and logos belong to their respective owners. Their appearance describes relevant tools or ecosystems and does not by itself imply sponsorship, employment or partnership.</p>
+</section>
+
+
+<section class="if-role-section" id="roleExplorer" aria-label="Career path explorer">
+  <div class="if-shell">
+    <div class="section-heading if-heading-on-dark">
+      <span>CAREER PATH EXPLORER</span>
+      <h2>Don’t start with a course. Start with the role you want to grow into.</h2>
+      <p>Pick a direction and see the kind of skills and project work you can build around it.</p>
+    </div>
+
+    <div class="if-role-layout">
+      <div class="if-role-list" role="tablist" aria-label="Career paths">
+        <button class="if-role-card active" type="button" role="tab" aria-selected="true" data-role="software">
+          <span class="if-role-icon">⌘</span><span><b>Software Developer</b><small>Web · Python · Java · DSA</small></span><strong>→</strong>
+        </button>
+        <button class="if-role-card" type="button" role="tab" aria-selected="false" data-role="ai">
+          <span class="if-role-icon">✦</span><span><b>AI & Data Builder</b><small>AI · ML · Data Science</small></span><strong>→</strong>
+        </button>
+        <button class="if-role-card" type="button" role="tab" aria-selected="false" data-role="security">
+          <span class="if-role-icon">◈</span><span><b>Cyber Security Track</b><small>Security · Cloud · Networking</small></span><strong>→</strong>
+        </button>
+        <button class="if-role-card" type="button" role="tab" aria-selected="false" data-role="engineering">
+          <span class="if-role-icon">⚙</span><span><b>Core & Emerging Engineer</b><small>IoT · Embedded · VLSI · EV</small></span><strong>→</strong>
+        </button>
+      </div>
+
+      <article class="if-role-detail" id="roleDetail">
+        <div class="if-role-kicker">PATH 01 / SOFTWARE</div>
+        <h3 id="roleTitle">Software Developer</h3>
+        <p id="roleDescription">Turn programming fundamentals into practical product-building experience you can explain confidently.</p>
+        <div class="if-detail-grid">
+          <div><span>FOCUS SKILLS</span><b id="roleSkills">Web Development · Python · Java · DSA</b></div>
+          <div><span>PROJECT STYLE</span><b id="roleProject">Responsive application or business website</b></div>
+          <div><span>CAREER SIGNAL</span><b id="roleSignal">A portfolio project with a clear story: problem → solution → result</b></div>
+        </div>
+        <div class="if-role-footer"><span>Choose your domain during application</span><button class="primary-btn if-inline-apply open-application" type="button">Build This Path <span>→</span></button></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="if-proof-stack" aria-label="Programme proof stack">
+  <div class="if-shell">
+    <div class="if-proof-head">
+      <div class="section-heading">
+        <span>THE PROOF STACK</span>
+        <h2>Learn it. Build it. Show it.</h2>
+        <p>The page is designed around what a student can actually point to after the programme — not just what they can claim they attended.</p>
+      </div>
+    </div>
+    <div class="if-proof-grid">
+      <article><span>01</span><h3>Learn</h3><p>Follow a structured path around the selected domain and strengthen the skills that support the project.</p><b>Skills + guidance</b></article>
+      <article><span>02</span><h3>Build</h3><p>Complete practical work that gives your learning a tangible output you can discuss in interviews.</p><b>Project + evidence</b></article>
+      <article><span>03</span><h3>Show</h3><p>Turn the work into a clearer portfolio story, resume point and interview conversation starter.</p><b>Portfolio + confidence</b></article>
+    </div>
+  </div>
 </section>
 
 <section class="application-zone">
@@ -1465,7 +1621,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 <section class="student-journey-section" aria-label="Student journey">
   <div class="student-journey-shell">
     <div class="student-journey-head">
-      <div><span>YOUR STUDENT JOURNEY</span><h2>From application to career readiness.</h2></div>
+      <div><span>YOUR BUILD JOURNEY</span><h2>From curiosity to a portfolio you can explain.</h2></div>
       <p>A simple visual path helps students understand what happens next without reading a long block of text.</p>
     </div>
     <div class="journey-scroller" id="studentJourneyScroller">
@@ -1487,7 +1643,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 </div>
 
 <section class="section receive-section" id="benefits">
-  <div class="section-heading"><span>WHAT YOU RECEIVE</span><h2>Clear outcomes, not vague promises.</h2><p>The exact activities vary by selected domain, but the programme is designed around practical output and career preparation.</p></div>
+  <div class="section-heading"><span>WHAT YOU RECEIVE</span><h2>The outcomes students can actually work toward.</h2><p>The exact activities vary by selected domain, but the programme is designed around practical output and career preparation.</p></div>
   <div class="receive-grid">
     <article><i>01</i><h3>Domain Learning Path</h3><p>A structured route based on the career area you select.</p></article>
     <article><i>02</i><h3>Practical Project</h3><p>Work designed to create a portfolio-ready output.</p></article>
@@ -1499,7 +1655,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 </section>
 
 <section class="section project-section" id="projects">
-  <div class="section-heading inverted"><span>SAMPLE PROJECT PREVIEWS</span><h2>See what practical learning can look like.</h2><p>Project scope and tools may vary by batch, selected track and student level.</p></div>
+  <div class="section-heading inverted"><span>SAMPLE PROJECT PREVIEWS</span><h2>Build something you can talk about.</h2><p>Project scope and tools may vary by batch, selected track and student level.</p></div>
   <div class="project-grid">
     <article><div class="project-icon">&lt;/&gt;</div><span>WEB DEVELOPMENT</span><h3>Responsive Business Website</h3><p>Plan, build, test and publish a mobile-friendly website.</p><ul><li>HTML, CSS and JavaScript</li><li>Responsive interface</li><li>Deployment workflow</li></ul><small>BEGINNER–INTERMEDIATE</small></article>
     <article><div class="project-icon">AI</div><span>AI & DATA</span><h3>Prediction or Analytics Model</h3><p>Prepare data, build a model and explain the result clearly.</p><ul><li>Python fundamentals</li><li>Data cleaning and analysis</li><li>Model evaluation</li></ul><small>INTERMEDIATE</small></article>
@@ -1518,7 +1674,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 
 
 <section class="student-persona-section" aria-label="Who the programme is for">
-  <div class="section-heading"><span>BUILT FOR DIFFERENT STUDENTS</span><h2>Find the path that feels like you.</h2><p>Whether you are starting out or already building skills, the same guided application leads you to the right domain.</p></div>
+  <div class="section-heading"><span>BUILT FOR DIFFERENT STUDENTS</span><h2>Choose a path that feels like your next move.</h2><p>Whether you are starting out or already building skills, the same guided application leads you to the right domain.</p></div>
   <div class="persona-track" id="personaTrack">
     <article class="persona-card active"><div class="persona-art"><div class="persona-avatar"></div><div class="persona-laptop"></div></div><h3>College Student</h3><p>Start early, discover a domain and build a foundation through practical work.</p><div class="persona-cta">START WITH THE BASICS →</div></article>
     <article class="persona-card"><div class="persona-art"><div class="persona-avatar"></div><div class="persona-laptop"></div></div><h3>Beginner Developer</h3><p>Turn classroom knowledge into projects you can explain with confidence.</p><div class="persona-cta">BUILD YOUR PROFILE →</div></article>
@@ -1534,7 +1690,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 </section>
 
 <section class="section process-section" id="how">
-  <div class="section-heading"><span>WHAT HAPPENS NEXT?</span><h2>A clear path from application to onboarding.</h2></div>
+  <div class="section-heading"><span>WHAT HAPPENS NEXT?</span><h2>A clear path from interest to onboarding.</h2></div>
   <div class="how-grid">
     <article><b>01</b><h3>Submit your application</h3><p>Complete the guided form and receive an application reference.</p></article>
     <article><b>02</b><h3>Application review</h3><p>The programme team reviews your academic details and preferred domain.</p></article>
@@ -1555,7 +1711,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 </section>
 
 <section class="section faq-section" id="faq">
-  <div class="section-heading"><span>QUESTIONS</span><h2>Everything you need to know before applying.</h2></div>
+  <div class="section-heading"><span>QUESTIONS</span><h2>Questions students usually ask before they begin.</h2></div>
   <div class="faq-list">
     <details><summary>Who can apply?<i>+</i></summary><p>Students from 1st year through final year, as well as eligible passed-out students, may apply across degree and diploma programmes.</p></details>
     <details><summary>What is the programme mode and duration?<i>+</i></summary><p>The programme is online and is generally structured across a 2–3 month period. Exact schedules may vary by selected track or batch.</p></details>
@@ -1567,7 +1723,7 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
   </div>
 </section>
 
-<section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your next project can start with one minute.</h2><p>No prerequisite knowledge required. Choose your domain and start your application.</p></div><button class="open-application" type="button">Start Application <span>→</span></button></section>
+<section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your next project can start with one clear decision.</h2><p>No prerequisite knowledge required. Choose your domain and start your application.</p></div><button class="open-application" type="button">Start Application <span>→</span></button></section>
 </main>
 
 <footer id="contact">
@@ -3362,6 +3518,78 @@ console.info('SkillPath guided form build: Final V11');
   menu.querySelectorAll('[data-site-popup]').forEach(btn=>btn.addEventListener('click',()=>openPopup(btn.dataset.sitePopup)));
   close.addEventListener('click',closePopup);done.addEventListener('click',closePopup);modal.addEventListener('click',e=>{if(e.target===modal)closePopup();});document.addEventListener('keydown',e=>{if(e.key==='Escape')closePopup();});
   document.querySelectorAll('.hero-nav-dropdown .open-application').forEach(btn=>btn.addEventListener('click',()=>{menu.open=false;}));
+})();
+</script>
+
+
+<script id="internsforge-redesign-interactions">
+(function(){
+  const roleData = {
+    software:{
+      kicker:"PATH 01 / SOFTWARE",
+      title:"Software Developer",
+      desc:"Turn programming fundamentals into practical product-building experience you can explain confidently.",
+      skills:"Web Development · Python · Java · DSA",
+      project:"Responsive application or business website",
+      signal:"A portfolio project with a clear story: problem → solution → result"
+    },
+    ai:{
+      kicker:"PATH 02 / AI & DATA",
+      title:"AI & Data Builder",
+      desc:"Explore data, automation and intelligent systems through a practical project-led learning path.",
+      skills:"Python · Data Science · Machine Learning · AI",
+      project:"Prediction model, analytics workflow or AI-enabled application",
+      signal:"A documented project showing data → method → result"
+    },
+    security:{
+      kicker:"PATH 03 / CYBER & CLOUD",
+      title:"Cyber Security Track",
+      desc:"Build foundations in security, cloud and responsible technical problem-solving with practical outputs.",
+      skills:"Cyber Security · Cloud · Networking · Risk",
+      project:"Security assessment, monitoring concept or cloud workflow",
+      signal:"A clear technical explanation of a security or infrastructure problem"
+    },
+    engineering:{
+      kicker:"PATH 04 / CORE & EMERGING",
+      title:"Core & Emerging Engineer",
+      desc:"Connect your engineering discipline to modern project work across connected systems and emerging technology.",
+      skills:"IoT · Embedded · VLSI · Robotics · EV",
+      project:"Prototype, simulation, embedded workflow or engineering analysis",
+      signal:"A project that shows design thinking, technical decisions and output"
+    }
+  };
+  const cards = [...document.querySelectorAll(".if-role-card")];
+  const fields = {
+    kicker:document.querySelector("#roleDetail .if-role-kicker"),
+    title:document.getElementById("roleTitle"),
+    desc:document.getElementById("roleDescription"),
+    skills:document.getElementById("roleSkills"),
+    project:document.getElementById("roleProject"),
+    signal:document.getElementById("roleSignal")
+  };
+  cards.forEach(card=>{
+    card.addEventListener("click",()=>{
+      cards.forEach(c=>{c.classList.remove("active");c.setAttribute("aria-selected","false")});
+      card.classList.add("active"); card.setAttribute("aria-selected","true");
+      const d=roleData[card.dataset.role]; if(!d) return;
+      fields.kicker.textContent=d.kicker;
+      fields.title.textContent=d.title;
+      fields.desc.textContent=d.desc;
+      fields.skills.textContent=d.skills;
+      fields.project.textContent=d.project;
+      fields.signal.textContent=d.signal;
+    });
+  });
+  document.querySelectorAll(".if-role-section .if-role-card").forEach((el,i)=>{
+    el.addEventListener("keydown",e=>{
+      if(e.key==="ArrowDown"||e.key==="ArrowRight"){
+        e.preventDefault(); cards[(i+1)%cards.length].focus();
+      }
+      if(e.key==="ArrowUp"||e.key==="ArrowLeft"){
+        e.preventDefault(); cards[(i-1+cards.length)%cards.length].focus();
+      }
+    });
+  });
 })();
 </script>
 

@@ -1292,6 +1292,232 @@ body{background:#f6f8fc;color:#12213d}
 }
 </style>
 
+
+<style id="internsforge-v3-finish">
+html{scroll-behavior:smooth;overflow-x:hidden}
+body{overflow-x:hidden}
+main{overflow:clip}
+
+.final-cta-v3{
+  width:100%;
+  margin:0;
+  padding:0;
+  border-radius:0;
+  background:
+    radial-gradient(circle at 82% 20%,rgba(6,182,212,.15),transparent 28%),
+    radial-gradient(circle at 12% 62%,rgba(124,58,237,.16),transparent 32%),
+    linear-gradient(135deg,#050816 0%,#0a1430 52%,#081c2c 100%);
+  border-top:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.08);
+  overflow:hidden;
+}
+.final-cta-inner{
+  width:min(1200px,calc(100% - 40px));
+  min-height:320px;
+  margin:0 auto;
+  padding:62px 0 58px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 300px;
+  gap:60px;
+  align-items:center;
+  position:relative;
+}
+.final-cta-inner:after{
+  content:"";
+  position:absolute;
+  width:390px;height:390px;
+  right:-175px;top:-190px;
+  border:1px solid rgba(255,255,255,.05);
+  border-radius:50%;
+  box-shadow:0 0 0 90px rgba(255,255,255,.012),0 0 0 180px rgba(255,255,255,.008);
+  pointer-events:none;
+}
+.final-cta-copy{position:relative;z-index:2}
+.final-cta-copy>span{
+  display:inline-block;
+  color:#8ea1ff;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:1.8px;
+  margin-bottom:12px;
+}
+.final-cta-copy h2{
+  color:#fff;
+  font-size:clamp(34px,4vw,52px);
+  line-height:1.03;
+  letter-spacing:-1.8px;
+  margin:0 0 15px;
+  max-width:780px;
+}
+.final-cta-copy p{
+  color:#9babca;
+  font-size:15px;
+  line-height:1.65;
+  margin:0;
+  max-width:720px;
+}
+.final-cta-action{
+  position:relative;z-index:2;
+  display:flex;flex-direction:column;align-items:flex-start;
+  gap:10px;
+}
+.final-cta-action .open-application{
+  width:100%;
+  min-height:64px;
+  border:0;
+  border-radius:16px;
+  padding:0 22px;
+  background:linear-gradient(110deg,#7c3aed,#2563eb 68%,#06b6d4);
+  color:#fff;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 18px 42px rgba(61,62,205,.28);
+  transition:transform .2s ease,box-shadow .2s ease;
+}
+.final-cta-action .open-application:hover{
+  transform:translateY(-2px);
+  box-shadow:0 23px 52px rgba(61,62,205,.35);
+}
+.final-cta-action .open-application b{margin-left:10px;font-size:18px}
+.final-cta-action small{color:#7183a6;font-size:10px;line-height:1.5}
+
+footer.footer-v3{
+  margin:0!important;
+  padding:0!important;
+  background:#f8fafc!important;
+  border-top:1px solid #e7ebf3;
+  display:block!important;
+  max-width:none!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.footer-v3-top{
+  width:min(1200px,calc(100% - 40px));
+  margin:0 auto;
+  padding:34px 0 28px;
+  display:grid;
+  grid-template-columns:1.2fr 1fr 1fr;
+  gap:28px;
+  align-items:start;
+}
+.footer-v3-brand{
+  display:flex;
+  align-items:flex-start;
+  gap:14px;
+  text-decoration:none;
+}
+.footer-v3-brand img{width:44px;height:44px;object-fit:contain}
+.footer-v3-brand strong{display:block;color:#13213f;font-size:15px}
+.footer-v3-brand small{display:block;color:#74819a;font-size:10px;line-height:1.5;margin-top:5px}
+.footer-v3-block>span{
+  display:block;
+  color:#8290a8;
+  font-size:9px;
+  letter-spacing:1px;
+  font-weight:800;
+  margin-bottom:9px;
+}
+.footer-v3-block a{
+  display:block;
+  width:max-content;
+  max-width:100%;
+  color:#41516e;
+  text-decoration:none;
+  font-size:11px;
+  margin:7px 0;
+}
+.footer-v3-block a:hover,.footer-v3-links a:hover{color:#5e3ad7}
+.footer-v3-bottom{
+  width:min(1200px,calc(100% - 40px));
+  margin:0 auto;
+  padding:22px 0 26px;
+  border-top:1px solid #e7ebf3;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+  color:#8190a8;
+  font-size:10px;
+}
+.footer-v3-links{display:flex;align-items:center;gap:18px}
+.footer-v3-links a{color:#5e6c84;text-decoration:none}
+.back-to-top{
+  width:40px!important;height:40px!important;
+  border:1px solid #dde4ef!important;
+  background:#fff!important;
+  color:#172541!important;
+  border-radius:12px!important;
+  display:grid!important;place-items:center;
+  padding:0!important;
+  margin:0!important;
+  font-size:18px!important;
+  cursor:pointer;
+}
+.final-cta-v3 + footer{margin-top:0!important}
+
+@media(max-width:900px){
+  .final-cta-inner{grid-template-columns:1fr;gap:28px;padding:54px 0}
+  .final-cta-action{width:min(390px,100%)}
+  .footer-v3-top{grid-template-columns:1fr 1fr}
+}
+@media(max-width:620px){
+  .final-cta-inner,.footer-v3-top,.footer-v3-bottom{width:calc(100% - 28px)}
+  .final-cta-copy h2{font-size:35px;letter-spacing:-1.1px}
+  .final-cta-action{width:100%}
+  .footer-v3-top{grid-template-columns:1fr}
+  .footer-v3-bottom{flex-direction:column;align-items:flex-start}
+  .footer-v3-links{flex-wrap:wrap}
+}
+</style>
+
+
+<style id="internsforge-final-hero-image">
+.if-hero-v2{grid-template-columns:minmax(0,1.03fr) minmax(520px,1.1fr);align-items:center}
+.if-final-hero-art{
+  height:auto!important;
+  min-height:0!important;
+  padding:0!important;
+  overflow:hidden;
+  border-radius:30px;
+  background:#071024;
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 28px 90px rgba(0,0,0,.42);
+  position:relative;
+}
+.if-final-hero-art:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(145deg,rgba(124,58,237,.10),rgba(6,182,212,.06) 55%,transparent);
+  pointer-events:none;
+  z-index:2;
+}
+.if-cinematic-picture{
+  display:block;
+  width:100%;
+  line-height:0;
+  position:relative;
+}
+.if-cinematic-picture img{
+  display:block;
+  width:100%;
+  height:auto;
+  max-width:none;
+  object-fit:contain;
+  filter:none!important;
+  image-rendering:auto;
+  transform:none!important;
+}
+@media(max-width:1000px){
+  .if-hero-v2{grid-template-columns:1fr}
+  .if-final-hero-art{max-width:860px;margin:0 auto}
+}
+@media(max-width:700px){
+  .if-final-hero-art{border-radius:22px}
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -1342,17 +1568,11 @@ body{background:#f6f8fc;color:#12213d}
     </div>
   </div>
 
-  <div class="hero-art if-hero-art-v2" aria-label="Forge your future visual">
-    <div class="if-noise"></div>
-    <div class="if-art-top"><span>INTERNFORGE / CAREER SYSTEM</span><i>● LIVE</i></div>
-    <div class="if-portrait-shell">
-      <img src="hero-career-growth.png" alt="Student exploring a career growth path" loading="eager">
-    </div>
-    <div class="if-floating if-f1"><span class="if-dot"></span><b>LEARN</b><small>Industry-ready skills</small></div>
-    <div class="if-floating if-f2"><span class="if-dot"></span><b>BUILD</b><small>Real project output</small></div>
-    <div class="if-floating if-f3"><span class="if-dot"></span><b>SHOW</b><small>Portfolio evidence</small></div>
-    <div class="if-score-card"><small>CAREER READINESS</small><strong>Build → Prove → Progress</strong><div class="if-score-bar"><span></span></div><em>Structured around practical progress</em></div>
-    <div class="if-orbit o1"></div><div class="if-orbit o2"></div>
+  <div class="hero-art if-hero-art-v2 if-final-hero-art" aria-label="Cinematic career-growth visual">
+    <picture class="if-cinematic-picture">
+      <source srcset="hero-cinematic.webp" type="image/webp">
+      <img src="hero-cinematic.png" alt="Student building skills, projects and career readiness" loading="eager" decoding="async">
+    </picture>
   </div>
 </section>
 
@@ -1723,17 +1943,51 @@ body{background:#f6f8fc;color:#12213d}
   </div>
 </section>
 
-<section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your next project can start with one clear decision.</h2><p>No prerequisite knowledge required. Choose your domain and start your application.</p></div><button class="open-application" type="button">Start Application <span>→</span></button></section>
+<section class="final-cta final-cta-v3" id="start-application">
+  <div class="final-cta-inner">
+    <div class="final-cta-copy">
+      <span>READY TO BEGIN?</span>
+      <h2>Turn your next idea into something you can show.</h2>
+      <p>Choose your direction, complete the application, and take the first step toward building practical proof of your skills.</p>
+    </div>
+    <div class="final-cta-action">
+      <button class="open-application" type="button">Start Application <b>→</b></button>
+      <small>Quick application · Mobile friendly · Guided next steps</small>
+    </div>
+  </div>
+</section>
 </main>
 
-<footer id="contact">
-  <a class="footer-brand" href="#home"><img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge"><span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span></a>
-  <p>Practical learning and career preparation for students.</p>
-  <div><small>© 2026 InternsForge Internship Programme</small><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a></nav></div>
-  <button id="backToTop" type="button" aria-label="Back to top">↑</button>
+<footer id="contact" class="footer-v3">
+  <div class="footer-v3-top">
+    <a class="footer-v3-brand" href="#home">
+      <img src="internsforge-logo.svg" alt="InternsForge">
+      <span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span>
+    </a>
+    <div class="footer-v3-block">
+      <span>EXPLORE</span>
+      <a href="#roleExplorer">Career paths</a>
+      <a href="#domains">Domains</a>
+      <a href="#how-it-works">How it works</a>
+    </div>
+    <div class="footer-v3-block">
+      <span>PROGRAMME</span>
+      <a href="#faq">FAQ</a>
+      <a href="#start-application" class="open-application">Application</a>
+      <a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a>
+    </div>
+  </div>
+  <div class="footer-v3-bottom">
+    <span>© 2026 InternsForge Internship Programme</span>
+    <div class="footer-v3-links">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <button id="backToTop" class="back-to-top" type="button" aria-label="Back to top">↑</button>
+    </div>
+  </div>
 </footer>
 
-<button class="floating-cta" id="floatingCta" type="button"><span>Applications Open</span><strong>Apply in 60 Seconds →</strong></button>
+<button class="floating-cta" id="floatingCta" type="button"><span>Applications Open</span><strong>Start Your Journey →</strong></button>
 <div class="site-info-modal" id="siteInfoModal" aria-hidden="true">
   <div class="site-info-card" role="dialog" aria-modal="true" aria-labelledby="siteInfoTitle">
     <button class="site-info-close" id="siteInfoClose" type="button" aria-label="Close">×</button>
@@ -3590,6 +3844,14 @@ console.info('SkillPath guided form build: Final V11');
       }
     });
   });
+})();
+</script>
+
+
+<script id="internsforge-v3-finish-js">
+(function(){
+  const btn=document.getElementById("backToTop");
+  if(btn) btn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
 })();
 </script>
 

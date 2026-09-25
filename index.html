@@ -2359,6 +2359,111 @@ body{
 }
 </style>
 
+
+<style id="internsforge-v9-logo-fix">
+/* ===== V9 BRAND MARK FIX ===== */
+.site-header .brand{
+  flex:0 0 auto;
+  min-width:150px;
+  gap:11px!important;
+}
+.site-header .brand-mark{
+  display:block!important;
+  width:58px!important;
+  height:46px!important;
+  min-width:58px!important;
+  min-height:46px!important;
+  object-fit:contain!important;
+  object-position:left center!important;
+  transform-origin:left center!important;
+}
+.site-header .brand-copy{
+  flex:0 0 auto!important;
+}
+.site-header .brand-copy strong{
+  font-size:17px!important;
+  font-weight:800!important;
+  line-height:1.05!important;
+  letter-spacing:-.2px!important;
+}
+.site-header .brand-copy small{
+  font-size:7px!important;
+  letter-spacing:1.35px!important;
+  margin-top:4px!important;
+}
+.site-header .brand:hover .brand-mark{
+  transform:scale(1.04) rotate(-3deg)!important;
+}
+
+/* Desktop: make the brand clearly visible without stealing nav width. */
+@media(min-width:1051px){
+  .site-header .brand{
+    min-width:210px;
+  }
+  .site-header .brand-mark{
+    width:64px!important;
+    height:50px!important;
+    min-width:64px!important;
+  }
+  .site-header .brand-copy strong{
+    font-size:18px!important;
+  }
+}
+
+/* Tablet */
+@media(max-width:1050px){
+  .site-header .brand{
+    min-width:155px!important;
+  }
+  .site-header .brand-mark{
+    width:48px!important;
+    height:40px!important;
+    min-width:48px!important;
+  }
+  .site-header .brand-copy strong{
+    font-size:15px!important;
+  }
+}
+
+/* Mobile: logo remains readable instead of collapsing into a tiny icon. */
+@media(max-width:600px){
+  .site-header .brand{
+    min-width:150px!important;
+    gap:9px!important;
+  }
+  .site-header .brand-mark{
+    width:42px!important;
+    height:36px!important;
+    min-width:42px!important;
+  }
+  .site-header .brand-copy strong{
+    font-size:14px!important;
+  }
+  .site-header .brand-copy small{
+    font-size:6.5px!important;
+    letter-spacing:1.05px!important;
+  }
+}
+
+/* Small phones */
+@media(max-width:370px){
+  .site-header .brand{
+    min-width:128px!important;
+  }
+  .site-header .brand-mark{
+    width:37px!important;
+    height:33px!important;
+    min-width:37px!important;
+  }
+  .site-header .brand-copy strong{
+    font-size:13px!important;
+  }
+  .site-header .brand-copy small{
+    display:none!important;
+  }
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>

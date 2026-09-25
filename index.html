@@ -2515,6 +2515,463 @@ body{
 }
 </style>
 
+
+<style id="internsforge-v11-application-design">
+/* =========================================================
+   V11 APPLICATION EXPERIENCE
+   Reworked modal visual hierarchy while preserving all
+   existing field IDs, form steps and JS hooks.
+   ========================================================= */
+
+body.application-modal-open{
+  overflow:hidden!important;
+}
+
+body.application-modal-open .application-zone{
+  padding:20px!important;
+  background:
+    radial-gradient(circle at 12% 18%,rgba(124,58,237,.22),transparent 29%),
+    radial-gradient(circle at 86% 78%,rgba(6,182,212,.18),transparent 31%),
+    rgba(4,9,24,.78)!important;
+  backdrop-filter:blur(18px)!important;
+  -webkit-backdrop-filter:blur(18px)!important;
+}
+
+/* Main split-panel */
+body.application-modal-open .application-card.wizard-shell{
+  width:min(1080px,calc(100vw - 40px))!important;
+  max-width:1080px!important;
+  height:min(760px,calc(100dvh - 40px))!important;
+  max-height:calc(100dvh - 40px)!important;
+  min-height:0!important;
+  padding:0!important;
+  display:block!important;
+  overflow:hidden!important;
+  border:1px solid rgba(158,175,220,.22)!important;
+  border-radius:30px!important;
+  background:#f7f9fc!important;
+  box-shadow:
+    0 45px 120px rgba(0,0,0,.42),
+    0 0 0 1px rgba(255,255,255,.07) inset!important;
+  animation:applicationModalIn .55s cubic-bezier(.22,1,.36,1) both;
+}
+
+/* Left visual journey rail */
+.app-journey-rail{
+  position:absolute;
+  z-index:10;
+  inset:0 auto 0 0;
+  width:246px;
+  padding:30px 25px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 18% 12%,rgba(112,91,255,.28),transparent 30%),
+    radial-gradient(circle at 90% 78%,rgba(6,182,212,.18),transparent 30%),
+    linear-gradient(165deg,#071022 0%,#0a1730 55%,#0b2140 100%);
+  border-right:1px solid rgba(132,157,220,.14);
+  overflow:hidden;
+}
+.app-journey-rail:after{
+  content:"";
+  position:absolute;
+  width:260px;height:260px;
+  right:-150px;bottom:-150px;
+  border:1px solid rgba(120,153,255,.11);
+  border-radius:50%;
+  box-shadow:0 0 0 60px rgba(255,255,255,.012);
+  pointer-events:none;
+}
+.app-rail-brand{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  position:relative;
+  z-index:2;
+}
+.app-rail-mark{
+  width:34px;height:34px;
+  display:grid;place-items:center;
+  border-radius:11px;
+  color:#fff;
+  font-size:10px;font-weight:900;
+  background:linear-gradient(135deg,#7c3aed,#06b6d4);
+  box-shadow:0 9px 25px rgba(64,89,225,.25);
+}
+.app-rail-brand b,.app-rail-brand small{display:block}
+.app-rail-brand b{font:800 13px Manrope;color:#fff}
+.app-rail-brand small{font-size:7px;color:#6f83a7;letter-spacing:1px;margin-top:3px}
+.app-rail-intro{
+  position:relative;z-index:2;
+  margin:52px 0 30px;
+}
+.app-rail-intro>span{
+  font-size:8px;letter-spacing:1.5px;font-weight:900;color:#91a4ff;
+}
+.app-rail-intro h3{
+  font-size:29px;line-height:1.04;letter-spacing:-1px;
+  margin:9px 0 9px;color:#fff;
+}
+.app-rail-intro p{
+  margin:0;color:#8194b7;font-size:10px;line-height:1.65;
+}
+.app-rail-steps{
+  list-style:none;margin:0;padding:0;
+  display:grid;gap:9px;
+  position:relative;z-index:2;
+}
+.app-rail-step{
+  display:flex;align-items:center;gap:11px;
+  padding:11px 10px;
+  border:1px solid transparent;
+  border-radius:14px;
+  opacity:.42;
+  transition:.28s ease;
+}
+.app-rail-step>span{
+  width:30px;height:30px;flex:none;
+  display:grid;place-items:center;
+  border-radius:10px;
+  background:rgba(255,255,255,.06);
+  color:#8899b9;
+  font-size:8px;font-weight:900;
+}
+.app-rail-step b,.app-rail-step small{display:block}
+.app-rail-step b{color:#e7edfb;font-size:10px}
+.app-rail-step small{color:#7184a6;font-size:8px;margin-top:2px}
+.application-card[data-active-step="1"] .app-rail-step[data-rail-step="1"],
+.application-card[data-active-step="2"] .app-rail-step[data-rail-step="2"],
+.application-card[data-active-step="3"] .app-rail-step[data-rail-step="3"],
+.application-card[data-active-step="4"] .app-rail-step[data-rail-step="4"]{
+  opacity:1;
+  background:rgba(124,58,237,.12);
+  border-color:rgba(147,125,255,.24);
+}
+.application-card[data-active-step="1"] .app-rail-step[data-rail-step="1"]>span,
+.application-card[data-active-step="2"] .app-rail-step[data-rail-step="2"]>span,
+.application-card[data-active-step="3"] .app-rail-step[data-rail-step="3"]>span,
+.application-card[data-active-step="4"] .app-rail-step[data-rail-step="4"]>span{
+  color:#fff;
+  background:linear-gradient(135deg,#7c3aed,#2563eb);
+  box-shadow:0 7px 20px rgba(83,73,218,.24);
+}
+.app-rail-proof{
+  position:absolute;
+  left:25px;right:25px;bottom:25px;
+  padding-top:18px;
+  border-top:1px solid rgba(255,255,255,.08);
+  z-index:2;
+}
+.app-rail-proof span{display:block;color:#677b9f;font-size:7px;letter-spacing:1.3px;font-weight:900;margin-bottom:9px}
+.app-rail-proof p{margin:6px 0;color:#90a1be;font-size:8.5px}
+
+/* Right/content pane */
+body.application-modal-open .application-card.wizard-shell>.wizard-backdrop{
+  left:246px!important;
+  right:0!important;
+  width:auto!important;
+  opacity:.7!important;
+}
+body.application-modal-open .application-card.wizard-shell>.form-celebration,
+body.application-modal-open .application-card.wizard-shell>.typing-aura{
+  left:246px!important;
+}
+body.application-modal-open .application-card.wizard-shell>.wizard-head,
+body.application-modal-open .application-card.wizard-shell>.wizard-hero,
+body.application-modal-open .application-card.wizard-shell>.application-progress-four,
+body.application-modal-open .application-card.wizard-shell>form,
+body.application-modal-open .application-card.wizard-shell>.secure,
+body.application-modal-open .application-card.wizard-shell>#message,
+body.application-modal-open .application-card.wizard-shell>.draft-banner{
+  margin-left:246px!important;
+  width:calc(100% - 246px)!important;
+  box-sizing:border-box!important;
+}
+body.application-modal-open .application-card.wizard-shell>.wizard-head{
+  padding:26px 30px 0!important;
+}
+body.application-modal-open .application-card.wizard-shell>.draft-banner{
+  margin-top:18px!important;
+  margin-right:28px!important;
+  margin-bottom:0!important;
+}
+body.application-modal-open .application-card.wizard-shell>.wizard-hero{
+  margin-top:16px!important;
+  margin-right:28px!important;
+  margin-bottom:14px!important;
+  padding:20px 22px!important;
+  border-radius:20px!important;
+}
+body.application-modal-open .application-card.wizard-shell>.application-progress-four{
+  margin-top:10px!important;
+  margin-right:28px!important;
+  margin-bottom:14px!important;
+  padding:0 4px!important;
+}
+body.application-modal-open .application-card.wizard-shell>form{
+  height:calc(100% - 272px)!important;
+  min-height:0!important;
+  overflow:auto!important;
+  padding:0 28px 30px!important;
+  scrollbar-width:thin;
+  scrollbar-color:#c8d1e4 transparent;
+}
+body.application-modal-open .application-card.wizard-shell>.secure{
+  margin-right:28px!important;
+}
+
+/* Compact application header */
+.wizard-chip-row{
+  display:flex!important;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.application-eyebrow{
+  color:#526be5!important;
+  font-size:9px!important;
+  letter-spacing:1.6px!important;
+}
+.wizard-time-pill{
+  border:1px solid #dfe6f2!important;
+  background:#fff!important;
+  color:#4861c9!important;
+  box-shadow:0 7px 20px rgba(43,64,111,.06);
+}
+.wizard-progress-shell{margin-top:12px!important}
+.wizard-progress-shell small{color:#7a89a1!important}
+.wizard-progress-bar{height:7px!important;background:#e8edf6!important}
+.wizard-progress-bar span{background:linear-gradient(90deg,#7c3aed,#2563eb,#06b6d4)!important}
+
+/* Current-step banner */
+.wizard-step-badge{
+  background:rgba(255,255,255,.09)!important;
+  border-color:rgba(255,255,255,.18)!important;
+  box-shadow:none!important;
+}
+.wizard-copy h2{
+  font-size:27px!important;
+  letter-spacing:-1.1px!important;
+}
+.wizard-copy p{
+  font-size:11px!important;
+  max-width:560px;
+  color:#bcc9df!important;
+}
+.wizard-visual{
+  padding-left:12px!important;
+}
+.wizard-visual-core{
+  border-color:rgba(255,255,255,.15)!important;
+  background:rgba(255,255,255,.07)!important;
+  color:#fff!important;
+  border-radius:11px!important;
+}
+.wizard-visual small{color:#67e0ba!important}
+
+/* Slim progress stages */
+.progress-four-step span{
+  width:30px!important;height:30px!important;
+  border-radius:10px!important;
+}
+.progress-four-step b{font-size:8px!important}
+.application-progress-four>i{height:3px!important;border-radius:999px!important}
+.progress-four-step.active,.progress-four-step.completed{opacity:1!important}
+
+/* Form surface */
+body.application-modal-open .form-stage{
+  margin-top:0!important;
+}
+.step-panel{
+  padding:24px!important;
+  border:1px solid #e3e9f3!important;
+  border-radius:20px!important;
+  background:#fff!important;
+  box-shadow:0 10px 30px rgba(23,44,80,.055)!important;
+}
+.step-panel-head{
+  margin-bottom:18px!important;
+}
+.step-panel-head span{
+  color:#6578e8!important;
+  font-size:9px!important;
+}
+.step-panel-head h3{
+  font-size:27px!important;
+  color:#16243d!important;
+}
+.step-panel-head p{
+  color:#7b8aa1!important;
+  max-width:680px;
+}
+
+/* Fields become cleaner cards/controls. */
+.field-wrap{
+  padding:0!important;
+}
+.field-wrap label{
+  font-size:10px!important;
+  font-weight:800!important;
+  color:#53627b!important;
+  margin-bottom:6px!important;
+}
+.field-control{
+  border:1px solid #dce4f0!important;
+  background:#fbfcff!important;
+  border-radius:14px!important;
+  transition:.22s ease!important;
+}
+.field-control:focus-within{
+  border-color:#8092ea!important;
+  background:#fff!important;
+  box-shadow:0 0 0 4px rgba(92,112,232,.08)!important;
+  transform:translateY(-1px);
+}
+.field-control input,.field-control select,.field-control textarea{
+  color:#1b2a43!important;
+}
+.field-control input::placeholder,.field-control textarea::placeholder{
+  color:#a1acbc!important;
+}
+.field-help{
+  color:#93a0b2!important;
+  font-size:9px!important;
+}
+.field-error{
+  color:#d34b5a!important;
+}
+
+/* Better action area */
+.step-actions{
+  margin-top:20px!important;
+  padding-top:18px!important;
+  border-top:1px solid #edf0f6!important;
+}
+.step-actions button{
+  min-height:52px!important;
+  border-radius:13px!important;
+  font-weight:800!important;
+}
+.step-actions .next-step,
+.step-actions button[type="submit"]{
+  background:linear-gradient(110deg,#7c3aed,#2563eb 72%,#06b6d4)!important;
+  box-shadow:0 12px 30px rgba(66,69,213,.2)!important;
+}
+.step-actions .secondary{
+  color:#53627b!important;
+  background:#f7f9fc!important;
+  border:1px solid #dfe5ef!important;
+}
+
+/* Modal close control */
+body.application-modal-open .application-card.wizard-shell .application-close{
+  z-index:30!important;
+  top:16px!important;
+  right:16px!important;
+  width:38px!important;height:38px!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  border:1px solid #dfe5ef!important;
+  color:#334362!important;
+  box-shadow:0 8px 24px rgba(21,37,66,.09)!important;
+  transition:.22s ease!important;
+}
+body.application-modal-open .application-card.wizard-shell .application-close:hover{
+  transform:rotate(90deg) scale(1.03)!important;
+}
+
+/* Entry animation */
+@keyframes applicationModalIn{
+  from{opacity:0;transform:translateY(20px) scale(.975)}
+  to{opacity:1;transform:none}
+}
+
+/* Mobile application is a dedicated single-column experience. */
+@media(max-width:820px){
+  body.application-modal-open .application-zone{
+    padding:8px!important;
+    align-items:flex-start!important;
+  }
+  body.application-modal-open .application-card.wizard-shell{
+    width:100%!important;
+    max-width:680px!important;
+    height:calc(100dvh - 16px)!important;
+    max-height:calc(100dvh - 16px)!important;
+    border-radius:23px!important;
+  }
+  .app-journey-rail{
+    display:none!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.wizard-backdrop{
+    left:0!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.wizard-head,
+  body.application-modal-open .application-card.wizard-shell>.wizard-hero,
+  body.application-modal-open .application-card.wizard-shell>.application-progress-four,
+  body.application-modal-open .application-card.wizard-shell>form,
+  body.application-modal-open .application-card.wizard-shell>.secure,
+  body.application-modal-open .application-card.wizard-shell>#message,
+  body.application-modal-open .application-card.wizard-shell>.draft-banner{
+    margin-left:0!important;
+    width:100%!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.wizard-head{
+    padding:17px 16px 0!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.wizard-hero{
+    margin:12px 12px 10px!important;
+    padding:17px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.application-progress-four{
+    margin:10px 12px 12px!important;
+    padding:0!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>form{
+    height:calc(100% - 250px)!important;
+    padding:0 12px 22px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.draft-banner{
+    margin:12px 12px 0!important;
+  }
+  .step-panel{
+    padding:18px!important;
+    border-radius:18px!important;
+  }
+  .step-panel-head h3{font-size:22px!important}
+  .wizard-copy h2{font-size:23px!important}
+  .wizard-copy p{font-size:10.5px!important}
+  .progress-four-step b{font-size:7px!important}
+}
+
+@media(max-width:480px){
+  body.application-modal-open .application-card.wizard-shell{
+    border-radius:19px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.wizard-head{
+    padding:14px 13px 0!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.wizard-hero{
+    margin:10px 9px!important;
+    padding:14px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>.application-progress-four{
+    margin:8px 9px 10px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell>form{
+    padding:0 9px 18px!important;
+  }
+  .wizard-step-badge{
+    width:45px!important;height:45px!important;
+    border-radius:13px!important;
+  }
+  .wizard-visual{display:none!important}
+  .application-progress-four{gap:3px!important}
+  .progress-four-step span{width:27px!important;height:27px!important}
+  .progress-four-step b{display:none!important}
+  .application-progress-four>i{min-width:10px!important}
+  .step-panel{padding:15px!important}
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -2696,6 +3153,40 @@ body{
 
   <aside class="application-card wizard-shell" id="apply" data-active-step="1">
     <button class="application-close" id="closeApplication" type="button" aria-label="Close application">×</button>
+    <aside class="app-journey-rail" aria-label="Application journey">
+  <div class="app-rail-brand">
+    <span class="app-rail-mark">IF</span>
+    <div><b>InternsForge</b><small>CAREER APPLICATION</small></div>
+  </div>
+
+  <div class="app-rail-intro">
+    <span>YOUR NEXT MOVE</span>
+    <h3>Build your path.</h3>
+    <p>Answer a few focused questions. Your draft stays saved as you move.</p>
+  </div>
+
+  <ol class="app-rail-steps">
+    <li class="app-rail-step" data-rail-step="1">
+      <span>01</span><div><b>Personal</b><small>Contact details</small></div>
+    </li>
+    <li class="app-rail-step" data-rail-step="2">
+      <span>02</span><div><b>Academic</b><small>College & year</small></div>
+    </li>
+    <li class="app-rail-step" data-rail-step="3">
+      <span>03</span><div><b>Profile</b><small>Preferences</small></div>
+    </li>
+    <li class="app-rail-step" data-rail-step="4">
+      <span>04</span><div><b>Review</b><small>Confirm & submit</small></div>
+    </li>
+  </ol>
+
+  <div class="app-rail-proof">
+    <span>WHY THIS FLOW</span>
+    <p>✓ Guided, step-by-step application</p>
+    <p>✓ Draft saved on this device</p>
+    <p>✓ Designed to finish in under a minute</p>
+  </div>
+</aside>
     <div class="wizard-backdrop" aria-hidden="true">
       <span class="blob blob-one"></span>
       <span class="blob blob-two"></span>
@@ -2722,8 +3213,8 @@ body{
     <div class="wizard-hero" id="wizardHero">
       <div class="wizard-step-badge" id="wizardStepBadge">01</div>
       <div class="wizard-copy">
-        <h2 id="wizardTitle">Let’s begin your application</h2>
-        <p id="wizardSubtitle">Enter your contact details first. Only after this step is completed, the academic step will be shown.</p>
+        <h2 id="wizardTitle">Let’s map your starting point</h2>
+        <p id="wizardSubtitle">Start with two details. We’ll unlock the rest of your application as you go.</p>
       </div>
       <div class="wizard-visual" aria-hidden="true">
         <div class="wizard-visual-core" id="wizardVisualLabel">CONTACT</div>
@@ -2757,7 +3248,7 @@ body{
           <div class="field-control"><span class="phone-prefix">+91</span><input id="phone" name="phone" type="tel" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel" required><span class="valid-mark">✓</span></div>
           <small class="field-help">Programme updates may be sent to this number.</small><small class="field-error" id="phoneError"></small>
         </div>
-        <div class="step-actions one-button"><button type="button" class="next-step">Unlock Academic Step <span>→</span></button></div>
+        <div class="step-actions one-button"><button type="button" class="next-step">Continue to academics <span>→</span></button></div>
       </section>
 
       <section class="form-step step-panel" data-step="2" hidden>
@@ -2799,7 +3290,7 @@ body{
             <small class="field-error" id="domainError"></small>
           </div>
         </div>
-        <div class="step-actions"><button type="button" class="back-step secondary">← Back</button><button type="button" class="next-step">Review My Application <span>→</span></button></div>
+        <div class="step-actions"><button type="button" class="back-step secondary">← Back</button><button type="button" class="next-step">Continue to profile <span>→</span></button></div>
       </section>
 
       <section class="form-step step-panel" data-step="3" hidden>
@@ -2830,7 +3321,7 @@ body{
             <small class="field-error" id="applicationReasonError"></small>
           </div>
         </div>
-        <div class="step-actions"><button type="button" class="back-step secondary">← Back</button><button type="button" class="next-step">Review My Application <span>→</span></button></div>
+        <div class="step-actions"><button type="button" class="back-step secondary">← Back</button><button type="button" class="next-step">Continue to profile <span>→</span></button></div>
       </section>
 
       <section class="form-step review-step step-panel" data-step="4" hidden>
@@ -2843,7 +3334,7 @@ body{
         <div id="applicationReview" class="application-review"></div>
         <label class="consent-row"><input type="checkbox" id="applicationConsent" required><span>I confirm that the information provided is correct and agree to the <a href="terms.html" target="_blank" rel="noopener">programme terms</a> and <a href="privacy.html" target="_blank" rel="noopener">privacy notice</a>.</span></label>
         <label class="consent-row optional"><input type="checkbox" id="communicationConsent"><span>I agree to receive application and programme updates through WhatsApp, phone or email.</span></label>
-        <div class="step-actions"><button type="button" class="back-step secondary">← Edit Details</button><button type="submit">Submit Application <span>→</span></button></div>
+        <div class="step-actions"><button type="button" class="back-step secondary">← Edit Details</button><button type="submit">Send My Application <span>→</span></button></div>
       </section>
       </div>
     </form>
@@ -3084,10 +3575,10 @@ let lastMilestone = 0;
 let draftTimer = 0;
 
 const stepMeta = {
-  1: { badge: '01', title: 'Let’s begin your application', subtitle: 'Enter your contact details first. Only after this step is completed, the academic step will be shown.', visual: 'CONTACT', hint: 'Start here', progressText: 'Step 1 of 4 · Contact details', time: 'About 60 seconds left' },
-  2: { badge: '02', title: 'Now tell us about your profile', subtitle: 'Your academic details help us understand your background and the domain that suits you best.', visual: 'PROFILE', hint: 'Academic step unlocked', progressText: 'Step 2 of 4 · Academic profile', time: 'About 40 seconds left' },
-  3: { badge: '03', title: 'A few final profile details', subtitle: 'These details help our programme team communicate with you in the right way and plan your start.', visual: 'PREFERENCES', hint: 'Almost there', progressText: 'Step 3 of 4 · Preferences', time: 'About 20 seconds left' },
-  4: { badge: '04', title: 'Review and submit', subtitle: 'Only this final screen will submit your application. Review once and confirm with confidence.', visual: 'SUBMIT', hint: 'Final step', progressText: 'Step 4 of 4 · Review & submit', time: 'About 10 seconds left' }
+  1: { badge: '01', title: 'Let’s map your starting point', subtitle: 'Start with two details. We’ll unlock the rest of your application as you go.', visual: 'CONTACT', hint: 'Start here', progressText: 'Step 1 of 4 · Contact details', time: 'About 60 seconds left' },
+  2: { badge: '02', title: 'Build your academic profile', subtitle: 'Tell us where you study and what kind of work you want to explore.', visual: 'PROFILE', hint: 'Academic step unlocked', progressText: 'Step 2 of 4 · Academic profile', time: 'About 40 seconds left' },
+  3: { badge: '03', title: 'Tune your preferences', subtitle: 'A few preferences help us personalise the next step for you.', visual: 'PREFERENCES', hint: 'Almost there', progressText: 'Step 3 of 4 · Preferences', time: 'About 20 seconds left' },
+  4: { badge: '04', title: 'Review and send', subtitle: 'Check your details once, then send your application when everything looks right.', visual: 'SUBMIT', hint: 'Final step', progressText: 'Step 4 of 4 · Review & submit', time: 'About 10 seconds left' }
 };
 
 const fieldRules = {

@@ -1518,6 +1518,209 @@ footer.footer-v3{
 }
 </style>
 
+
+<style id="internsforge-v4-visual-finish">
+/* ===== HERO MOTION LAYER ===== */
+.if-final-hero-art{
+  isolation:isolate;
+  position:relative!important;
+  overflow:visible!important;
+}
+.if-cinematic-picture{position:relative;z-index:3}
+.if-image-glow{
+  position:absolute;
+  inset:8% 8% 5%;
+  border-radius:30px;
+  background:linear-gradient(125deg,rgba(124,58,237,.35),rgba(6,182,212,.22),rgba(245,158,11,.17));
+  filter:blur(34px);
+  opacity:.45;
+  animation:ifGlow 5s ease-in-out infinite;
+  z-index:0;
+}
+.if-image-shine{
+  position:absolute;
+  z-index:4;
+  top:-15%;
+  left:-35%;
+  width:28%;
+  height:130%;
+  transform:rotate(18deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent);
+  filter:blur(7px);
+  animation:ifShine 6.5s ease-in-out infinite;
+  pointer-events:none;
+}
+.if-hero-sparkles{position:absolute;inset:0;z-index:6;pointer-events:none}
+.if-hero-sparkles i{
+  position:absolute;width:5px;height:5px;border-radius:50%;
+  background:#9fe8ff;box-shadow:0 0 14px rgba(86,222,255,.9);
+  opacity:.75;animation:ifSpark 4.5s ease-in-out infinite;
+}
+.if-hero-sparkles i:nth-child(1){left:7%;top:21%;animation-delay:-.5s}
+.if-hero-sparkles i:nth-child(2){left:86%;top:18%;width:4px;height:4px;animation-delay:-2.1s}
+.if-hero-sparkles i:nth-child(3){left:91%;top:67%;animation-delay:-1.3s}
+.if-hero-sparkles i:nth-child(4){left:13%;top:79%;width:3px;height:3px;animation-delay:-3s}
+.if-hero-sparkles i:nth-child(5){left:48%;top:6%;width:3px;height:3px;animation-delay:-1.8s}
+.if-hero-sparkles i:nth-child(6){left:58%;top:88%;width:4px;height:4px;animation-delay:-3.7s}
+
+.if-float-chip{
+  position:absolute;
+  z-index:7;
+  min-width:144px;
+  padding:10px 13px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(7,14,34,.78);
+  backdrop-filter:blur(14px);
+  box-shadow:0 16px 40px rgba(0,0,0,.28);
+  color:#fff;
+  animation:ifChipFloat 5.5s ease-in-out infinite;
+}
+.if-float-chip b{display:block;font-size:9px;letter-spacing:1px;color:#fff}
+.if-float-chip span{display:block;margin-top:3px;font-size:9px;color:#91a4c5}
+.if-chip-a{left:-28px;top:17%;}.if-chip-b{right:-25px;top:31%;animation-delay:-1.5s}
+.if-chip-c{left:-17px;bottom:20%;animation-delay:-2.7s}.if-chip-d{right:-16px;bottom:9%;animation-delay:-3.6s}
+@keyframes ifGlow{50%{opacity:.7;transform:scale(1.015)}}
+@keyframes ifShine{0%,18%{left:-38%;opacity:0}30%{opacity:.9}55%,100%{left:125%;opacity:0}}
+@keyframes ifSpark{50%{transform:translateY(-10px) scale(1.35);opacity:1}100%{transform:translateY(5px);opacity:.35}}
+@keyframes ifChipFloat{50%{transform:translateY(-8px)}}
+
+/* ===== FULL-BLEED CLOSING SECTION ===== */
+.final-cta-v4{
+  width:100vw!important;
+  max-width:none!important;
+  margin-left:calc(50% - 50vw)!important;
+  margin-right:calc(50% - 50vw)!important;
+  padding:0!important;
+  border-radius:0!important;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 88% 30%,rgba(6,182,212,.14),transparent 25%),
+    radial-gradient(circle at 12% 40%,rgba(124,58,237,.17),transparent 28%),
+    linear-gradient(135deg,#050816 0%,#081226 58%,#071d2c 100%);
+  border-top:1px solid rgba(255,255,255,.08);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.final-v4-shell{
+  width:min(1120px,calc(100% - 32px));
+  margin:0 auto;
+  text-align:center;
+  padding:82px 0 68px;
+  position:relative;
+}
+.final-v4-shell:before,.final-v4-shell:after{
+  content:"";position:absolute;pointer-events:none;border-radius:50%;
+  border:1px solid rgba(255,255,255,.055)
+}
+.final-v4-shell:before{width:520px;height:520px;top:-210px;right:-230px}
+.final-v4-shell:after{width:380px;height:380px;bottom:-245px;left:-170px}
+.final-v4-eyebrow{color:#98a9ff;font-size:10px;letter-spacing:2px;font-weight:800;margin-bottom:14px}
+.final-v4-shell h2{
+  margin:0 auto;
+  max-width:840px;
+  color:#fff;
+  font-size:clamp(40px,5.2vw,64px);
+  line-height:1.01;
+  letter-spacing:-2.7px;
+}
+.final-v4-shell p{
+  max-width:650px;margin:20px auto 0;color:#9baccc;
+  font-size:15px;line-height:1.7
+}
+.final-v4-actions{
+  display:flex;justify-content:center;align-items:center;gap:12px;
+  margin-top:30px;flex-wrap:wrap
+}
+.final-v4-primary{
+  min-width:220px;min-height:56px;border:0;border-radius:15px;
+  background:linear-gradient(110deg,#7c3aed,#2563eb 68%,#06b6d4);
+  color:#fff;font-weight:800;font-size:14px;cursor:pointer;
+  box-shadow:0 18px 40px rgba(62,62,203,.27);
+}
+.final-v4-primary b{margin-left:10px;font-size:18px}
+.final-v4-secondary{
+  min-height:56px;padding:0 19px;display:flex;align-items:center;
+  border-radius:15px;border:1px solid rgba(255,255,255,.14);
+  color:#dbe3f6;text-decoration:none;background:rgba(255,255,255,.035);
+  font-weight:700;font-size:13px;
+}
+.final-v4-meta{
+  display:flex;justify-content:center;gap:20px;flex-wrap:wrap;
+  margin-top:25px;color:#7185a7;font-size:10px;
+}
+.final-v4-meta span{padding:7px 10px;border-radius:999px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07)}
+
+/* ===== FOOTER ===== */
+footer.footer-v4{
+  width:100vw!important;max-width:none!important;
+  margin-left:calc(50% - 50vw)!important;margin-right:calc(50% - 50vw)!important;
+  margin-top:0!important;padding:0!important;
+  background:#020616!important;color:#fff;
+  border:0!important;border-radius:0!important;
+  display:block!important;box-shadow:none!important;
+}
+.footer-v4-shell{
+  width:min(1120px,calc(100% - 32px));
+  margin:0 auto;
+  padding:46px 0 36px;
+  display:grid;
+  grid-template-columns:1.4fr .8fr .8fr 1.05fr;
+  gap:34px;
+}
+.footer-v4-brand{display:flex;gap:12px;align-items:flex-start;text-decoration:none}
+.footer-v4-brand img{width:42px;height:42px;object-fit:contain}
+.footer-v4-brand strong{display:block;color:#f5f7ff;font-size:15px}
+.footer-v4-brand small{display:block;color:#667897;font-size:9px;letter-spacing:1px;margin-top:5px}
+.footer-v4-main>p{max-width:290px;color:#7283a0;font-size:11px;line-height:1.6;margin:16px 0 0}
+.footer-v4-col>span{display:block;color:#657796;font-size:9px;letter-spacing:1.4px;font-weight:800;margin-bottom:11px}
+.footer-v4-col a{display:block;width:max-content;max-width:100%;color:#a4b1c8;text-decoration:none;font-size:11px;margin:8px 0}
+.footer-v4-col a:hover{color:#fff}
+.footer-v4-col>b{display:block;color:#f7f9ff;font-size:13px}
+.footer-v4-col>small{display:block;color:#687995;font-size:10px;line-height:1.6;margin-top:8px;max-width:210px}
+.footer-v4-bottom{
+  width:min(1120px,calc(100% - 32px));
+  margin:0 auto;
+  padding:20px 0 25px;
+  border-top:1px solid rgba(255,255,255,.07);
+  color:#566782;font-size:9px;
+  display:flex;justify-content:space-between;align-items:center;gap:20px;
+}
+.footer-v4-bottom>div{display:flex;align-items:center;gap:17px}
+.footer-v4-bottom a{color:#6e7e98;text-decoration:none}
+.footer-v4-bottom a:hover{color:#fff}
+.footer-v4-bottom button{
+  width:36px;height:36px;border-radius:11px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.035);color:#fff;cursor:pointer;
+}
+
+/* Kill old footer spacing/white canvas leakage */
+main + footer.footer-v4, .final-cta-v4 + footer.footer-v4{margin-top:0!important}
+@media(max-width:1000px){
+  .if-chip-a{left:10px}.if-chip-b{right:10px}.if-chip-c{left:10px}.if-chip-d{right:10px}
+  .footer-v4-shell{grid-template-columns:1.2fr 1fr 1fr}
+}
+@media(max-width:700px){
+  .if-float-chip{min-width:118px;padding:8px 10px}.if-float-chip span{font-size:8px}.if-float-chip b{font-size:8px}
+  .if-chip-a{left:6px;top:8%}.if-chip-b{right:6px;top:22%}.if-chip-c{left:6px;bottom:19%}.if-chip-d{right:6px;bottom:7%}
+  .final-v4-shell{padding:64px 0 54px}.final-v4-shell h2{letter-spacing:-1.5px}
+  .final-v4-actions{flex-direction:column}.final-v4-primary,.final-v4-secondary{width:100%;justify-content:center}
+  .final-v4-meta{gap:7px}.final-v4-meta span{font-size:9px}
+  .footer-v4-shell{grid-template-columns:1fr 1fr;padding:38px 0 28px}
+  .footer-v4-main{grid-column:1/-1}
+  .footer-v4-bottom{flex-direction:column;align-items:flex-start}
+}
+@media(max-width:460px){
+  .footer-v4-shell{grid-template-columns:1fr}
+  .footer-v4-main{grid-column:auto}
+  .if-float-chip{transform:scale(.9);transform-origin:top left}
+  .if-chip-b,.if-chip-d{transform-origin:top right}
+}
+@media(prefers-reduced-motion:reduce){
+  .if-image-glow,.if-image-shine,.if-hero-sparkles i,.if-float-chip{animation:none!important}
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -1569,10 +1772,19 @@ footer.footer-v3{
   </div>
 
   <div class="hero-art if-hero-art-v2 if-final-hero-art" aria-label="Cinematic career-growth visual">
+    <div class="if-hero-sparkles" aria-hidden="true">
+      <i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <div class="if-float-chip if-chip-a"><b>AI / ML</b><span>Future skills</span></div>
+    <div class="if-float-chip if-chip-b"><b>LIVE PROJECTS</b><span>Build. Show. Grow.</span></div>
+    <div class="if-float-chip if-chip-c"><b>PORTFOLIO</b><span>Proof of your work</span></div>
+    <div class="if-float-chip if-chip-d"><b>CAREER READY</b><span>Interview confidence</span></div>
+    <div class="if-image-glow"></div>
     <picture class="if-cinematic-picture">
       <source srcset="hero-cinematic.webp" type="image/webp">
       <img src="hero-cinematic.png" alt="Student building skills, projects and career readiness" loading="eager" decoding="async">
     </picture>
+    <div class="if-image-shine" aria-hidden="true"></div>
   </div>
 </section>
 
@@ -1943,46 +2155,62 @@ footer.footer-v3{
   </div>
 </section>
 
-<section class="final-cta final-cta-v3" id="start-application">
-  <div class="final-cta-inner">
-    <div class="final-cta-copy">
-      <span>READY TO BEGIN?</span>
-      <h2>Turn your next idea into something you can show.</h2>
-      <p>Choose your direction, complete the application, and take the first step toward building practical proof of your skills.</p>
+<section class="final-cta final-cta-v4" id="start-application">
+  <div class="final-v4-shell">
+    <div class="final-v4-eyebrow">YOUR NEXT MOVE</div>
+    <h2>Build something you can be proud to put your name on.</h2>
+    <p>Choose your direction, complete the application, and start building practical proof of your skills.</p>
+    <div class="final-v4-actions">
+      <button class="open-application final-v4-primary" type="button">Start Application <b>→</b></button>
+      <a href="#roleExplorer" class="final-v4-secondary">Explore career paths</a>
     </div>
-    <div class="final-cta-action">
-      <button class="open-application" type="button">Start Application <b>→</b></button>
-      <small>Quick application · Mobile friendly · Guided next steps</small>
+    <div class="final-v4-meta">
+      <span>✓ Guided application</span>
+      <span>✓ 35+ career domains</span>
+      <span>✓ Project-focused learning</span>
+      <span>✓ Mobile-friendly</span>
     </div>
   </div>
 </section>
 </main>
 
-<footer id="contact" class="footer-v3">
-  <div class="footer-v3-top">
-    <a class="footer-v3-brand" href="#home">
-      <img src="internsforge-logo.svg" alt="InternsForge">
-      <span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span>
-    </a>
-    <div class="footer-v3-block">
+<footer id="contact" class="footer-v4">
+  <div class="footer-v4-shell">
+    <div class="footer-v4-main">
+      <a class="footer-v4-brand" href="#home">
+        <img src="internsforge-logo.svg" alt="InternsForge">
+        <span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span>
+      </a>
+      <p>Practical learning and career preparation for students.</p>
+    </div>
+
+    <div class="footer-v4-col">
       <span>EXPLORE</span>
       <a href="#roleExplorer">Career paths</a>
       <a href="#domains">Domains</a>
       <a href="#how-it-works">How it works</a>
     </div>
-    <div class="footer-v3-block">
+
+    <div class="footer-v4-col">
       <span>PROGRAMME</span>
       <a href="#faq">FAQ</a>
       <a href="#start-application" class="open-application">Application</a>
-      <a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a>
+      <a href="login.html" class="admin-login-link">🔒 Admin Panel</a>
+    </div>
+
+    <div class="footer-v4-col">
+      <span>QUICK NOTE</span>
+      <b>Learn → Build → Show</b>
+      <small>Make your next step visible through practical work and a stronger portfolio.</small>
     </div>
   </div>
-  <div class="footer-v3-bottom">
+
+  <div class="footer-v4-bottom">
     <span>© 2026 InternsForge Internship Programme</span>
-    <div class="footer-v3-links">
+    <div>
       <a href="privacy.html">Privacy</a>
       <a href="terms.html">Terms</a>
-      <button id="backToTop" class="back-to-top" type="button" aria-label="Back to top">↑</button>
+      <button id="backToTop" type="button" aria-label="Back to top">↑</button>
     </div>
   </div>
 </footer>
@@ -3849,6 +4077,14 @@ console.info('SkillPath guided form build: Final V11');
 
 
 <script id="internsforge-v3-finish-js">
+(function(){
+  const btn=document.getElementById("backToTop");
+  if(btn) btn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));
+})();
+</script>
+
+
+<script id="internsforge-v4-footer-js">
 (function(){
   const btn=document.getElementById("backToTop");
   if(btn) btn.addEventListener("click",()=>window.scrollTo({top:0,behavior:"smooth"}));

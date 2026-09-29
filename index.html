@@ -3526,6 +3526,22 @@ height:64px !important;
 }
 </style>
 
+
+<style id="v4-redesign">
+:root{
+--primary:#10284B;--accent:#4F6BFF;--bg:#F8FAFC;--text:#162B4D;
+}
+body{background:var(--bg)!important}
+h1,h2,h3{color:var(--text)!important}
+.cta,.btn,.button{border-radius:14px!important}
+.trust-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:40px auto;max-width:1200px}
+.trust-card{background:#fff;padding:20px;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.06);font-weight:700}
+.scholarship-banner{max-width:1200px;margin:30px auto;padding:32px;border-radius:24px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff}
+.testimonial-highlight{max-width:1200px;margin:50px auto}
+.t-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.t-card{background:#fff;padding:24px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.t-card:hover{transform:translateY(-6px);transition:.3s}
+</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -3543,7 +3559,7 @@ height:64px !important;
   </nav>
 
   <button class="header-cta open-application" type="button">
-    Start Your Journey <span>↗</span>
+    Apply Now <span>↗</span>
   </button>
 
   <details class="mobile-nav">
@@ -3569,7 +3585,7 @@ height:64px !important;
     <h1>Your degree gets you qualified.<br><span>Your projects make your skills visible.</span></h1>
     <p class="hero-lead">Choose a career direction, build practical work, strengthen your portfolio and prepare for the next stage of your career — through a guided online internship experience.</p>
     <div class="hero-actions">
-      <button class="primary-btn if-primary-v2 open-application" type="button">Start Your Journey <span>→</span></button>
+      <button class="primary-btn if-primary-v2 open-application" type="button">Apply Now <span>→</span></button>
       <a class="secondary-btn if-secondary-v2" href="#roleExplorer">Explore Career Paths</a>
     </div>
     <div class="hero-proof if-proof-v2">
@@ -4007,7 +4023,7 @@ height:64px !important;
 <div class="tcard"><div class="stars">★★★★★</div><p>“The training sessions were very useful and the certificate will be valuable for my future studies and career.”</p><span>— Swetha Karpagam</span></div>
 </div></div></section>
 <style>
-.student-testimonials{padding:90px 20px;background:#f8fafc!important;display:block!important;visibility:visible!important;opacity:1!important}
+.student-testimonials{padding:90px 20px;background:#fff}
 .student-testimonials .wrap{max-width:1200px;margin:auto}
 .student-testimonials .eyebrow{color:#4f6bff;font-weight:800;letter-spacing:2px;font-size:12px}
 .student-testimonials h2{font-size:clamp(2rem,5vw,4rem);margin:10px 0;color:#102038}
@@ -4093,7 +4109,7 @@ height:64px !important;
   </div>
 </footer>
 
-<button class="floating-cta" id="floatingCta" type="button"><span>Applications Open</span><strong>Start Your Journey →</strong></button>
+<button class="floating-cta" id="floatingCta" type="button"><span>Applications Open</span><strong>Apply Now →</strong></button>
 <div class="site-info-modal" id="siteInfoModal" aria-hidden="true">
   <div class="site-info-card" role="dialog" aria-modal="true" aria-labelledby="siteInfoTitle">
     <button class="site-info-close" id="siteInfoClose" type="button" aria-label="Close">×</button>
@@ -6110,12 +6126,24 @@ console.info('SkillPath guided form build: Final V11');
 })();
 </script>
 
+
+<section class="testimonial-highlight">
+<h2>What Students Say</h2>
+<div class="t-grid">
+<div class="t-card">★★★★★<br><br>It was my first time exploring this domain and I gained clarity about the field.<br><br><b>— Himakshi</b></div>
+<div class="t-card">★★★★★<br><br>A great learning journey with excellent mentor guidance.<br><br><b>— Saravanan</b></div>
+<div class="t-card">★★★★★<br><br>The sessions were clear, practical and easy to follow.<br><br><b>— Maha Dhanalakshmi</b></div>
+</div>
+</section>
+<section class="trust-strip">
+<div class="trust-card">Industry Projects</div>
+<div class="trust-card">Mentor Guidance</div>
+<div class="trust-card">Certification</div>
+<div class="trust-card">Placement Preparation</div>
+</section>
+<section class="scholarship-banner">
+<h2>Scholarship Opportunities Available</h2>
+<p>Apply early to be considered for available scholarship benefits and priority review.</p>
+</section>
 </body>
 </html>
-
-<style>
-.student-testimonials{position:relative;z-index:5}
-.student-testimonials .wrap{max-width:1200px;margin:0 auto}
-.testimonial-grid{display:grid!important}
-.tcard{opacity:1!important;visibility:visible!important}
-</style>

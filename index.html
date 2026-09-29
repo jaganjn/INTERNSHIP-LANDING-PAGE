@@ -383,6 +383,20 @@ body.application-modal-open #message{display:block;position:relative;z-index:3;m
   .application-exit-small{font-size:9.5px;line-height:1.4;margin-top:9px;padding:0 8px}
 }
 @keyframes applicationExitSheetIn{from{transform:translateY(18px);opacity:.7}to{transform:translateY(0);opacity:1}}
+
+/* MOBILE UX PATCH */
+@media (max-width:768px){
+.section-heading h2{color:#162742!important;opacity:1!important;font-size:34px!important;line-height:1.15!important;letter-spacing:-1px!important}
+.if-proof-grid article,.fit-grid article,.how-grid article,.faq-list details{padding:20px!important}
+.if-proof-grid article{min-height:auto!important;height:auto!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;gap:12px!important}
+.how-grid{grid-template-columns:1fr!important}
+.how-grid article{height:auto!important;min-height:unset!important}
+.faq-list summary{color:#162742!important;font-weight:700!important;padding:18px!important;min-height:auto!important}
+.fit-grid ul{font-size:15px!important;line-height:1.8!important}
+section{padding-top:60px!important;padding-bottom:60px!important}
+.sticky-cta,.bottom-cta{height:60px!important;padding:0 18px!important}
+}
+
 </style>
 <style id="domain-mobile-visibility-and-card-transitions">
 /* Mobile domain cards: strong contrast and lightweight per-carousel transitions. */

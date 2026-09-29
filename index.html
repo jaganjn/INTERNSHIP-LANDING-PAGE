@@ -3433,6 +3433,99 @@ body.application-modal-open .application-card.wizard-shell .form-step{
 }
 </style>
 
+
+<style id="mobile-hotfix-v2">
+@media (max-width:768px){
+
+/* Headings */
+.section-heading h2,
+.if-journey-head h2,
+.if-proof-head h2,
+.if-outcomes-head h2,
+.how-head h2,
+.faq-head h2{
+color:#182b4d !important;
+opacity:1 !important;
+text-shadow:none !important;
+}
+
+/* Remove huge empty space inside cards */
+.if-proof-grid article,
+.if-journey-grid article,
+.if-outcomes-grid article,
+.how-grid article{
+min-height:unset !important;
+height:auto !important;
+padding:24px !important;
+display:flex !important;
+flex-direction:column !important;
+justify-content:flex-start !important;
+gap:14px !important;
+}
+
+/* Make card titles visible */
+.if-proof-grid article h3,
+.if-journey-grid article h3,
+.if-outcomes-grid article h3,
+.how-grid article h3{
+color:#22395f !important;
+opacity:1 !important;
+}
+
+/* Body copy */
+.if-proof-grid article p,
+.if-journey-grid article p,
+.if-outcomes-grid article p,
+.how-grid article p{
+color:#667792 !important;
+line-height:1.6 !important;
+}
+
+/* Force single-column cards on mobile */
+.if-proof-grid,
+.if-outcomes-grid,
+.if-journey-grid,
+.how-grid{
+display:grid !important;
+grid-template-columns:1fr !important;
+gap:16px !important;
+overflow:visible !important;
+}
+
+/* Prevent cropped carousel cards */
+.if-outcomes-grid > *,
+.if-journey-grid > *,
+.how-grid > *{
+width:100% !important;
+max-width:100% !important;
+}
+
+/* Better section spacing */
+.if-proof-stack,
+.if-outcomes,
+.if-journey,
+.how-it-works,
+.faq-section{
+padding-top:48px !important;
+padding-bottom:48px !important;
+}
+
+/* FAQ visibility */
+.faq-list summary,
+.faq-list summary span{
+color:#22395f !important;
+opacity:1 !important;
+font-weight:700 !important;
+}
+
+/* CTA */
+.bottom-cta,
+.sticky-cta{
+height:64px !important;
+}
+}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>

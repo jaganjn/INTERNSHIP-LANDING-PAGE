@@ -3522,6 +3522,22 @@ main{min-height:0!important}
 .application-zone{display:none!important;height:0!important;min-height:0!important;margin:0!important}
 body.application-modal-open .application-zone{display:flex!important;height:100dvh!important;min-height:100dvh!important}
 </style>
+<style id="v13-explore-domains-style">
+.v13-domain-explorer{padding:72px max(18px,calc((100% - 1200px)/2));background:#071024;color:#fff}
+.v13-domain-explorer-inner{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(420px,.95fr);gap:30px;align-items:stretch}
+.v13-domain-explorer-copy{padding:8px 0}
+.v13-domain-explorer .v13-kicker{font-size:10px;letter-spacing:1.5px;font-weight:900;color:#86a0ff}
+.v13-domain-explorer h2{margin:10px 0 12px;font:800 clamp(34px,4vw,52px)/1.06 Manrope;color:#fff!important;letter-spacing:-1.8px}
+.v13-domain-explorer p{margin:0;color:#a8b7d0;max-width:630px;line-height:1.7}
+.v13-domain-meta{display:flex;flex-wrap:wrap;gap:8px;margin:22px 0}
+.v13-domain-meta span{padding:7px 10px;border-radius:999px;border:1px solid rgba(126,151,255,.2);background:rgba(255,255,255,.05);color:#c9d5ea;font-size:10px;font-weight:800}
+.v13-explore-btn{margin-top:4px}.v13-domain-categories{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.v13-domain-category-card{display:grid;grid-template-columns:42px 1fr;grid-template-rows:auto auto;column-gap:10px;align-items:center;text-align:left;padding:14px;border:1px solid rgba(134,158,255,.18);border-radius:16px;background:rgba(255,255,255,.055);color:#fff;cursor:pointer;transition:.25s}
+.v13-domain-category-card:hover{transform:translateY(-2px);border-color:rgba(126,151,255,.45);background:rgba(78,96,188,.13)}
+.v13-domain-category-card>span{grid-row:1/3;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(135deg,#5d72ee,#9a54d9);font-size:20px}
+.v13-domain-category-card b{font-size:12px}.v13-domain-category-card small{font-size:9px;color:#95a6c0;margin-top:2px}
+@media(max-width:820px){.v13-domain-explorer{padding:58px 16px}.v13-domain-explorer-inner{grid-template-columns:1fr}.v13-domain-categories{grid-template-columns:1fr}.v13-explore-btn{width:100%}}
+</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div aria-hidden="true" class="scroll-progress" id="scrollProgress"></div>
@@ -3529,7 +3545,7 @@ body.application-modal-open .application-zone{display:flex!important;height:100d
 <a aria-label="InternsForge home" class="brand" href="#home">
 <img alt="InternsForge — Learn, Build, Grow" class="brand-mark" src="internsforge-logo.svg"/>
 </a>
-<nav aria-label="Primary navigation" class="desktop-nav"><a href="#home">Home</a><a href="#programme">Programme</a><a href="#student-stories">Student Stories</a><a href="#domains">Career Paths</a><a href="#faq">FAQ</a></nav>
+<nav aria-label="Primary navigation" class="desktop-nav"><a href="#home">Home</a><a href="#programme">Programme</a><a href="#student-stories">Student Stories</a><a href="#domains">Career Paths</a><a href="#explore-domains">Explore Domains</a><a href="#faq">FAQ</a></nav>
 <button class="header-cta open-application" type="button">
     Apply Now <span>↗</span>
 </button>
@@ -3541,7 +3557,7 @@ body.application-modal-open .application-zone{display:flex!important;height:100d
 <div class="mobile-nav-panel" role="menu">
 <a href="#home">Home</a>
 <a href="#domains">Career Paths</a>
-<a href="#domains">Domains</a>
+<a href="#explore-domains">Explore Domains</a>
 <a href="#how-it-works">Process</a>
 <a href="#faq">FAQ</a>
 <button class="open-application mobile-apply" type="button">Apply Now <span>→</span></button>
@@ -3641,11 +3657,35 @@ body.application-modal-open .application-zone{display:flex!important;height:100d
 </div></div>
 <p class="brand-disclaimer">Brand names and logos belong to their respective owners. Their appearance describes relevant tools or ecosystems and does not by itself imply sponsorship, employment or partnership.</p>
 </section>
+<section aria-labelledby="exploreDomainsTitle" class="v13-domain-explorer" id="explore-domains">
+  <div class="v13-domain-explorer-inner">
+    <div class="v13-domain-explorer-copy">
+      <span class="v13-kicker">EXPLORE DOMAINS</span>
+      <h2 id="exploreDomainsTitle">Explore all 35 internship domains.</h2>
+      <p>Browse the available tracks by category, compare domains, and choose the direction that fits your interests before you apply.</p>
+      <div class="v13-domain-meta">
+        <span>35 domains</span>
+        <span>6 categories</span>
+        <span>Search &amp; filter</span>
+      </div>
+      <button class="primary-btn v13-explore-btn" id="openDomainExplorer" type="button">Explore All Domains <span>→</span></button>
+    </div>
+    <div class="v13-domain-categories" aria-label="Domain categories">
+      <button type="button" data-open-category="0" class="v13-domain-category-card"><span>💻</span><b>IT &amp; Software</b><small>Web · AI · Data · Cloud</small></button>
+      <button type="button" data-open-category="1" class="v13-domain-category-card"><span>📡</span><b>Electronics &amp; Communication</b><small>IoT · Embedded · VLSI</small></button>
+      <button type="button" data-open-category="2" class="v13-domain-category-card"><span>⚙️</span><b>Mechanical</b><small>CAD · EV · Design</small></button>
+      <button type="button" data-open-category="3" class="v13-domain-category-card"><span>🧬</span><b>Biotechnology</b><small>Lab · Research · Bioinformatics</small></button>
+      <button type="button" data-open-category="4" class="v13-domain-category-card"><span>📊</span><b>Management</b><small>Business · Finance · Marketing</small></button>
+      <button type="button" data-open-category="5" class="v13-domain-category-card"><span>🏥</span><b>Health Information</b><small>Healthcare · Records · Analytics</small></button>
+    </div>
+  </div>
+</section>
+
 <section aria-label="Career path explorer" class="if-role-section" id="domains">
 <div class="if-shell">
 <div class="section-heading if-heading-on-dark">
 <span>CAREER PATH EXPLORER</span>
-<h2>Don’t start with a course. Start with the role you want to grow into.</h2>
+<h2>Explore career paths and see where each domain can take you.</h2>
 <p>Pick a direction and see the kind of skills and project work you can build around it.</p>
 </div>
 <div class="if-role-layout">
@@ -3695,7 +3735,7 @@ body.application-modal-open .application-zone{display:flex!important;height:100d
 </section>
 <section aria-label="Scholarship opportunity" class="v9-scholarship">
 <div class="v9-scholarship-inner">
-<div><span class="v9-mini-label">SCHOLARSHIP OPPORTUNITY</span><h2>Selected students may be eligible for available scholarship benefits.</h2><p>Apply early for review. Availability and eligibility can vary by intake and track.</p></div>
+<div><span class="v9-mini-label">SCHOLARSHIP OPPORTUNITY</span><h2>Scholarship consideration may be available for eligible students.</h2><p>Availability and eligibility are reviewed by intake and track. No public slot count is displayed unless it is verified.</p></div>
 <button class="primary-btn open-application" type="button">Apply Now <span>→</span></button>
 </div>
 </section>
@@ -4678,10 +4718,15 @@ async function submitApplication() {
     // the application itself has been written successfully. The transaction
     // keeps simultaneous submissions from overwriting each other.
     try {
-      await db.ref('publicStats/applicationCount').transaction(current => {
+      const applicationCountResult = await db.ref('publicStats/applicationCount').transaction(current => {
         const n = Number(current);
         return Number.isFinite(n) && n >= 0 ? Math.floor(n) + 1 : 1;
       });
+      if (applicationCountResult?.committed) {
+        const visibleCounter = document.getElementById('liveApplicationCount');
+        const nextCount = Number(applicationCountResult.snapshot?.val());
+        if (visibleCounter && Number.isFinite(nextCount)) visibleCounter.textContent = Math.floor(nextCount).toLocaleString('en-IN');
+      }
     } catch (counterError) {
       console.warn('Public application counter update failed:', counterError);
     }
@@ -5455,21 +5500,22 @@ console.info('SkillPath guided form build: Final V11');
   // Live application counter for Firebase Spark: only the privacy-safe
   // aggregate is public; individual applications remain auth-protected.
   const counter=document.getElementById('liveApplicationCount');
+  let counterBound=false;
   function bindLiveCounter(){
-    if(!counter || typeof db === 'undefined' || !db?.ref) return false;
+    if(counterBound || !counter) return true;
+    if(typeof db === 'undefined' || !db?.ref) return false;
     try{
+      counterBound=true;
       db.ref('publicStats/applicationCount').on('value',snap=>{
         const raw=snap.val();
-        const count=Number.isFinite(Number(raw)) ? Math.max(0, Math.floor(Number(raw))) : 0;
-        counter.textContent=count.toLocaleString('en-IN');
-        counter.classList.remove('live-count-pop');
-        void counter.offsetWidth;
-        if(!reduce) counter.classList.add('live-count-pop');
-      },()=>{counter.textContent='—';});
+        const count=Number.isFinite(Number(raw)) ? Math.max(0, Math.floor(Number(raw))) : null;
+        counter.textContent = count === null ? '—' : count.toLocaleString('en-IN');
+      },()=>{ counter.textContent='—'; counterBound=false; });
       return true;
-    }catch(e){ counter.textContent='—'; return false; }
+    }catch(e){ counterBound=false; counter.textContent='—'; return false; }
   }
-  if(!bindLiveCounter()) window.setTimeout(bindLiveCounter,300);
+  const retryCounter=()=>{ if(!bindLiveCounter()) window.setTimeout(retryCounter,500); };
+  retryCounter();
 
   // Four-stage visual progress mirrors the existing three form panels without changing submission logic.
   const form=document.getElementById('internshipForm');
@@ -5878,33 +5924,29 @@ console.info('SkillPath guided form build: Final V11');
   }
 })();
 </script>
-<script id="v9-final-interactions">
+<script id="v13-counter-interactions">
 (function(){
   const reduce=window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const animateCounter=(el,target)=>{
-    if(!el || el.dataset.v9Done==="1") return;
-    const duration=850; const start=performance.now();
+  const stat=document.querySelector('.v9-counter[data-count]');
+  if(!stat)return;
+  const target=Number(stat.dataset.count)||0;
+  const finish=()=>{stat.textContent=String(target);stat.dataset.v13Done='1';};
+  if(reduce){finish();return;}
+  const animate=()=>{
+    if(stat.dataset.v13Done==='1')return;
+    const duration=800,start=performance.now();
     const step=(now)=>{
       const p=Math.min(1,(now-start)/duration);
       const eased=1-Math.pow(1-p,3);
-      el.textContent=Math.round(target*eased);
-      if(p<1) requestAnimationFrame(step); else {el.textContent=String(target);el.dataset.v9Done="1";}
+      stat.textContent=String(Math.round(target*eased));
+      if(p<1)requestAnimationFrame(step); else finish();
     };
-    if(reduce){el.textContent=String(target);el.dataset.v9Done="1";} else requestAnimationFrame(step);
+    requestAnimationFrame(step);
   };
-  const stat=document.querySelector('.v9-counter[data-count]');
-  if(stat){
-    const target=Number(stat.dataset.count)||0;
-    if('IntersectionObserver' in window && !reduce){
-      const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){animateCounter(stat,target);io.disconnect();}},{threshold:.5});
-      io.observe(stat);
-    } else animateCounter(stat,target);
-  }
-  const live=document.getElementById('liveApplicationCount');
-  if(live){
-    const apply=()=>{const n=parseInt((live.textContent||'').replace(/[^0-9]/g,''),10); if(Number.isFinite(n)&&n>0){live.dataset.count=n;live.dataset.v9Done='0';animateCounter(live,n)}};
-    const mo=new MutationObserver(apply); mo.observe(live,{childList:true,characterData:true,subtree:true}); apply();
-  }
+  if('IntersectionObserver' in window){
+    const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){animate();io.disconnect();}},{threshold:.5});
+    io.observe(stat);
+  }else animate();
 })();
 </script>
 <script id="v12-runtime-guard">
@@ -5914,6 +5956,21 @@ window.addEventListener('error', function(e){
 window.addEventListener('unhandledrejection', function(e){
   try { window.__internsforgeRuntimeErrors = window.__internsforgeRuntimeErrors || []; window.__internsforgeRuntimeErrors.push(String(e.reason || 'Unhandled promise rejection')); } catch(_){}
 });
+</script>
+<script id="v13-domain-category-buttons">
+(function(){
+  function openCategory(category){
+    const modal=document.getElementById('domainModal');
+    const tabs=[...document.querySelectorAll('[data-domain-category]')];
+    if(!modal)return;
+    document.getElementById('openDomainExplorer')?.click();
+    window.setTimeout(()=>{
+      const tab=tabs.find(t=>t.dataset.domainCategory===String(category));
+      if(tab) tab.click();
+    },30);
+  }
+  document.querySelectorAll('[data-open-category]').forEach(btn=>btn.addEventListener('click',()=>openCategory(btn.dataset.openCategory)));
+})();
 </script>
 </body>
 </html>

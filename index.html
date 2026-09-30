@@ -3481,6 +3481,40 @@ main{overflow:visible!important}
   .if-proof-stack{padding-top:54px!important;padding-bottom:54px!important}
   .v9-scholarship-inner{padding:18px!important}
 }
+</style><style id="v11-final-cleanup">
+/* V11 FINAL SOURCE CLEANUP */
+html,body{overflow-x:hidden!important}
+main{display:block!important;overflow:visible!important}
+main>section, main>div{max-width:100%;}
+/* Never reserve viewport-sized blank space for content sections. */
+main>section:not(.hero):not(.if-hero-v2){min-height:0!important;height:auto!important}
+.if-role-section{padding-block:76px!important}
+.if-role-detail{min-height:0!important;height:auto!important}
+.if-proof-stack{min-height:0!important;height:auto!important;padding-block:68px!important}
+.student-testimonials-v9{padding-block:68px!important}
+.ecosystem{margin-bottom:32px!important}
+.v9-scholarship{padding-top:0!important;padding-bottom:0!important;margin:0!important}
+.v9-scholarship-inner{margin:0!important}
+.faq-section{min-height:0!important;height:auto!important;padding-block:68px!important}
+.final-cta{min-height:0!important;height:auto!important;margin-top:0!important}
+/* Critical sections must remain visible even if a reveal observer is unavailable. */
+main>section{opacity:1!important;transform:none!important;visibility:visible!important}
+main .motion-reveal{opacity:1!important;transform:none!important;visibility:visible!important}
+/* Keep the modal out of normal document flow until explicitly opened. */
+.application-zone{display:none!important;height:0!important;min-height:0!important;padding:0!important;margin:0!important}
+body.application-modal-open .application-zone{display:flex!important;height:100dvh!important;min-height:100dvh!important;margin:0!important;padding:8px!important}
+/* Mobile rhythm */
+@media(max-width:820px){
+  main>section:not(.hero):not(.if-hero-v2){min-height:0!important;height:auto!important}
+  .if-role-section{padding-block:58px!important}
+  .if-proof-stack,.student-testimonials-v9,.faq-section{padding-block:58px!important}
+  .ecosystem{margin:10px 13px 28px!important}
+}
+@media(max-width:560px){
+  .if-role-section{padding-block:52px!important}
+  .if-proof-stack,.student-testimonials-v9,.faq-section{padding-block:52px!important}
+  .v9-section-title-row h2{font-size:32px!important}
+}
 </style></head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div aria-hidden="true" class="scroll-progress" id="scrollProgress"></div>
@@ -3488,7 +3522,7 @@ main{overflow:visible!important}
 <a aria-label="InternsForge home" class="brand" href="#home">
 <img alt="InternsForge — Learn, Build, Grow" class="brand-mark" src="internsforge-logo.svg"/>
 </a>
-<nav aria-label="Primary navigation" class="desktop-nav"><a href="#home">Home</a><a href="#programme">Programme</a><a href="#student-stories">Student Stories</a><a href="#roleExplorer">Career Paths</a><a href="#faq">FAQ</a></nav>
+<nav aria-label="Primary navigation" class="desktop-nav"><a href="#home">Home</a><a href="#programme">Programme</a><a href="#student-stories">Student Stories</a><a href="#domains">Career Paths</a><a href="#faq">FAQ</a></nav>
 <button class="header-cta open-application" type="button">
     Apply Now <span>↗</span>
 </button>
@@ -3499,7 +3533,7 @@ main{overflow:visible!important}
 </summary>
 <div class="mobile-nav-panel" role="menu">
 <a href="#home">Home</a>
-<a href="#roleExplorer">Career Paths</a>
+<a href="#domains">Career Paths</a>
 <a href="#domains">Domains</a>
 <a href="#how-it-works">Process</a>
 <a href="#faq">FAQ</a>
@@ -3515,7 +3549,7 @@ main{overflow:visible!important}
 <p class="hero-lead">Choose a career direction, build practical work, strengthen your portfolio and prepare for the next stage of your career — through a guided online internship experience.</p>
 <div class="hero-actions">
 <button class="primary-btn if-primary-v2 open-application" type="button">Apply Now <span>→</span></button>
-<a class="secondary-btn if-secondary-v2" href="#roleExplorer">Explore Career Paths</a>
+<a class="secondary-btn if-secondary-v2" href="#domains">Explore Career Paths</a>
 </div>
 <div class="hero-proof if-proof-v2">
 <span>✓ Guided online application</span>
@@ -3600,7 +3634,7 @@ main{overflow:visible!important}
 </div></div>
 <p class="brand-disclaimer">Brand names and logos belong to their respective owners. Their appearance describes relevant tools or ecosystems and does not by itself imply sponsorship, employment or partnership.</p>
 </section>
-<section aria-label="Career path explorer" class="if-role-section" id="roleExplorer">
+<section aria-label="Career path explorer" class="if-role-section" id="domains">
 <div class="if-shell">
 <div class="section-heading if-heading-on-dark">
 <span>CAREER PATH EXPLORER</span>
@@ -3636,7 +3670,7 @@ main{overflow:visible!important}
 </div>
 </div>
 </section>
-<section aria-label="Programme proof stack" class="if-proof-stack">
+<section aria-label="Programme proof stack" class="if-proof-stack" id="how-it-works">
 <div class="if-shell">
 <div class="if-proof-head">
 <div class="section-heading">
@@ -3863,20 +3897,6 @@ main{overflow:visible!important}
 </aside>
 </section>
 
-<div aria-label="Typical student milestones" class="student-ticker">
-<div class="student-ticker-label"><i></i> STUDENT MILESTONES</div>
-<div class="student-ticker-viewport"><div class="student-ticker-track">
-<span class="ticker-item">✓ <b>Application Received</b> — your interest is recorded</span><span class="ticker-item">✓ <b>Internship Started</b> — onboarding and learning begins</span><span class="ticker-item">✓ <b>Project Completed</b> — practical work becomes portfolio evidence</span><span class="ticker-item">✓ <b>Certificate Issued</b> — after applicable completion requirements</span><span class="ticker-item">✓ <b>Career Ready</b> — prepare for placements and interviews</span>
-<span class="ticker-item">✓ <b>Application Received</b> — your interest is recorded</span><span class="ticker-item">✓ <b>Internship Started</b> — onboarding and learning begins</span><span class="ticker-item">✓ <b>Project Completed</b> — practical work becomes portfolio evidence</span><span class="ticker-item">✓ <b>Certificate Issued</b> — after applicable completion requirements</span><span class="ticker-item">✓ <b>Career Ready</b> — prepare for placements and interviews</span>
-</div></div>
-</div>
-
-
-
-
-
-
-
 <section class="section faq-section" id="faq">
 <div class="section-heading"><span>QUESTIONS</span><h2>Questions students usually ask before they begin.</h2></div>
 <div class="faq-list">
@@ -3896,7 +3916,7 @@ main{overflow:visible!important}
 <p>Choose your direction, complete the application, and start building practical proof of your skills.</p>
 <div class="final-v4-actions">
 <button class="open-application final-v4-primary" type="button">Apply Now <b>→</b></button>
-<a class="final-v4-secondary" href="#roleExplorer">Explore career paths</a>
+<a class="final-v4-secondary" href="#domains">Explore career paths</a>
 </div>
 <div class="final-v4-meta">
 <span>✓ Guided application</span>
@@ -3918,7 +3938,7 @@ main{overflow:visible!important}
 </div>
 <div class="footer-v4-col">
 <span>EXPLORE</span>
-<a href="#roleExplorer">Career paths</a>
+<a href="#domains">Career paths</a>
 <a href="#domains">Domains</a>
 <a href="#how-it-works">How it works</a>
 </div>

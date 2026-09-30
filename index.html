@@ -3434,146 +3434,57 @@ body.application-modal-open .application-card.wizard-shell .form-step{
 </style>
 
 
-<style id="mobile-hotfix-v2">
-@media (max-width:768px){
 
-/* Headings */
-.section-heading h2,
-.if-journey-head h2,
-.if-proof-head h2,
-.if-outcomes-head h2,
-.how-head h2,
-.faq-head h2{
-color:#182b4d !important;
-opacity:1 !important;
-text-shadow:none !important;
-}
-
-/* Remove huge empty space inside cards */
-.if-proof-grid article,
-.if-journey-grid article,
-.if-outcomes-grid article,
-.how-grid article{
-min-height:unset !important;
-height:auto !important;
-padding:24px !important;
-display:flex !important;
-flex-direction:column !important;
-justify-content:flex-start !important;
-gap:14px !important;
-}
-
-/* Make card titles visible */
-.if-proof-grid article h3,
-.if-journey-grid article h3,
-.if-outcomes-grid article h3,
-.how-grid article h3{
-color:#22395f !important;
-opacity:1 !important;
-}
-
-/* Body copy */
-.if-proof-grid article p,
-.if-journey-grid article p,
-.if-outcomes-grid article p,
-.how-grid article p{
-color:#667792 !important;
-line-height:1.6 !important;
-}
-
-/* Force single-column cards on mobile */
-.if-proof-grid,
-.if-outcomes-grid,
-.if-journey-grid,
-.how-grid{
-display:grid !important;
-grid-template-columns:1fr !important;
-gap:16px !important;
-overflow:visible !important;
-}
-
-/* Prevent cropped carousel cards */
-.if-outcomes-grid > *,
-.if-journey-grid > *,
-.how-grid > *{
-width:100% !important;
-max-width:100% !important;
-}
-
-/* Better section spacing */
-.if-proof-stack,
-.if-outcomes,
-.if-journey,
-.how-it-works,
-.faq-section{
-padding-top:48px !important;
-padding-bottom:48px !important;
-}
-
-/* FAQ visibility */
-.faq-list summary,
-.faq-list summary span{
-color:#22395f !important;
-opacity:1 !important;
-font-weight:700 !important;
-}
-
-/* CTA */
-.bottom-cta,
-.sticky-cta{
-height:64px !important;
-}
-}
-</style>
-
-
-<style id="v4-redesign">
+<style id="v9-final-design-system">
 :root{
---primary:#10284B;--accent:#4F6BFF;--bg:#F8FAFC;--text:#162B4D;
+  --v9-primary:#10284B;
+  --v9-accent:#4F6BFF;
+  --v9-violet:#7047EB;
+  --v9-text:#172B4D;
+  --v9-muted:#667792;
+  --v9-line:#DEE6F1;
+  --v9-surface:#FFFFFF;
+  --v9-soft:#F7F9FC;
+  --v9-dark:#071426;
 }
-body{background:var(--bg)!important}
-h1,h2,h3{color:var(--text)!important}
-.cta,.btn,.button{border-radius:14px!important}
-.trust-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin:40px auto;max-width:1200px}
-.trust-card{background:#fff;padding:20px;border-radius:18px;box-shadow:0 10px 30px rgba(0,0,0,.06);font-weight:700}
-.scholarship-banner{max-width:1200px;margin:30px auto;padding:32px;border-radius:24px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff}
-.testimonial-highlight{max-width:1200px;margin:50px auto}
-.t-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
-.t-card{background:#fff;padding:24px;border-radius:20px;box-shadow:0 10px 30px rgba(0,0,0,.08)}
-.t-card:hover{transform:translateY(-6px);transition:.3s}
-</style>
-
-<style id="v6-conversion-system">
-:root{--primary:#10284B;--accent:#4F6BFF;--bg:#F8FAFC;--text:#162B4D}
-body{background:var(--bg)!important}
-section{padding:80px 0}
-@media(max-width:768px){section{padding:56px 0}}
-.v6-trust,.v6-outcomes{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;max-width:1200px;margin:auto}
-.v6-card{background:#fff;border-radius:18px;padding:24px;box-shadow:0 10px 25px rgba(0,0,0,.06)}
-.v6-banner{max-width:1200px;margin:auto;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;padding:32px;border-radius:24px}
-.v6-final{text-align:center;max-width:1000px;margin:auto}
-</style>
-
-<style id="v9-layout-fix">
-section{scroll-margin-top:90px}
-@media(max-width:768px){
- section{padding-top:64px!important;padding-bottom:64px!important}
- h1{line-height:1.1!important}
- h2{line-height:1.15!important}
-}
-.faq-section,.faq,.questions-section{
- min-height:auto!important;
- height:auto!important;
- padding-top:80px!important;
- padding-bottom:80px!important;
-}
-.testimonial-card{
- border-radius:20px!important;
- box-shadow:0 12px 30px rgba(0,0,0,.08)!important;
-}
-.apply-now,.cta-button{
- border-radius:14px!important;
-}
+body{background:var(--v9-soft);color:var(--v9-text)}
+main{display:block;overflow:clip}
+.section{padding-block:96px}
+.section-heading h2,.application-intro h2{color:var(--v9-text)}
+.section-heading p,.application-intro p{color:var(--v9-muted)}
+.project-section .section-heading h2,.domain-section .section-heading h2,.proof-section .section-heading h2,.section-heading.inverted h2{color:#F7FAFF}
+.project-section .section-heading p,.domain-section .section-heading p,.proof-section .section-heading p,.section-heading.inverted p{color:#A9B8D2}
+.trust-strip{margin-top:16px;margin-bottom:28px}
+.trust-strip article{background:var(--v9-surface);border-color:var(--v9-line);box-shadow:0 10px 32px rgba(22,44,78,.055);transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease}
+.trust-strip article:hover{transform:translateY(-4px);box-shadow:0 18px 42px rgba(22,44,78,.10);border-color:#C9D6EA}
+.trust-strip strong{color:var(--v9-primary)}
+.trust-strip small{color:var(--v9-muted)}
+.ecosystem{margin-bottom:64px}
+.student-testimonials-v9{padding:86px max(16px,calc((100% - 1200px)/2));background:#FFFFFF;border-top:1px solid #E9EEF6;border-bottom:1px solid #E9EEF6}
+.v9-section-shell{max-width:1200px;margin:0 auto}
+.v9-section-kicker{font-size:11px;letter-spacing:1.7px;font-weight:800;color:var(--v9-accent)}
+.v9-section-title-row{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:10px}
+.v9-section-title-row h2{margin:0;font-family:Manrope,Inter,sans-serif;font-size:clamp(32px,4vw,52px);line-height:1.08;letter-spacing:-1.9px;color:var(--v9-primary)}
+.v9-section-title-row p{margin:12px 0 0;max-width:690px;color:var(--v9-muted);font-size:15px}
+.v9-testimonial-note{white-space:nowrap;color:#E8AA38;font-weight:800;font-size:15px}.v9-testimonial-note span{display:block;margin-top:4px;color:#8A96A9;font-size:9px;letter-spacing:1px;text-transform:uppercase;text-align:right}
+.testimonial-track-v9{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px;margin-top:34px}
+.testimonial-card-v9{min-width:0;background:linear-gradient(180deg,#FFFFFF,#FAFBFE);border:1px solid #E2E9F3;border-radius:22px;padding:22px;box-shadow:0 16px 40px rgba(22,43,77,.07);transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;animation:v9CardIn .65s ease both}
+.testimonial-card-v9:nth-child(2){animation-delay:.06s}.testimonial-card-v9:nth-child(3){animation-delay:.12s}.testimonial-card-v9:nth-child(4){animation-delay:.18s}.testimonial-card-v9:nth-child(5){animation-delay:.24s}
+.testimonial-card-v9:hover{transform:translateY(-6px);box-shadow:0 22px 48px rgba(22,43,77,.11);border-color:#C9D6EA}
+.testimonial-top-v9{display:grid;grid-template-columns:42px 1fr auto;align-items:center;gap:10px;margin-bottom:16px}.student-avatar-v9{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(135deg,#EAF0FF,#F2ECFF);color:#3F57C5;font-weight:800}.testimonial-top-v9 strong,.testimonial-top-v9 span{display:block}.testimonial-top-v9 strong{font-size:13px;color:var(--v9-primary)}.testimonial-top-v9 div span{font-size:9px;color:#8895A9;margin-top:2px}.testimonial-top-v9>b{font-size:13px;color:#F1B744;letter-spacing:1px}.testimonial-card-v9 p{margin:0;color:#55657E;font-size:12.5px;line-height:1.75}
+.v9-scholarship{padding:24px max(16px,calc((100% - 1200px)/2)) 0;background:var(--v9-soft)}
+.v9-scholarship-inner{display:flex;align-items:center;justify-content:space-between;gap:22px;padding:24px 26px;border:1px solid rgba(79,107,255,.18);border-radius:22px;background:linear-gradient(135deg,#EEF3FF,#F8F4FF);box-shadow:0 14px 35px rgba(48,69,125,.06)}
+.v9-mini-label{font-size:10px;letter-spacing:1.4px;font-weight:800;color:#5A69D9}.v9-scholarship h2{margin:5px 0;font:800 23px/1.2 Manrope;color:var(--v9-primary)}.v9-scholarship p{margin:0;color:var(--v9-muted);font-size:12px}
+.application-zone{padding-top:82px}
+.faq-section{background:#F7F9FC!important;padding-top:86px!important;padding-bottom:86px!important}
+.faq-section .section-heading h2{color:var(--v9-primary)!important}.faq-list{gap:12px}.faq-list details{border-color:#DDE5F0;background:#FFF;box-shadow:none}.faq-list details[open]{box-shadow:0 14px 34px rgba(27,47,82,.08);border-color:#C9D5E8}.faq-list summary{padding:19px 21px;color:#25395D;font-size:13px}.faq-list details p{color:#667792}
+.final-cta{padding-top:80px;padding-bottom:80px}.final-cta h2{color:#FFF}.final-cta p{color:#AFBDD5}
+.v9-counter{font-variant-numeric:tabular-nums}
+@keyframes v9CardIn{from{opacity:.15;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media(max-width:1080px){.testimonial-track-v9{grid-template-columns:repeat(3,minmax(0,1fr))}.testimonial-card-v9:nth-child(n+4){display:none}}
+@media(max-width:820px){.section{padding-block:72px}.student-testimonials-v9{padding-block:68px}.v9-section-title-row{align-items:flex-start;flex-direction:column}.v9-testimonial-note span{text-align:left}.testimonial-track-v9{display:flex;overflow-x:auto;gap:14px;padding:2px 2px 10px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none}.testimonial-track-v9::-webkit-scrollbar{display:none}.testimonial-card-v9{flex:0 0 min(86vw,340px);scroll-snap-align:start}.testimonial-card-v9:nth-child(n+4){display:block}.v9-scholarship-inner{flex-direction:column;align-items:flex-start}.v9-scholarship .primary-btn{width:100%}.faq-section{padding-top:68px!important;padding-bottom:68px!important}}
+@media(max-width:560px){.section{padding-block:60px}.trust-strip{grid-template-columns:1fr 1fr;padding-inline:14px}.trust-strip article{padding:16px}.trust-strip strong{font-size:13px}.trust-strip small{font-size:10px}.ecosystem{margin-inline:14px;margin-bottom:44px}.v9-section-title-row h2{font-size:33px}.v9-scholarship-inner{padding:20px}.v9-scholarship h2{font-size:20px}.application-zone{padding-top:62px}.faq-list summary{padding:17px 16px}.final-cta{padding-inline:20px}}
+@media(prefers-reduced-motion:reduce){.testimonial-card-v9{animation:none!important;transition:none!important}.testimonial-card-v9:hover{transform:none}}
 </style>
 
 </head>
@@ -3607,7 +3518,7 @@ section{scroll-margin-top:90px}
       <a href="#domains">Domains</a>
       <a href="#how-it-works">Process</a>
       <a href="#faq">FAQ</a>
-      <button type="button" class="open-application mobile-apply">Start Application <span>→</span></button>
+      <button type="button" class="open-application mobile-apply">Apply Now <span>→</span></button>
     </div>
   </details>
 </header>
@@ -3631,7 +3542,7 @@ section{scroll-margin-top:90px}
       <span><b>01</b> Choose</span><span>→</span><span><b>02</b> Build</span><span>→</span><span><b>03</b> Show</span>
     </div>
     <div class="fact-row" aria-label="Programme facts">
-      <article><b>35</b><small>Career domains</small></article>
+      <article><b class="v9-counter" data-count="35">0</b><small>Career domains</small></article>
       <article><b id="liveApplicationCount">—</b><small>Students applied</small></article>
       <article><b>1st–Final</b><small>All years welcome</small></article>
       <article><b>2–3 Months</b><small>Typical duration</small></article>
@@ -3655,12 +3566,47 @@ section{scroll-margin-top:90px}
   </div>
 </section>
 
-<section class="trust-strip" id="programme" aria-label="Programme summary">
-  <article><span>MODE</span><strong>Online</strong><small>Learn from anywhere</small></article>
-  <article><span>ELIGIBILITY</span><strong>Any Degree</strong><small>All departments welcome</small></article>
-  <article><span>APPLICATION</span><strong>About 60 seconds</strong><small>Three guided steps</small></article>
-  <article><span>NEXT STEP</span><strong>Application review</strong><small>Details shared after review</small></article>
+<section class="trust-strip" id="programme" aria-label="Programme benefits">
+  <article><span>BUILD</span><strong>Industry Projects</strong><small>Work on practical, portfolio-ready tasks</small></article>
+  <article><span>GUIDANCE</span><strong>Mentor Support</strong><small>Structured learning and project guidance</small></article>
+  <article><span>PROOF</span><strong>Certification</strong><small>Document your completed learning journey</small></article>
+  <article><span>CAREER</span><strong>Placement Preparation</strong><small>Resume and interview readiness support</small></article>
 </section>
+<section class="student-testimonials-v9" id="student-stories" aria-labelledby="studentStoriesTitle">
+  <div class="v9-section-shell">
+    <div class="v9-section-kicker">STUDENT SUCCESS STORIES</div>
+    <div class="v9-section-title-row">
+      <div>
+        <h2 id="studentStoriesTitle">What students say about their experience</h2>
+        <p>Real feedback shared by students after their training and project journey.</p>
+      </div>
+      <div class="v9-testimonial-note">★★★★★ <span>Student feedback</span></div>
+    </div>
+    <div class="testimonial-track-v9" role="list">
+      <article class="testimonial-card-v9" role="listitem">
+        <div class="testimonial-top-v9"><span class="student-avatar-v9">H</span><div><strong>Himakshi</strong><span>Student review</span></div><b>★★★★★</b></div>
+        <p>“It was my first time exploring this domain. The internship gave me clarity about the field and helped me understand the concepts better.”</p>
+      </article>
+      <article class="testimonial-card-v9" role="listitem">
+        <div class="testimonial-top-v9"><span class="student-avatar-v9">S</span><div><strong>Saravanan</strong><span>Student review</span></div><b>★★★★★</b></div>
+        <p>“A great learning journey. I gained strong knowledge in Data Structures and Algorithms. The mentors provided excellent guidance throughout the program.”</p>
+      </article>
+      <article class="testimonial-card-v9" role="listitem">
+        <div class="testimonial-top-v9"><span class="student-avatar-v9">M</span><div><strong>Maha Dhanalakshmi</strong><span>Student review</span></div><b>★★★★★</b></div>
+        <p>“The recorded sessions were clear and easy to follow. Complex topics were explained in a simple way, making learning much easier.”</p>
+      </article>
+      <article class="testimonial-card-v9" role="listitem">
+        <div class="testimonial-top-v9"><span class="student-avatar-v9">B</span><div><strong>Bavan</strong><span>Student review</span></div><b>★★★★★</b></div>
+        <p>“The live sessions were very interesting and engaging. The learning experience was valuable and practical.”</p>
+      </article>
+      <article class="testimonial-card-v9" role="listitem">
+        <div class="testimonial-top-v9"><span class="student-avatar-v9">S</span><div><strong>Swetha Karpagam</strong><span>Student review</span></div><b>★★★★★</b></div>
+        <p>“The training sessions were very useful and the certificate will be valuable for my future studies and career.”</p>
+      </article>
+    </div>
+  </div>
+</section>
+
 
 <section class="ecosystem" aria-label="Technology ecosystems">
   <div class="ecosystem-title"><span>TOOLS AND TECHNOLOGY ECOSYSTEMS USED ACROSS SELECTED TRACKS</span><small>Exposure varies by domain</small></div>
@@ -3732,6 +3678,13 @@ section{scroll-margin-top:90px}
   </div>
 </section>
 
+
+<section class="v9-scholarship" aria-label="Scholarship opportunity">
+  <div class="v9-scholarship-inner">
+    <div><span class="v9-mini-label">SCHOLARSHIP OPPORTUNITY</span><h2>Selected students may be eligible for available scholarship benefits.</h2><p>Apply early for review. Availability and eligibility can vary by intake and track.</p></div>
+    <button class="primary-btn open-application" type="button">Apply Now <span>→</span></button>
+  </div>
+</section>
 <section class="application-zone">
   <div class="application-intro">
     <span>GUIDED APPLICATION</span>
@@ -4044,32 +3997,6 @@ section{scroll-margin-top:90px}
 </section>
 
 
-<section class="student-testimonials reveal">
-<div class="wrap">
-<div class="eyebrow">STUDENT SUCCESS STORIES</div>
-<h2>What Students Say About Their Experience</h2>
-<p class="test-sub">Real feedback shared by students after completing their training, projects and internship journey.</p>
-<div class="testimonial-grid">
-<div class="tcard"><div class="stars">★★★★★</div><p>“It was my first time exploring this domain. The internship gave me clarity about the field and helped me understand the concepts better.”</p><span>— Himakshi</span></div>
-<div class="tcard"><div class="stars">★★★★★</div><p>“A great learning journey. I gained strong knowledge in Data Structures and Algorithms. The mentors provided excellent guidance throughout the program.”</p><span>— Saravanan</span></div>
-<div class="tcard"><div class="stars">★★★★★</div><p>“The recorded sessions were clear and easy to follow. Complex topics were explained in a simple way, making learning much easier.”</p><span>— Maha Dhanalakshmi</span></div>
-<div class="tcard"><div class="stars">★★★★★</div><p>“The live sessions were very interesting and engaging. The learning experience was valuable and practical.”</p><span>— Bavan</span></div>
-<div class="tcard"><div class="stars">★★★★★</div><p>“The training sessions were very useful and the certificate will be valuable for my future studies and career.”</p><span>— Swetha Karpagam</span></div>
-</div></div></section>
-<style>
-.student-testimonials{padding:90px 20px;background:#fff}
-.student-testimonials .wrap{max-width:1200px;margin:auto}
-.student-testimonials .eyebrow{color:#4f6bff;font-weight:800;letter-spacing:2px;font-size:12px}
-.student-testimonials h2{font-size:clamp(2rem,5vw,4rem);margin:10px 0;color:#102038}
-.test-sub{color:#667792;max-width:700px}
-.testimonial-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;margin-top:40px}
-.tcard{background:linear-gradient(180deg,#fff,#f8faff);border:1px solid #e3ebf5;border-radius:24px;padding:28px;box-shadow:0 20px 50px rgba(16,32,56,.08);transition:.35s}
-.tcard:hover{transform:translateY(-8px)}
-.stars{color:#ffbd52;font-size:20px;margin-bottom:14px}
-.tcard p{color:#42536d;line-height:1.8}
-.tcard span{display:block;margin-top:16px;font-weight:800;color:#102038}
-@media(max-width:768px){.testimonial-grid{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.tcard{min-width:85%;scroll-snap-align:start} .student-testimonials{padding:64px 16px}}
-</style>
 <section class="section faq-section" id="faq">
   <div class="section-heading"><span>QUESTIONS</span><h2>Questions students usually ask before they begin.</h2></div>
   <div class="faq-list">
@@ -4089,7 +4016,7 @@ section{scroll-margin-top:90px}
     <h2>Build something you can be proud to put your name on.</h2>
     <p>Choose your direction, complete the application, and start building practical proof of your skills.</p>
     <div class="final-v4-actions">
-      <button class="open-application final-v4-primary" type="button">Start Application <b>→</b></button>
+      <button class="open-application final-v4-primary" type="button">Apply Now <b>→</b></button>
       <a href="#roleExplorer" class="final-v4-secondary">Explore career paths</a>
     </div>
     <div class="final-v4-meta">
@@ -4151,7 +4078,7 @@ section{scroll-margin-top:90px}
     <h2 id="siteInfoTitle">Explore InternsForge</h2>
     <p id="siteInfoText"></p>
     <div class="site-info-grid" id="siteInfoGrid"></div>
-    <div class="site-info-actions"><button type="button" class="primary-btn open-application" id="siteInfoApply">Start Application <span>→</span></button><button type="button" class="secondary-btn" id="siteInfoDone">Close</button></div>
+    <div class="site-info-actions"><button type="button" class="primary-btn open-application" id="siteInfoApply">Apply Now <span>→</span></button><button type="button" class="secondary-btn" id="siteInfoDone">Close</button></div>
   </div>
 </div>
 
@@ -6161,55 +6088,36 @@ console.info('SkillPath guided form build: Final V11');
 </script>
 
 
-<section class="testimonial-highlight">
-<h2>What Students Say</h2>
-<div class="t-grid">
-<div class="t-card">★★★★★<br><br>It was my first time exploring this domain and I gained clarity about the field.<br><br><b>— Himakshi</b></div>
-<div class="t-card">★★★★★<br><br>A great learning journey with excellent mentor guidance.<br><br><b>— Saravanan</b></div>
-<div class="t-card">★★★★★<br><br>The sessions were clear, practical and easy to follow.<br><br><b>— Maha Dhanalakshmi</b></div>
-</div>
-</section>
-<section class="trust-strip">
-<div class="trust-card">Industry Projects</div>
-<div class="trust-card">Mentor Guidance</div>
-<div class="trust-card">Certification</div>
-<div class="trust-card">Placement Preparation</div>
-</section>
-<section class="scholarship-banner">
-<h2>Scholarship Opportunities Available</h2>
-<p>Apply early to be considered for available scholarship benefits and priority review.</p>
-</section>
 
-<section>
-<div class="v6-trust">
-<div class="v6-card"><b>Industry Projects</b><p>Build practical work.</p></div>
-<div class="v6-card"><b>Mentor Guidance</b><p>Learn with structured support.</p></div>
-<div class="v6-card"><b>Certification</b><p>Showcase achievement.</p></div>
-<div class="v6-card"><b>Career Preparation</b><p>Improve readiness.</p></div>
-</div>
-</section>
 
-<section>
-<div class="v6-outcomes">
-<div class="v6-card"><h3>Portfolio Projects</h3></div>
-<div class="v6-card"><h3>Practical Skills</h3></div>
-<div class="v6-card"><h3>Resume Enhancement</h3></div>
-<div class="v6-card"><h3>Interview Readiness</h3></div>
-</div>
-</section>
-
-<section>
-<div class="v6-banner">
-<h2>Scholarship Opportunities Available</h2>
-<p>Apply early for priority review and scholarship consideration.</p>
-</div>
-</section>
-
-<section>
-<div class="v6-final">
-<h2>Applications Open</h2>
-<p>Build projects, gain experience, and strengthen your profile.</p>
-</div>
-</section>
+<script id="v9-final-interactions">
+(function(){
+  const reduce=window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const animateCounter=(el,target)=>{
+    if(!el || el.dataset.v9Done==="1") return;
+    const duration=850; const start=performance.now();
+    const step=(now)=>{
+      const p=Math.min(1,(now-start)/duration);
+      const eased=1-Math.pow(1-p,3);
+      el.textContent=Math.round(target*eased);
+      if(p<1) requestAnimationFrame(step); else {el.textContent=String(target);el.dataset.v9Done="1";}
+    };
+    if(reduce){el.textContent=String(target);el.dataset.v9Done="1";} else requestAnimationFrame(step);
+  };
+  const stat=document.querySelector('.v9-counter[data-count]');
+  if(stat){
+    const target=Number(stat.dataset.count)||0;
+    if('IntersectionObserver' in window && !reduce){
+      const io=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){animateCounter(stat,target);io.disconnect();}},{threshold:.5});
+      io.observe(stat);
+    } else animateCounter(stat,target);
+  }
+  const live=document.getElementById('liveApplicationCount');
+  if(live){
+    const apply=()=>{const n=parseInt((live.textContent||'').replace(/[^0-9]/g,''),10); if(Number.isFinite(n)&&n>0){live.dataset.count=n;live.dataset.v9Done='0';animateCounter(live,n)}};
+    const mo=new MutationObserver(apply); mo.observe(live,{childList:true,characterData:true,subtree:true}); apply();
+  }
+})();
+</script>
 </body>
 </html>

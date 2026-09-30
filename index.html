@@ -3581,6 +3581,13 @@ body.application-modal-open .application-zone{display:flex!important;height:100d
   }
 }
 </style>
+
+<style id="v15-application-modal-final-fix">
+/* V15: application modal must be hidden in normal flow and visible only while open. */
+.application-zone{display:none !important;height:0 !important;min-height:0 !important;margin:0 !important;padding:0 !important;}
+body.application-modal-open .application-zone{display:flex !important;height:100dvh !important;min-height:100dvh !important;width:100vw !important;position:fixed !important;inset:0 !important;margin:0 !important;padding:8px !important;z-index:5000 !important;align-items:center !important;justify-content:center !important;overflow:hidden !important;pointer-events:auto !important;}
+body.application-modal-open .application-card.wizard-shell{pointer-events:auto !important;}
+</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div aria-hidden="true" class="scroll-progress" id="scrollProgress"></div>
@@ -3782,7 +3789,7 @@ body.application-modal-open .application-zone{display:flex!important;height:100d
 <button class="primary-btn open-application" type="button">Apply Now <span>→</span></button>
 </div>
 </section>
-<section class="application-zone" style="display:none!important">
+<section class="application-zone" aria-hidden="true">
 <div class="application-intro">
 <span>GUIDED APPLICATION</span>
 <h2>Complete your profile without the usual form fatigue.</h2>
@@ -5284,6 +5291,7 @@ console.info('SkillPath guided form build: Final V11');
     updateVisitor({ formProgress: 0, currentStep: 1, currentField: 'Application form opened', status: 'online', hasStartedFilling: false });
     restoreScroll=window.scrollY;
     body.classList.add('application-modal-open');
+    applicationZone?.setAttribute('aria-hidden','false');
     armModalHistory();
     if(domain){ const field=document.getElementById('domain'); if(field){field.value=domain; field.dispatchEvent(new Event('change',{bubbles:true}));} }
     applicationCard?.setAttribute('aria-label','Internship application');
@@ -5391,6 +5399,7 @@ console.info('SkillPath guided form build: Final V11');
     applicationFormOpen = false;
     formInteractionStarted = false;
     body.classList.remove('application-modal-open');
+    applicationZone?.setAttribute('aria-hidden','true');
     hideExitConfirm();
     disarmModalHistory();
     if (typeof afterClose === 'function') window.setTimeout(afterClose, 0);
@@ -5460,7 +5469,15 @@ console.info('SkillPath guided form build: Final V11');
   exitConfirm?.addEventListener('click', e=>{ if(e.target===exitConfirm) hideExitConfirm(); });
   document.addEventListener('keydown', e=>{ if(e.key==='Escape' && closeConfirmOpen) hideExitConfirm(); });
 
-  openButtons.forEach(btn=>btn.addEventListener('click',()=>openApplication()));
+  // v15-direct-cta-guard: keep every Apply CTA functional even if another page-level
+  // click handler changes. Stop only after the modal has been opened successfully.
+  openButtons.forEach(btn=>{
+    btn.addEventListener('click', (event)=>{
+      event.preventDefault();
+      event.stopPropagation();
+      openApplication(btn.dataset.domain || '');
+    }, true);
+  });
   document.addEventListener('click', event => {
     const btn = event.target.closest('.open-application, #floatingCta');
     if (!btn) return;
@@ -5531,7 +5548,6 @@ console.info('SkillPath guided form build: Final V11');
   document.querySelectorAll('[data-close-domain]').forEach(b=>b.addEventListener('click',closeDomain));
   search?.addEventListener('input',filterDomains);
   tabs.forEach(tab=>tab.addEventListener('click',()=>{tabs.forEach(t=>t.classList.remove('active'));tab.classList.add('active');filterDomains();}));
-  list?.addEventListener('click',e=>{const card=e.target.closest('.domain-explorer-card'); if(!card)return; const domain=card.dataset.domainName; closeDomain(); openApplication(domain);});
   tabs[0]?.classList.add('active');
 })();
 
@@ -5572,7 +5588,11 @@ console.info('SkillPath guided form build: Final V11');
     const academic=form.elements.namedItem('email')?.value.trim() && form.elements.namedItem('college')?.value.trim() && form.elements.namedItem('department')?.value.trim() && form.elements.namedItem('year')?.value;
     const domain=form.elements.namedItem('domain')?.value;
     const current=document.getElementById('apply')?.dataset.activeStep||'1';
-    const states=[!!(name&&phone),!!academic,!!domain,!!(state&&communicationLanguage&&startAvailability&&applicationReason),current==='4'];
+    const stateValue=form.elements.namedItem('state')?.value.trim();
+    const communicationLanguageValue=form.elements.namedItem('communicationLanguage')?.value;
+    const startAvailabilityValue=form.elements.namedItem('startAvailability')?.value;
+    const applicationReasonValue=form.elements.namedItem('applicationReason')?.value.trim();
+    const states=[!!(name&&phone),!!academic,!!domain,!!(stateValue&&communicationLanguageValue&&startAvailabilityValue&&applicationReasonValue),current==='4'];
     const active=current==='1'?0:current==='2'?(domain?2:1):3;
     stages.forEach((el,i)=>{el.classList.toggle('active',i===active);el.classList.toggle('completed',states[i]&&i<active);});
     lines.forEach((line,i)=>line.classList.toggle('done',states[i]));

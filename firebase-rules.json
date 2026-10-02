@@ -15,11 +15,11 @@
       ".write": "auth != null",
       "applicationCount": {
         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() == newData.val()",
-        ".write": "auth != null || (!data.exists() && newData.val() === 1) || (data.exists() && data.isNumber() && newData.val() === data.val() + 1)"
+        ".write": "auth != null || (!data.exists() && newData.val() === 1) || (data.exists() && data.val() is number && newData.val() === data.val() + 1)"
       },
       "landingPageVisitorCount": {
         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() == newData.val()",
-        ".write": "auth != null || (!data.exists() && newData.val() === 1) || (data.exists() && data.isNumber() && newData.val() === data.val() + 1)"
+        ".write": "auth != null || (!data.exists() && newData.val() === 1) || (data.exists() && data.val() is number && newData.val() === data.val() + 1)"
       },
       "landingPageVisitors": {
         "$visitorId": {
@@ -29,7 +29,7 @@
       },
       "applicationVisitorCount": {
         ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() == newData.val()",
-        ".write": "auth != null || (!data.exists() && newData.val() === 1) || (data.exists() && data.isNumber() && newData.val() === data.val() + 1)"
+        ".write": "auth != null || (!data.exists() && newData.val() === 1) || (data.exists() && data.val() is number && newData.val() === data.val() + 1)"
       }
     },
     "abandonedApplications": {

@@ -1867,6 +1867,8 @@ function doPost(e) {
     if (!e || !e.postData || !e.postData.contents) return jsonResponse({status:"error", message:"No data received."});
     const data = JSON.parse(e.postData.contents);
     if (data.action === "syncApplications") return jsonResponse(syncApplicationsToSheet(data.applications || [], data.updateExisting === true));
+    if (data.action === "assignApplicationToCounselor") return jsonResponse(assignApplicationToCounselor(data));
+    if (data.action === "updateDashboardCRM") return jsonResponse(updateDashboardCRM(data));
     if (data.action === "updateApplication") return jsonResponse(updateApplicationInSheet(data.application || {}));
     if (data.action === "deleteApplication") return jsonResponse(deleteApplicationFromSheets(data.application || data));
     if (data.action === "saveAbandonedApplication") return saveAbandonedApplication(data);
@@ -2031,6 +2033,154 @@ function syncApplicationsToSheet(applications, updateExisting) {
     }
   }
   return {status:"success", message:"Firebase applications processed.", received:applications.length, added, updated, skipped, invalid, totalRows:Math.max(0,sheet.getLastRow()-1)};
+}
+
+
+/**
+ * ADMIN DASHBOARD -> COUNSELOR-ONLY ASSIGNMENT
+ * --------------------------------------------
+ * Assignment from the Admin Dashboard must NOT modify Master Sheet1.
+ * This endpoint updates Firebase and routes the lead only to the selected
+ * counselor spreadsheet. Master Sheet1 remains unchanged until a counselor
+ * or a normal CRM workflow updates the record.
+ */
+function assignApplicationToCounselor(raw) {
+  raw = raw || {};
+  const application = raw.application || raw;
+  const applicationId = value(application.applicationId || application.applicationID || application.id);
+  if (!applicationId) return {status:"error", message:"Application ID is required."};
+
+  const app = buildApplicationObject(application, applicationId);
+  const previousAssignedTo = normalizeCounselorName(raw.previousAssignedTo || "");
+  const newAssignedTo = normalizeCounselorName(app["Assigned To"] || "");
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    // This writes only counselor spreadsheets; it never touches Master Sheet1.
+    const counselorResult = syncApplicationToCounselorSheet(app, previousAssignedTo);
+
+    // Keep Firebase authoritative for the dashboard assignment, but mark the
+    // write so the dashboard's generic child_changed listener does not echo it
+    // back into updateApplicationInSheet() and Master Sheet1.
+    const firebaseResult = firebaseRestPatch(
+      "/submittedApplications/" + encodeURIComponent(applicationId),
+      {
+        assignedTo: newAssignedTo,
+        updatedAtMs: Date.now(),
+        syncSource: "dashboard-assignment"
+      }
+    );
+
+    return {
+      status: "success",
+      applicationId: applicationId,
+      previousAssignedTo: previousAssignedTo,
+      assignedTo: newAssignedTo,
+      counselor: counselorResult,
+      firebase: firebaseResult
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * ADMIN DASHBOARD -> CRM UPDATE
+ * -----------------------------
+ * Normal dashboard CRM fields still update Master/Firebase. If Assigned To
+ * changes in the same operation, Master Sheet1 keeps its existing assignment
+ * while the selected counselor spreadsheet is rerouted independently.
+ */
+function updateDashboardCRM(raw) {
+  raw = raw || {};
+  const application = raw.application || raw;
+  const applicationId = value(application.applicationId || application.applicationID || application.id);
+  if (!applicationId) return {status:"error", message:"Application ID is required."};
+
+  const sheet = getSheet();
+  const headers = getHeaders(sheet);
+  const rowNumber = findApplicationId(sheet, headers, applicationId);
+  const current = rowNumber > 0
+    ? rowValuesToApplicationObject(headers, readManagedRow_(sheet, rowNumber, headers.length))
+    : null;
+
+  const app = buildApplicationObject(application, applicationId);
+  app["Call Status"] = standardizeCallStatus_(app["Call Status"]);
+
+  const previousAssignedTo = normalizeCounselorName(
+    raw.previousAssignedTo || (current && current["Assigned To"]) || ""
+  );
+  const newAssignedTo = normalizeCounselorName(app["Assigned To"] || "");
+  const assignmentChanged = raw.assignmentChanged === true ||
+    previousAssignedTo.toLowerCase() !== newAssignedTo.toLowerCase();
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    let masterApp = app;
+
+    if (assignmentChanged && current) {
+      // Keep Master Sheet1's routing field untouched. Other CRM fields can still
+      // be updated normally.
+      masterApp = Object.assign({}, app, {
+        "Assigned To": value(current["Assigned To"] || previousAssignedTo)
+      });
+    }
+
+    if (rowNumber > 0) {
+      updateRowByApplicationId(sheet, headers, rowNumber, masterApp);
+    } else {
+      // If the application is missing from Master, do not create a Master
+      // assignment merely because the Dashboard routed it to a counselor.
+      if (assignmentChanged) {
+        masterApp = Object.assign({}, app, {"Assigned To": ""});
+      }
+      sheet.appendRow(buildRow(headers, masterApp));
+    }
+
+    SpreadsheetApp.flush();
+
+    // Route the live counselor copy separately. For assignment changes this
+    // removes the old counselor copy and writes the selected counselor copy.
+    const counselorResult = syncApplicationToCounselorSheet(
+      app,
+      previousAssignedTo
+    );
+
+    const firebasePayload = {
+      callStatus: value(app["Call Status"]),
+      nextFollowUpAt: sheetDateToIso(app["Next Follow-up"]),
+      remarks: value(app["Remarks"]),
+      assignedTo: newAssignedTo,
+      updatedAtMs: Date.now(),
+      syncSource: "dashboard-crm"
+    };
+
+    const firebaseResult = firebaseRestPatch(
+      "/submittedApplications/" + encodeURIComponent(applicationId),
+      firebasePayload
+    );
+
+    auditLiveChanges_(applicationId, null, app, {
+      source: "Admin Dashboard",
+      actor: "Admin Dashboard",
+      isBulk: false
+    });
+
+    return {
+      status: "success",
+      applicationId: applicationId,
+      row: rowNumber > 0 ? rowNumber : sheet.getLastRow(),
+      assignmentChanged: assignmentChanged,
+      masterAssignedTo: masterApp["Assigned To"] || "",
+      assignedTo: newAssignedTo,
+      counselor: counselorResult,
+      firebase: firebaseResult
+    };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function updateApplicationInSheet(raw) {

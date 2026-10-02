@@ -136,6 +136,13 @@
       "$announcementId": {
         ".validate": "newData.val() === null || newData.hasChildren(['title','message','audience','active','createdAt'])"
       }
+    },
+    "assignmentRoutingStatus": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      "$requestId": {
+        ".validate": "newData.val() === null || newData.hasChildren(['status','requestId','applicationId','assignedTo','updatedAtMs'])"
+      }
     }
   }
 }

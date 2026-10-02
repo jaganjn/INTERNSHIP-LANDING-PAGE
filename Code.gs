@@ -1867,8 +1867,7 @@ function doPost(e) {
     if (!e || !e.postData || !e.postData.contents) return jsonResponse({status:"error", message:"No data received."});
     const data = JSON.parse(e.postData.contents);
     if (data.action === "syncApplications") return jsonResponse(syncApplicationsToSheet(data.applications || [], data.updateExisting === true));
-    if (data.action === "assignApplicationToCounselor") return jsonResponse(assignApplicationToCounselor(data));
-    if (data.action === "updateDashboardCRM") return jsonResponse(updateDashboardCRM(data));
+    if (data.action === "routeApplicationToCounselor") return jsonResponse(routeApplicationToCounselor(data));
     if (data.action === "updateApplication") return jsonResponse(updateApplicationInSheet(data.application || {}));
     if (data.action === "deleteApplication") return jsonResponse(deleteApplicationFromSheets(data.application || data));
     if (data.action === "saveAbandonedApplication") return saveAbandonedApplication(data);
@@ -2036,203 +2035,145 @@ function syncApplicationsToSheet(applications, updateExisting) {
 }
 
 
-function ensureCounselorRegisteredForDashboard_(counselorName) {
-  const name = normalizeCounselorName(counselorName);
-  if (!name) return null;
-  const existing = getCounselorRecord(name);
-  if (existing && existing.spreadsheetId) return existing;
-
-  const result = registerCounselor(name, "");
-  if (!result || result.status !== "success") {
-    throw new Error(
-      'Could not register counselor "' + name + '". ' +
-      ((result && result.message) || "Unknown registration error.")
-    );
-  }
-  return getCounselorRecord(name) || result;
-}
-
 /**
- * ADMIN DASHBOARD -> COUNSELOR-ONLY ASSIGNMENT
- * --------------------------------------------
- * Assignment from the Admin Dashboard must NOT modify Master Sheet1.
- * This endpoint updates Firebase and routes the lead only to the selected
- * counselor spreadsheet. Master Sheet1 remains unchanged until a counselor
- * or a normal CRM workflow updates the record.
+ * ADMIN DASHBOARD -> COUNSELOR-ONLY ROUTING
+ * -----------------------------------------
+ * This is intentionally separate from updateApplicationInSheet().
+ * A dashboard assignment must:
+ *   1. route the lead to the selected counselor spreadsheet;
+ *   2. remove stale copies from the old/other counselor sheets;
+ *   3. never modify Master Sheet1.
+ *
+ * Firebase assignment is performed by the dashboard itself. This endpoint
+ * only handles the Google Sheets routing and publishes a small Firebase receipt
+ * so the dashboard can verify that the sheet write actually completed.
  */
-function assignApplicationToCounselor(raw) {
+function routeApplicationToCounselor(raw) {
   raw = raw || {};
   const application = raw.application || raw;
-  const applicationId = value(application.applicationId || application.applicationID || application.id);
-  if (!applicationId) return {status:"error", message:"Application ID is required."};
+  const applicationId = value(
+    application.applicationId || application.applicationID || application.id
+  );
+  if (!applicationId) {
+    return {status:"error", message:"Application ID is required."};
+  }
 
-  const requestedAssignedTo = normalizeCounselorName(
+  const assignedTo = normalizeCounselorName(
     application.assignedTo || application.AssignedTo || application["Assigned To"] || ""
   );
   const previousAssignedTo = normalizeCounselorName(raw.previousAssignedTo || "");
+  const requestId = value(raw.requestId) || Utilities.getUuid();
 
   const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
+  lock.waitLock(15000);
+
   try {
-    // Dashboard counselor names can exist only in browser localStorage.
-    // Before routing, make sure the selected counselor is actually present in
-    // the server-side Counselors registry and has a dedicated spreadsheet.
-    // registerCounselor() reuses an existing spreadsheet when one is already
-    // registered, and creates one automatically when it is missing.
-    let registration = null;
-    if (requestedAssignedTo) {
-      const before = getCounselorRecord(requestedAssignedTo);
-      if (!before || !before.spreadsheetId) {
-        registration = ensureCounselorRegisteredForDashboard_(requestedAssignedTo);
+    // Dashboard counselor names can exist in browser storage before they are
+    // present in the server-side registry. Register/reuse the counselor here
+    // before attempting the actual spreadsheet write.
+    if (assignedTo) {
+      const existing = getCounselorRecord(assignedTo);
+      if (!existing || !existing.spreadsheetId) {
+        const registration = registerCounselor(assignedTo, "");
+        if (!registration || registration.status !== "success") {
+          throw new Error(
+            'Counselor "' + assignedTo + '" could not be registered: ' +
+            ((registration && registration.message) || "Unknown registration error.")
+          );
+        }
       }
     }
 
-    // Use the freshest Firebase record so the counselor sheet receives the
-    // complete application even when the dashboard copy is stale/incomplete.
-    const liveApplication = getLiveApplication_(applicationId) || {};
-    const mergedApplication = Object.assign({}, liveApplication, application, {
-      id: applicationId,
-      applicationId: applicationId,
-      assignedTo: requestedAssignedTo
-    });
-    const app = buildApplicationObject(mergedApplication, applicationId);
-    app["Assigned To"] = requestedAssignedTo;
+    const app = buildApplicationObject(application, applicationId);
+    app["Application ID"] = applicationId;
+    app["Assigned To"] = assignedTo;
+    app["Call Status"] = standardizeCallStatus_(app["Call Status"]);
 
-    // This writes ONLY the selected counselor spreadsheet. It never touches
-    // Master Sheet1 for a dashboard assignment. If the lead was previously
-    // assigned, its old counselor copy is removed first.
-    const counselorResult = syncApplicationToCounselorSheet(app, previousAssignedTo);
-
-    // Firebase remains authoritative for the dashboard assignment. Marking the
-    // source prevents the realtime listener from echoing this assignment into
-    // the generic updateApplicationInSheet() -> Master Sheet1 path.
-    const firebaseResult = firebaseRestPatch(
-      "/submittedApplications/" + encodeURIComponent(applicationId),
-      {
-        assignedTo: requestedAssignedTo,
-        updatedAtMs: Date.now(),
-        syncSource: "dashboard-assignment"
-      }
-    );
-
-    return {
-      status: "success",
-      applicationId: applicationId,
-      previousAssignedTo: previousAssignedTo,
-      assignedTo: requestedAssignedTo,
-      registered: !!registration,
-      registration: registration,
-      counselor: counselorResult,
-      firebase: firebaseResult,
-      masterUpdated: false
-    };
-  } finally {
-    lock.releaseLock();
-  }
-}
-
-/**
- * ADMIN DASHBOARD -> CRM UPDATE
- * -----------------------------
- * Normal dashboard CRM fields still update Master/Firebase. If Assigned To
- * changes in the same operation, Master Sheet1 keeps its existing assignment
- * while the selected counselor spreadsheet is rerouted independently.
- */
-function updateDashboardCRM(raw) {
-  raw = raw || {};
-  const application = raw.application || raw;
-  const applicationId = value(application.applicationId || application.applicationID || application.id);
-  if (!applicationId) return {status:"error", message:"Application ID is required."};
-
-  const sheet = getSheet();
-  const headers = getHeaders(sheet);
-  const rowNumber = findApplicationId(sheet, headers, applicationId);
-  const current = rowNumber > 0
-    ? rowValuesToApplicationObject(headers, readManagedRow_(sheet, rowNumber, headers.length))
-    : null;
-
-  const app = buildApplicationObject(application, applicationId);
-  app["Call Status"] = standardizeCallStatus_(app["Call Status"]);
-
-  const previousAssignedTo = normalizeCounselorName(
-    raw.previousAssignedTo || (current && current["Assigned To"]) || ""
-  );
-  const newAssignedTo = normalizeCounselorName(app["Assigned To"] || "");
-  const assignmentChanged = raw.assignmentChanged === true ||
-    previousAssignedTo.toLowerCase() !== newAssignedTo.toLowerCase();
-
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
-  try {
-    let masterApp = app;
-
-    if (assignmentChanged && current) {
-      // Keep Master Sheet1's routing field untouched. Other CRM fields can still
-      // be updated normally.
-      masterApp = Object.assign({}, app, {
-        "Assigned To": value(current["Assigned To"] || previousAssignedTo)
-      });
-    }
-
-    if (rowNumber > 0) {
-      updateRowByApplicationId(sheet, headers, rowNumber, masterApp);
-    } else {
-      // If the application is missing from Master, do not create a Master
-      // assignment merely because the Dashboard routed it to a counselor.
-      if (assignmentChanged) {
-        masterApp = Object.assign({}, app, {"Assigned To": ""});
-      }
-      sheet.appendRow(buildRow(headers, masterApp));
-    }
-
-    SpreadsheetApp.flush();
-
-    // Route the live counselor copy separately. For assignment changes this
-    // removes the old counselor copy and writes the selected counselor copy.
-    // Dashboard-only counselor names may exist only in browser storage, so
-    // ensure the server-side Counselors registry is ready first.
-    if (assignmentChanged && newAssignedTo) {
-      ensureCounselorRegisteredForDashboard_(newAssignedTo);
-    }
+    // IMPORTANT: this function writes counselor sheets only. It does not call
+    // updateApplicationInSheet(), syncSheetRowToFirebase(), or write Master.
     const counselorResult = syncApplicationToCounselorSheet(
       app,
       previousAssignedTo
     );
 
-    const firebasePayload = {
-      callStatus: value(app["Call Status"]),
-      nextFollowUpAt: sheetDateToIso(app["Next Follow-up"]),
-      remarks: value(app["Remarks"]),
-      assignedTo: newAssignedTo,
-      updatedAtMs: Date.now(),
-      syncSource: "dashboard-crm"
-    };
-
-    const firebaseResult = firebaseRestPatch(
-      "/submittedApplications/" + encodeURIComponent(applicationId),
-      firebasePayload
+    // Publish a receipt so the dashboard can verify completion even though the
+    // browser uses a no-cors request to the Apps Script Web App.
+    const receipt = firebaseRestPatch(
+      "/assignmentRoutingStatus/" + encodeURIComponent(requestId),
+      {
+        status: "success",
+        requestId: requestId,
+        applicationId: applicationId,
+        previousAssignedTo: previousAssignedTo,
+        assignedTo: assignedTo,
+        counselorSheet: counselorResult.sheetName || "",
+        counselorRow: counselorResult.row || 0,
+        masterUpdated: false,
+        updatedAtMs: Date.now()
+      }
     );
-
-    auditLiveChanges_(applicationId, null, app, {
-      source: "Admin Dashboard",
-      actor: "Admin Dashboard",
-      isBulk: false
-    });
 
     return {
       status: "success",
+      requestId: requestId,
       applicationId: applicationId,
-      row: rowNumber > 0 ? rowNumber : sheet.getLastRow(),
-      assignmentChanged: assignmentChanged,
-      masterAssignedTo: masterApp["Assigned To"] || "",
-      assignedTo: newAssignedTo,
+      previousAssignedTo: previousAssignedTo,
+      assignedTo: assignedTo,
       counselor: counselorResult,
-      firebase: firebaseResult
+      masterUpdated: false,
+      receipt: receipt
+    };
+  } catch (error) {
+    // Best-effort cleanup if the counselor sheet was written before a later
+    // verification step failed. This keeps the failed assignment from leaving
+    // an orphaned counselor copy behind.
+    try {
+      if (assignedTo) {
+        removeApplicationFromCounselorSpreadsheet(assignedTo, applicationId);
+      }
+      if (previousAssignedTo) {
+        const restoreApp = buildApplicationObject(application, applicationId);
+        restoreApp["Application ID"] = applicationId;
+        restoreApp["Assigned To"] = previousAssignedTo;
+        syncApplicationToCounselorSheet(restoreApp, assignedTo);
+      }
+    } catch (cleanupError) {
+      console.warn("Assignment routing rollback cleanup failed:", cleanupError);
+    }
+
+    try {
+      firebaseRestPatch(
+        "/assignmentRoutingStatus/" + encodeURIComponent(requestId),
+        {
+          status: "error",
+          requestId: requestId,
+          applicationId: applicationId,
+          previousAssignedTo: previousAssignedTo,
+          assignedTo: assignedTo,
+          masterUpdated: false,
+          error: error.message || String(error),
+          updatedAtMs: Date.now()
+        }
+      );
+    } catch (receiptError) {
+      console.warn("Assignment routing error receipt failed:", receiptError);
+    }
+
+    console.error("Dashboard counselor routing failed:", error);
+    return {
+      status: "error",
+      requestId: requestId,
+      applicationId: applicationId,
+      previousAssignedTo: previousAssignedTo,
+      assignedTo: assignedTo,
+      masterUpdated: false,
+      message: error.message || String(error)
     };
   } finally {
     lock.releaseLock();
   }
 }
+
 
 function updateApplicationInSheet(raw) {
   const id = value(raw.applicationId || raw.applicationID || raw.id);
@@ -2974,19 +2915,14 @@ function syncApplicationToCounselorSheet(app, previousAssignedTo) {
     );
   }
 
-  // Always remove stale copies from every other counselor. This guarantees
-  // that a lead routed from the Admin Dashboard exists in only the selected
-  // counselor spreadsheet, even if an older stale copy already exists.
-  if (newAssignedTo) {
-    const cleanup = removeApplicationFromAllOtherCounselors_(
+  // If the previous assignment was unavailable (for example a pasted/multi-cell
+  // edit has no e.oldValue), remove stale copies from every other counselor.
+  // This prevents duplicate leads after reassignment.
+  if (newAssignedTo && !oldAssignedTo) {
+    removeApplicationFromAllOtherCounselors_(
       applicationId,
       newAssignedTo
     );
-    if (cleanup && cleanup.errors && cleanup.errors.length) {
-      throw new Error(
-        "Could not remove stale counselor copies: " + cleanup.errors.join(" | ")
-      );
-    }
   }
 
   /*

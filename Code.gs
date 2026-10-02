@@ -1901,12 +1901,12 @@ function verifyCounselorRouting(raw) {
       counselorSheet: sheet.getName(),
       counselorRow: rowNumber,
       masterUpdated: false,
-      version: "V6-DIRECT-SHEET-VERIFY"
+      version: "V7-DOGET-CONFLICT-FIX"
     };
   } catch (error) {
     return {
       status:"error", verified:false, applicationId:applicationId, firebaseApplicationKey:firebaseKey, counselor:counselorName, requestId:requestId,
-      message:error.message || String(error), version:"V6-DIRECT-SHEET-VERIFY"
+      message:error.message || String(error), version:"V7-DOGET-CONFLICT-FIX"
     };
   }
 }
@@ -1923,7 +1923,7 @@ function doGet(e) {
       const result = verifyCounselorRouting(p);
       return jsonpResponse_(p.callback, result);
     }
-    if (action === 'health') return jsonResponse({status:'online', version:'V6-DIRECT-SHEET-VERIFY', time:nowString(), message:'InternsForge Sheets receiver is healthy.'});
+    if (action === 'health') return jsonResponse({status:'online', version:'V7-DOGET-CONFLICT-FIX', time:nowString(), message:'InternsForge Sheets receiver is healthy.'});
     return jsonResponse({status:'error', message:'Unknown action: ' + action});
   } catch (error) {
     console.error('GET ERROR', error);
@@ -1947,7 +1947,7 @@ function doPost(e) {
     if (data.action === "deleteAbandonedApplication") return deleteAbandonedApplication(data);
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
     if (data.action === "removeCounselor") return jsonResponse(removeCounselor(data.counselorName || data.name || ""));
-    if (data.action === "health") return jsonResponse({status:"online", version:"V6-DIRECT-SHEET-VERIFY", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
+    if (data.action === "health") return jsonResponse({status:"online", version:"V7-DOGET-CONFLICT-FIX", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
     return saveSingleApplication(data);
   } catch (error) {
     console.error("POST ERROR", error);
@@ -2045,10 +2045,6 @@ function saveSingleApplication(data) {
   sheet.appendRow(buildRow(headers, application));
   SpreadsheetApp.flush();
   return jsonResponse({status:"success", duplicate:false, applicationId:application["Application ID"], message:"Application saved successfully."});
-}
-
-function doGet() {
-  return jsonResponse({status:"online", message:"InternsForge Google Sheets receiver is working.", time:nowString()});
 }
 
 function syncApplicationsToSheet(applications, updateExisting) {

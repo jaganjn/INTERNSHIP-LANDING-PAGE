@@ -2051,124 +2051,124 @@ function syncApplicationsToSheet(applications, updateExisting) {
 function routeApplicationToCounselor(raw) {
   raw = raw || {};
   const application = raw.application || raw;
-  const applicationId = value(
-    application.applicationId || application.applicationID || application.id
-  );
-  if (!applicationId) {
-    return {status:"error", message:"Application ID is required."};
-  }
+  const applicationId = value(application.applicationId || application.applicationID || application.id);
+  if (!applicationId) return {status:"error", message:"Application ID is required."};
 
-  const assignedTo = normalizeCounselorName(
-    application.assignedTo || application.AssignedTo || application["Assigned To"] || ""
-  );
+  const assignedTo = normalizeCounselorName(application.assignedTo || application.AssignedTo || application["Assigned To"] || "");
   const previousAssignedTo = normalizeCounselorName(raw.previousAssignedTo || "");
   const requestId = value(raw.requestId) || Utilities.getUuid();
 
+  function publishRouteState_(status, details) {
+    const payload = Object.assign({
+      status: status, requestId: requestId, applicationId: applicationId,
+      previousAssignedTo: previousAssignedTo, assignedTo: assignedTo,
+      masterUpdated: false, updatedAtMs: Date.now()
+    }, details || {});
+    try {
+      // Reuse the existing submittedApplications read path for dashboard receipt verification.
+      firebaseRestPatch(
+        "/submittedApplications/" + encodeURIComponent(applicationId) + "/assignmentRouting",
+        payload
+      );
+    } catch (receiptError) {
+      console.warn("Assignment routing receipt write failed:", receiptError);
+    }
+    return payload;
+  }
+
   const lock = LockService.getScriptLock();
   lock.waitLock(15000);
-
   try {
-    // Dashboard counselor names can exist in browser storage before they are
-    // present in the server-side registry. Register/reuse the counselor here
-    // before attempting the actual spreadsheet write.
     if (assignedTo) {
       const existing = getCounselorRecord(assignedTo);
       if (!existing || !existing.spreadsheetId) {
         const registration = registerCounselor(assignedTo, "");
         if (!registration || registration.status !== "success") {
-          throw new Error(
-            'Counselor "' + assignedTo + '" could not be registered: ' +
-            ((registration && registration.message) || "Unknown registration error.")
-          );
+          throw new Error('Counselor "' + assignedTo + '" could not be registered: ' + ((registration && registration.message) || "Unknown registration error."));
         }
       }
     }
 
+    // Dashboard assignment is intentionally counselor-only. Do not read or write Master Sheet1.
     const app = buildApplicationObject(application, applicationId);
     app["Application ID"] = applicationId;
     app["Assigned To"] = assignedTo;
     app["Call Status"] = standardizeCallStatus_(app["Call Status"]);
+    app["Remarks"] = sanitizeCrmRemarks_(app["Remarks"], "");
 
-    // IMPORTANT: this function writes counselor sheets only. It does not call
-    // updateApplicationInSheet(), syncSheetRowToFirebase(), or write Master.
-    const counselorResult = syncApplicationToCounselorSheet(
-      app,
-      previousAssignedTo
-    );
+    if (previousAssignedTo && previousAssignedTo.toLowerCase() !== assignedTo.toLowerCase()) {
+      removeApplicationFromCounselorSpreadsheet(previousAssignedTo, applicationId);
+    }
 
-    // Publish a receipt so the dashboard can verify completion even though the
-    // browser uses a no-cors request to the Apps Script Web App.
-    const receipt = firebaseRestPatch(
-      "/assignmentRoutingStatus/" + encodeURIComponent(requestId),
-      {
-        status: "success",
-        requestId: requestId,
-        applicationId: applicationId,
-        previousAssignedTo: previousAssignedTo,
-        assignedTo: assignedTo,
-        counselorSheet: counselorResult.sheetName || "",
-        counselorRow: counselorResult.row || 0,
-        masterUpdated: false,
-        updatedAtMs: Date.now()
+    if (!assignedTo) {
+      const cleanup = removeApplicationFromAllCounselorSpreadsheets_(applicationId);
+      if (cleanup && cleanup.errors && cleanup.errors.length) {
+        throw new Error("Could not remove the lead from all counselor sheets: " + cleanup.errors.join(" | "));
       }
-    );
+      const receipt = publishRouteState_("success", { action:"unassigned", counselorSheet:"", counselorRow:0 });
+      return {status:"success", requestId:requestId, applicationId:applicationId, previousAssignedTo:previousAssignedTo, assignedTo:"", masterUpdated:false, receipt:receipt};
+    }
+
+    const cleanup = removeApplicationFromAllOtherCounselors_(applicationId, assignedTo);
+    if (cleanup && cleanup.errors && cleanup.errors.length) {
+      throw new Error("Could not remove stale counselor copies: " + cleanup.errors.join(" | "));
+    }
+
+    const record = getCounselorRecord(assignedTo);
+    if (!record || !record.spreadsheetId) throw new Error('Counselor "' + assignedTo + '" is not configured with a Spreadsheet ID.');
+
+    const ss = SpreadsheetApp.openById(record.spreadsheetId);
+    const sheet = findCounselorLeadSheet_(ss, assignedTo, true);
+    if (!sheet) throw new Error("Could not create/find the counselor lead sheet for " + assignedTo);
+    assertCounselorLeadSchemaForWrite_(sheet, assignedTo);
+
+    const headers = COUNSELOR_CONFIG.LEADS_HEADERS.slice();
+    const newRow = buildRow(headers, app);
+    let rowNumber = findApplicationId(sheet, headers, applicationId);
+    if (rowNumber > 0) sheet.getRange(rowNumber, 1, 1, headers.length).setValues([newRow]);
+    else { sheet.appendRow(newRow); rowNumber = sheet.getLastRow(); }
+    SpreadsheetApp.flush();
+
+    const verifiedRow = findApplicationId(sheet, headers, applicationId);
+    if (verifiedRow <= 0) throw new Error("Counselor sheet write completed but the lead could not be verified by Application ID.");
+    ensureCounselorTrigger(record.spreadsheetId);
+
+    const receipt = publishRouteState_("success", {
+      action:"assigned", counselorSheet:sheet.getName(), counselorSpreadsheetId:record.spreadsheetId, counselorRow:verifiedRow
+    });
 
     return {
-      status: "success",
-      requestId: requestId,
-      applicationId: applicationId,
-      previousAssignedTo: previousAssignedTo,
-      assignedTo: assignedTo,
-      counselor: counselorResult,
-      masterUpdated: false,
-      receipt: receipt
+      status:"success", requestId:requestId, applicationId:applicationId, previousAssignedTo:previousAssignedTo, assignedTo:assignedTo, masterUpdated:false,
+      counselor:{status:"success", counselor:assignedTo, sheetName:sheet.getName(), row:verifiedRow, source:"Dashboard assignment payload"}, receipt:receipt
     };
+
   } catch (error) {
-    // Best-effort cleanup if the counselor sheet was written before a later
-    // verification step failed. This keeps the failed assignment from leaving
-    // an orphaned counselor copy behind.
     try {
-      if (assignedTo) {
-        removeApplicationFromCounselorSpreadsheet(assignedTo, applicationId);
-      }
+      if (assignedTo) removeApplicationFromCounselorSpreadsheet(assignedTo, applicationId);
       if (previousAssignedTo) {
-        const restoreApp = buildApplicationObject(application, applicationId);
-        restoreApp["Application ID"] = applicationId;
-        restoreApp["Assigned To"] = previousAssignedTo;
-        syncApplicationToCounselorSheet(restoreApp, assignedTo);
+        const restore = buildApplicationObject(application, applicationId);
+        restore["Application ID"] = applicationId;
+        restore["Assigned To"] = previousAssignedTo;
+        const oldRecord = getCounselorRecord(previousAssignedTo);
+        if (oldRecord && oldRecord.spreadsheetId) {
+          const oldSs = SpreadsheetApp.openById(oldRecord.spreadsheetId);
+          const oldSheet = findCounselorLeadSheet_(oldSs, previousAssignedTo, true);
+          assertCounselorLeadSchemaForWrite_(oldSheet, previousAssignedTo);
+          const oldHeaders = COUNSELOR_CONFIG.LEADS_HEADERS.slice();
+          const oldRow = buildRow(oldHeaders, restore);
+          const existingOldRow = findApplicationId(oldSheet, oldHeaders, applicationId);
+          if (existingOldRow > 0) oldSheet.getRange(existingOldRow, 1, 1, oldHeaders.length).setValues([oldRow]);
+          else oldSheet.appendRow(oldRow);
+          SpreadsheetApp.flush();
+        }
       }
     } catch (cleanupError) {
       console.warn("Assignment routing rollback cleanup failed:", cleanupError);
     }
 
-    try {
-      firebaseRestPatch(
-        "/assignmentRoutingStatus/" + encodeURIComponent(requestId),
-        {
-          status: "error",
-          requestId: requestId,
-          applicationId: applicationId,
-          previousAssignedTo: previousAssignedTo,
-          assignedTo: assignedTo,
-          masterUpdated: false,
-          error: error.message || String(error),
-          updatedAtMs: Date.now()
-        }
-      );
-    } catch (receiptError) {
-      console.warn("Assignment routing error receipt failed:", receiptError);
-    }
-
+    const receipt = publishRouteState_("error", {error:error.message || String(error), action:"failed"});
     console.error("Dashboard counselor routing failed:", error);
-    return {
-      status: "error",
-      requestId: requestId,
-      applicationId: applicationId,
-      previousAssignedTo: previousAssignedTo,
-      assignedTo: assignedTo,
-      masterUpdated: false,
-      message: error.message || String(error)
-    };
+    return {status:"error", requestId:requestId, applicationId:applicationId, previousAssignedTo:previousAssignedTo, assignedTo:assignedTo, masterUpdated:false, message:error.message || String(error), receipt:receipt};
   } finally {
     lock.releaseLock();
   }

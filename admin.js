@@ -821,15 +821,19 @@ function handleCounselorSelect(select, onValue) {
   return value;
 }
 
-async function waitForAssignmentRoutingReceipt_(requestId, timeoutMs = 15000) {
+async function waitForAssignmentRoutingReceipt_(appId, requestId, timeoutMs = 15000) {
+  const applicationId = String(appId || "").trim();
   const id = String(requestId || "").trim();
+  if (!applicationId) throw new Error("Missing application ID for routing verification.");
   if (!id) throw new Error("Missing assignment routing request ID.");
 
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
-    const snapshot = await db.ref(`assignmentRoutingStatus/${id}`).once("value");
+    // Reuse the existing authenticated submittedApplications read permission.
+    // Do not depend on a separate assignmentRoutingStatus top-level node.
+    const snapshot = await db.ref(`submittedApplications/${applicationId}/assignmentRouting`).once("value");
     const receipt = snapshot.val();
-    if (receipt) {
+    if (receipt && String(receipt.requestId || "") === id) {
       if (String(receipt.status || "").toLowerCase() === "success") return receipt;
       if (String(receipt.status || "").toLowerCase() === "error") {
         throw new Error(receipt.error || "Counselor sheet routing failed.");
@@ -837,7 +841,7 @@ async function waitForAssignmentRoutingReceipt_(requestId, timeoutMs = 15000) {
     }
     await new Promise(resolve => setTimeout(resolve, 400));
   }
-  throw new Error("Counselor sheet routing was not confirmed. Check the Apps Script Web App deployment and the counselor registry.");
+  throw new Error("Counselor sheet routing was not confirmed. The Apps Script route may not be deployed or the counselor spreadsheet may be unavailable.");
 }
 
 async function assignApplicationToCounselor(appId, counselor, source = "row") {
@@ -879,7 +883,7 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
       })
     });
 
-    await waitForAssignmentRoutingReceipt_(requestId);
+    await waitForAssignmentRoutingReceipt_(appId, requestId);
 
     await logApplicationActivity(appId, {
       action: "Lead reassigned",

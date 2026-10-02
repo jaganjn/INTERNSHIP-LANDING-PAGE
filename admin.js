@@ -821,27 +821,77 @@ function handleCounselorSelect(select, onValue) {
   return value;
 }
 
-async function waitForAssignmentRoutingReceipt_(appId, requestId, timeoutMs = 15000) {
-  const applicationId = String(appId || "").trim();
-  const id = String(requestId || "").trim();
-  if (!applicationId) throw new Error("Missing application ID for routing verification.");
-  if (!id) throw new Error("Missing assignment routing request ID.");
+async function verifyCounselorRoutingViaJsonp_(firebaseKey, applicationId, counselor, requestId, timeoutMs = 20000) {
+  const fKey = String(firebaseKey || "").trim();
+  const appId = String(applicationId || "").trim();
+  const counselorName = String(counselor || "").trim();
+  const reqId = String(requestId || "").trim();
+  if (!fKey) throw new Error("Missing Firebase application key for routing verification.");
+  if (!appId) throw new Error("Missing Application ID for routing verification.");
+  if (!counselorName) throw new Error("Missing counselor name for routing verification.");
 
   const started = Date.now();
+  let lastMessage = "Waiting for counselor sheet routing…";
+
   while (Date.now() - started < timeoutMs) {
-    // Reuse the existing authenticated submittedApplications read permission.
-    // Do not depend on a separate assignmentRoutingStatus top-level node.
-    const snapshot = await db.ref(`submittedApplications/${applicationId}/assignmentRouting`).once("value");
-    const receipt = snapshot.val();
-    if (receipt && String(receipt.requestId || "") === id) {
-      if (String(receipt.status || "").toLowerCase() === "success") return receipt;
-      if (String(receipt.status || "").toLowerCase() === "error") {
-        throw new Error(receipt.error || "Counselor sheet routing failed.");
+    try {
+      const result = await new Promise((resolve, reject) => {
+        const callbackName = `__ifRouteVerify_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const script = document.createElement("script");
+        let settled = false;
+        const cleanup = () => {
+          try { delete window[callbackName]; } catch (_) {}
+          script.remove();
+        };
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error("Routing verification request timed out."));
+        }, 7000);
+        window[callbackName] = payload => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          cleanup();
+          resolve(payload || {});
+        };
+        script.onerror = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          cleanup();
+          reject(new Error("Could not reach the Apps Script verification endpoint."));
+        };
+        const params = new URLSearchParams({
+          action: "verifyCounselorRouting",
+          applicationId: appId,
+          firebaseKey: fKey,
+          counselorName,
+          requestId: reqId,
+          callback: callbackName,
+          _: String(Date.now())
+        });
+        script.src = `${SHEETS_RECOVERY_ENDPOINT}?${params.toString()}`;
+        document.head.appendChild(script);
+      });
+
+      if (result && result.verified === true && String(result.assignedTo || "").trim().toLowerCase() === counselorName.toLowerCase()) {
+        return result;
       }
+      if (result && result.status === "error") {
+        lastMessage = result.message || "Apps Script verification returned an error.";
+      } else if (result && result.message) {
+        lastMessage = result.message;
+      }
+    } catch (error) {
+      lastMessage = error.message || String(error);
     }
-    await new Promise(resolve => setTimeout(resolve, 400));
+
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
-  throw new Error("Counselor sheet routing was not confirmed. The Apps Script route may not be deployed or the counselor spreadsheet may be unavailable.");
+
+  throw new Error(`${lastMessage} The counselor sheet could not be verified by the Apps Script endpoint.`);
 }
 
 async function assignApplicationToCounselor(appId, counselor, source = "row") {
@@ -878,12 +928,13 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
         action: "routeApplicationToCounselor",
         requestId: requestId,
         application: {...app, applicationId: app.applicationId || app.id, assignedTo: clean},
+        firebaseKey: appId,
         previousAssignedTo: old,
         source: source || "dashboard"
       })
     });
 
-    await waitForAssignmentRoutingReceipt_(appId, requestId);
+    await verifyCounselorRoutingViaJsonp_(appId, app.applicationId || app.id, clean, requestId);
 
     await logApplicationActivity(appId, {
       action: "Lead reassigned",

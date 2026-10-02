@@ -2036,22 +2036,6 @@ function syncApplicationsToSheet(applications, updateExisting) {
 }
 
 
-function ensureCounselorRegisteredForDashboard_(counselorName) {
-  const name = normalizeCounselorName(counselorName);
-  if (!name) return null;
-  const existing = getCounselorRecord(name);
-  if (existing && existing.spreadsheetId) return existing;
-
-  const result = registerCounselor(name, "");
-  if (!result || result.status !== "success") {
-    throw new Error(
-      'Could not register counselor "' + name + '". ' +
-      ((result && result.message) || "Unknown registration error.")
-    );
-  }
-  return getCounselorRecord(name) || result;
-}
-
 /**
  * ADMIN DASHBOARD -> COUNSELOR-ONLY ASSIGNMENT
  * --------------------------------------------
@@ -2066,50 +2050,23 @@ function assignApplicationToCounselor(raw) {
   const applicationId = value(application.applicationId || application.applicationID || application.id);
   if (!applicationId) return {status:"error", message:"Application ID is required."};
 
-  const requestedAssignedTo = normalizeCounselorName(
-    application.assignedTo || application.AssignedTo || application["Assigned To"] || ""
-  );
+  const app = buildApplicationObject(application, applicationId);
   const previousAssignedTo = normalizeCounselorName(raw.previousAssignedTo || "");
+  const newAssignedTo = normalizeCounselorName(app["Assigned To"] || "");
 
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    // Dashboard counselor names can exist only in browser localStorage.
-    // Before routing, make sure the selected counselor is actually present in
-    // the server-side Counselors registry and has a dedicated spreadsheet.
-    // registerCounselor() reuses an existing spreadsheet when one is already
-    // registered, and creates one automatically when it is missing.
-    let registration = null;
-    if (requestedAssignedTo) {
-      const before = getCounselorRecord(requestedAssignedTo);
-      if (!before || !before.spreadsheetId) {
-        registration = ensureCounselorRegisteredForDashboard_(requestedAssignedTo);
-      }
-    }
-
-    // Use the freshest Firebase record so the counselor sheet receives the
-    // complete application even when the dashboard copy is stale/incomplete.
-    const liveApplication = getLiveApplication_(applicationId) || {};
-    const mergedApplication = Object.assign({}, liveApplication, application, {
-      id: applicationId,
-      applicationId: applicationId,
-      assignedTo: requestedAssignedTo
-    });
-    const app = buildApplicationObject(mergedApplication, applicationId);
-    app["Assigned To"] = requestedAssignedTo;
-
-    // This writes ONLY the selected counselor spreadsheet. It never touches
-    // Master Sheet1 for a dashboard assignment. If the lead was previously
-    // assigned, its old counselor copy is removed first.
+    // This writes only counselor spreadsheets; it never touches Master Sheet1.
     const counselorResult = syncApplicationToCounselorSheet(app, previousAssignedTo);
 
-    // Firebase remains authoritative for the dashboard assignment. Marking the
-    // source prevents the realtime listener from echoing this assignment into
-    // the generic updateApplicationInSheet() -> Master Sheet1 path.
+    // Keep Firebase authoritative for the dashboard assignment, but mark the
+    // write so the dashboard's generic child_changed listener does not echo it
+    // back into updateApplicationInSheet() and Master Sheet1.
     const firebaseResult = firebaseRestPatch(
       "/submittedApplications/" + encodeURIComponent(applicationId),
       {
-        assignedTo: requestedAssignedTo,
+        assignedTo: newAssignedTo,
         updatedAtMs: Date.now(),
         syncSource: "dashboard-assignment"
       }
@@ -2119,12 +2076,9 @@ function assignApplicationToCounselor(raw) {
       status: "success",
       applicationId: applicationId,
       previousAssignedTo: previousAssignedTo,
-      assignedTo: requestedAssignedTo,
-      registered: !!registration,
-      registration: registration,
+      assignedTo: newAssignedTo,
       counselor: counselorResult,
-      firebase: firebaseResult,
-      masterUpdated: false
+      firebase: firebaseResult
     };
   } finally {
     lock.releaseLock();
@@ -2189,11 +2143,6 @@ function updateDashboardCRM(raw) {
 
     // Route the live counselor copy separately. For assignment changes this
     // removes the old counselor copy and writes the selected counselor copy.
-    // Dashboard-only counselor names may exist only in browser storage, so
-    // ensure the server-side Counselors registry is ready first.
-    if (assignmentChanged && newAssignedTo) {
-      ensureCounselorRegisteredForDashboard_(newAssignedTo);
-    }
     const counselorResult = syncApplicationToCounselorSheet(
       app,
       previousAssignedTo
@@ -2974,19 +2923,14 @@ function syncApplicationToCounselorSheet(app, previousAssignedTo) {
     );
   }
 
-  // Always remove stale copies from every other counselor. This guarantees
-  // that a lead routed from the Admin Dashboard exists in only the selected
-  // counselor spreadsheet, even if an older stale copy already exists.
-  if (newAssignedTo) {
-    const cleanup = removeApplicationFromAllOtherCounselors_(
+  // If the previous assignment was unavailable (for example a pasted/multi-cell
+  // edit has no e.oldValue), remove stale copies from every other counselor.
+  // This prevents duplicate leads after reassignment.
+  if (newAssignedTo && !oldAssignedTo) {
+    removeApplicationFromAllOtherCounselors_(
       applicationId,
       newAssignedTo
     );
-    if (cleanup && cleanup.errors && cleanup.errors.length) {
-      throw new Error(
-        "Could not remove stale counselor copies: " + cleanup.errors.join(" | ")
-      );
-    }
   }
 
   /*

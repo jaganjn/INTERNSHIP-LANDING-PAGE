@@ -821,6 +821,18 @@ function handleCounselorSelect(select, onValue) {
   return value;
 }
 
+async function waitForFirebaseAssignment_(appId, expectedAssignedTo, attempts = 6) {
+  const expected = String(expectedAssignedTo || "").trim().toLowerCase();
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const snapshot = await db.ref(`submittedApplications/${appId}`).once("value");
+    const current = snapshot.val() || {};
+    const actual = String(current.assignedTo || "").trim().toLowerCase();
+    if (actual === expected) return true;
+    await new Promise(resolve => setTimeout(resolve, 350));
+  }
+  return false;
+}
+
 async function assignApplicationToCounselor(appId, counselor, source = "row") {
   const app = applications.find(item => item.id === appId);
   if (!app) return false;
@@ -846,6 +858,11 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
         source: source || "dashboard"
       })
     });
+
+    const verified = await waitForFirebaseAssignment_(appId, clean || "");
+    if (!verified) {
+      throw new Error(`The assignment was not confirmed for ${clean || "Unassigned"}. Check the Apps Script deployment and counselor registry.`);
+    }
 
     await logApplicationActivity(appId, {
       action: "Lead reassigned",

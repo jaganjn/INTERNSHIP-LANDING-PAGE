@@ -1825,6 +1825,149 @@ footer nav a:hover{color:#ffbb70!important}
 }
 </style>
 
+
+<style id="final-typography-contrast-fix-2026">
+/* FINAL UI-ONLY TYPOGRAPHY / CONTRAST PATCH
+   Presentation only. No application logic, Firebase logic, APIs, forms, or existing JS are changed. */
+:root{
+  --if-text-strong:#18263a;
+  --if-text:#40536a;
+  --if-text-muted:#66778a;
+  --if-accent:#b45718;
+  --if-accent-blue:#5278e8;
+  --if-accent-green:#1e9b69;
+}
+
+/* Light-section defaults */
+.receive-section,
+.project-section,
+.fit-section,
+.student-persona-section,
+.process-section,
+.faq-section,
+.student-journey-section,
+.ecosystem,
+.trust-strip{
+  color:var(--if-text)!important;
+}
+
+/* Light-section headings */
+.receive-section .section-heading h2,
+.project-section .section-heading h2,
+.fit-section .section-heading h2,
+.student-persona-section .section-heading h2,
+.process-section .section-heading h2,
+.faq-section .section-heading h2,
+.student-journey-section .section-heading h2{
+  color:var(--if-text-strong)!important;
+}
+
+.receive-section .section-heading p,
+.project-section .section-heading p,
+.fit-section .section-heading p,
+.student-persona-section .section-heading p,
+.process-section .section-heading p,
+.faq-section .section-heading p,
+.student-journey-section .section-heading p{
+  color:var(--if-text-muted)!important;
+}
+
+.receive-section .section-heading>span,
+.project-section .section-heading>span,
+.fit-section .section-heading>span,
+.student-persona-section .section-heading>span,
+.process-section .section-heading>span,
+.faq-section .section-heading>span,
+.student-journey-section .section-heading>span{
+  color:var(--if-accent)!important;
+}
+
+/* Projects — fixes the low-contrast text visible in QA */
+.project-section{
+  background:#f6efe6!important;
+  color:var(--if-text-strong)!important;
+}
+.project-grid article{
+  background:#fffaf4!important;
+  color:var(--if-text)!important;
+  border-color:#e7dacb!important;
+}
+.project-grid article>span{color:#5b84ec!important}
+.project-grid h3{color:var(--if-text-strong)!important}
+.project-grid p{color:#5d6f82!important}
+.project-grid ul{color:#6b7c8f!important}
+.project-grid small{color:#1d9a68!important}
+.project-icon{background:#fff0df!important;color:#b45b1d!important}
+
+/* Benefits / receive */
+.receive-section{background:#fffdf9!important}
+.receive-grid article{color:var(--if-text)!important}
+.receive-grid i{color:#5d7ce5!important}
+.receive-grid h3{color:var(--if-text-strong)!important}
+.receive-grid p{color:#66778a!important}
+
+/* Eligibility / fit */
+.fit-section{color:var(--if-text)!important}
+.fit-grid h3{color:var(--if-text-strong)!important}
+.fit-grid ul{color:#617286!important}
+.fit-yes>span{color:#198a5d!important}
+.fit-no>span{color:#ad5a20!important}
+
+/* Student journey */
+.student-journey-section{color:var(--if-text)!important}
+.student-journey-head h2{color:var(--if-text-strong)!important}
+.journey-step-card{color:var(--if-text)!important}
+.journey-step-card h3{color:var(--if-text-strong)!important}
+.journey-step-card p{color:#6b7a8c!important}
+.journey-arrow{color:#b07a4f!important}
+
+/* Student personas */
+.student-persona-section{color:var(--if-text)!important}
+.persona-card h3{color:var(--if-text-strong)!important}
+.persona-card p{color:#69788a!important}
+.persona-cta{color:#a95518!important}
+
+/* How it works */
+.process-section{color:var(--if-text)!important}
+.how-grid article{color:var(--if-text)!important}
+.how-grid b{color:#5571df!important}
+.how-grid h3{color:var(--if-text-strong)!important}
+.how-grid p{color:#66778a!important}
+
+/* FAQ */
+.faq-section{color:var(--if-text)!important}
+.faq-list summary{color:var(--if-text-strong)!important}
+.faq-list summary i{color:#b25a1e!important}
+.faq-list details p{color:#667687!important}
+
+/* Trust strip + ecosystem */
+.trust-strip article{color:var(--if-text)!important}
+.trust-strip span{color:#5c78e4!important}
+.trust-strip strong{color:var(--if-text-strong)!important}
+.trust-strip small{color:#718094!important}
+.ecosystem{color:var(--if-text)!important}
+.ecosystem-title span{color:#5a78e4!important}
+.ecosystem-title small{color:#748396!important}
+.brand-disclaimer{color:#788696!important}
+
+/* Light modals / utility surfaces */
+.site-info-card h2,
+.domain-modal-head h2,
+.domain-explorer-card strong{color:var(--if-text-strong)!important}
+.site-info-card p,
+.domain-modal-head p,
+.domain-explorer-card small{color:#68788a!important}
+
+/* Preserve intentionally dark conversion surfaces */
+.conversion-domains,
+.proof-section,
+.final-cta,
+.wizard-hero{color:#fff!important}
+.conversion-domains .section-heading h2,
+.proof-section .section-heading h2,
+.final-cta h2{color:#fffaf4!important}
+</style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>

@@ -56,6 +56,65 @@ footer{border-top:1px solid var(--if-border)!important;color:#718197!important;m
 #adminModuleModalBody .referral-metrics{margin:0 0 18px!important;}
 #applicationModal{z-index:11000!important;}
 @media(max-width:700px){#adminModuleModal{padding:8px!important;}#adminModuleModalBody{padding:10px!important;max-height:calc(96vh - 80px)!important;}#adminModuleModalBody .dashboard-grid{grid-template-columns:1fr!important;}}
+
+/* Application trend explorer */
+.activity-trend-panel{overflow:hidden}
+.activity-trend-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
+.activity-trend-head h2{margin:4px 0 5px!important}
+.activity-trend-subtitle{margin:0;color:#8494a9;font-size:12px}
+.activity-trend-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.trend-view-btn{border:1px solid rgba(148,163,184,.16);background:#0b1420;color:#9eacc0;border-radius:10px;padding:8px 11px;font-size:11px;font-weight:800;cursor:pointer}
+.trend-view-btn:hover{border-color:rgba(245,185,66,.28);color:#ffd978}
+.trend-view-btn.active{border-color:rgba(98,168,255,.45);background:rgba(98,168,255,.12);color:#cfe2ff}
+.trend-month-picker{display:flex;align-items:center;gap:7px;border:1px solid rgba(148,163,184,.16);background:#0b1420;border-radius:10px;padding:5px 8px 5px 10px;color:#77889e;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.trend-month-picker input{border:0;outline:0;background:transparent;color:#eaf2fb;font:700 11px Inter,sans-serif;min-width:108px}
+.trend-month-picker input::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.7);cursor:pointer}
+.activity-summary-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
+.activity-summary-strip>div{padding:11px 12px;border:1px solid rgba(148,163,184,.11);border-radius:13px;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.01))}
+.activity-summary-strip small{display:block;color:#72849a;font-size:9px;text-transform:uppercase;letter-spacing:.08em}
+.activity-summary-strip strong{display:block;color:#f2f6fb;font-size:15px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.activity-trend-layout{display:grid;grid-template-columns:minmax(290px,34%) minmax(0,66%);gap:14px;align-items:stretch}
+.activity-calendar-card,.activity-bars-card{border:1px solid rgba(148,163,184,.11);background:linear-gradient(180deg,#0b1420,#09111b);border-radius:16px;padding:14px}
+.activity-calendar-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.activity-calendar-head strong{font:800 14px Manrope,Inter,sans-serif;color:#eef4fb}
+.activity-calendar-head button{width:30px;height:30px;border-radius:9px;border:1px solid rgba(148,163,184,.12);background:#101b29;color:#d4deea;cursor:pointer;font-size:19px;line-height:1}
+.activity-calendar-head button:hover{border-color:rgba(245,185,66,.28);color:#ffd978}
+.activity-calendar-weekdays,.activity-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.activity-calendar-weekdays span{font-size:8px;font-weight:800;text-align:center;color:#64758b;text-transform:uppercase;letter-spacing:.06em;padding-bottom:3px}
+.activity-calendar-grid{grid-auto-rows:minmax(34px,1fr)}
+.activity-day{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:34px;border:1px solid rgba(148,163,184,.07);border-radius:8px;background:#0d1824;color:#77889d;cursor:default;transition:transform .15s ease,border-color .15s ease}
+.activity-day.empty{background:transparent;border-color:transparent}
+.activity-day .day-num{font-size:10px;font-weight:800;color:#c9d5e3}
+.activity-day .day-count{font-size:8px;color:#73869c;margin-top:1px}
+.activity-day.today{box-shadow:inset 0 0 0 1px rgba(245,185,66,.55)}
+.activity-day.has-count{cursor:pointer}
+.activity-day.has-count:hover{transform:translateY(-1px);border-color:rgba(98,168,255,.45)}
+.activity-day.level-1{background:linear-gradient(180deg,rgba(98,168,255,.08),rgba(98,168,255,.04))}
+.activity-day.level-2{background:linear-gradient(180deg,rgba(98,168,255,.16),rgba(98,168,255,.06))}
+.activity-day.level-3{background:linear-gradient(180deg,rgba(98,168,255,.28),rgba(98,168,255,.09));border-color:rgba(98,168,255,.24)}
+.activity-day.level-4{background:linear-gradient(180deg,rgba(98,168,255,.42),rgba(98,168,255,.12));border-color:rgba(98,168,255,.4);box-shadow:0 5px 18px rgba(28,95,210,.12)}
+.activity-calendar-legend{display:flex;gap:12px;align-items:center;margin-top:12px;color:#687a91;font-size:9px}
+.activity-calendar-legend span{display:inline-flex;align-items:center;gap:5px}
+.activity-calendar-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;border:1px solid rgba(148,163,184,.1);background:#0d1824}
+.activity-calendar-legend i.mid{background:rgba(98,168,255,.18)}
+.activity-calendar-legend i.high{background:rgba(98,168,255,.4)}
+.activity-bars-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.activity-bars-head strong{display:block;margin-top:3px;font:800 14px Manrope,Inter,sans-serif;color:#eef4fb}
+.trend-total-chip{display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;border:1px solid rgba(54,211,153,.2);background:rgba(54,211,153,.07);color:#7ce6b5;font-size:10px;font-weight:800;white-space:nowrap}
+.activity-chart-scroll{overflow-x:auto;overflow-y:hidden;border-top:1px solid rgba(148,163,184,.08);border-bottom:1px solid rgba(148,163,184,.08);padding:16px 6px 10px}
+.activity-chart-scroll::-webkit-scrollbar{height:6px}.activity-chart-scroll::-webkit-scrollbar-thumb{background:#25364a;border-radius:999px}
+.activity-bar-chart{display:flex!important;align-items:flex-end;gap:9px;min-height:250px;width:max-content;min-width:100%}
+.activity-bar-chart .chart-day{width:26px;min-width:26px;height:226px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px}
+.activity-bar-chart .chart-bar-track{position:relative;width:100%;height:188px;display:flex;align-items:flex-end;justify-content:center}
+.activity-bar-chart .chart-bar-bg{position:absolute;inset:auto 0 0 0;height:100%;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.008))}
+.activity-bar-chart .chart-bar{position:relative;z-index:1;width:100%;min-height:5px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,#7a9cff 0%,#3c64e7 100%);box-shadow:0 8px 18px rgba(60,100,231,.18);transition:height .25s ease,transform .15s ease,filter .15s ease}
+.activity-bar-chart .chart-day:hover .chart-bar{transform:translateY(-2px);filter:brightness(1.12)}
+.activity-bar-chart .chart-count{font-size:9px;font-weight:800;color:#d9e4f4;height:12px;white-space:nowrap}
+.activity-bar-chart .chart-label{font-size:8px;color:#718399;white-space:nowrap}
+.activity-chart-axis-note{padding-top:8px;color:#566a82;font-size:9px}
+@media(max-width:900px){.activity-trend-layout{grid-template-columns:1fr}.activity-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.activity-trend-head{flex-direction:column}.activity-trend-actions{justify-content:flex-start}.activity-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.activity-calendar-grid{gap:4px}.activity-day{min-height:38px}.activity-bar-chart{gap:8px}.activity-bar-chart .chart-day{width:24px;min-width:24px}}
+
 </style>
 </head>
 <body class="admin-page">
@@ -223,7 +282,47 @@ footer{border-top:1px solid var(--if-border)!important;color:#718197!important;m
 </div>
 <div class="crm-footer"><span id="abResultCount">0 abandoned applications</span><small>Persistent recovery records are updated in real time; recovered submissions remain available through the recovery-status filter.</small></div>
 </section><section class="dashboard-grid admin-module source-workspace-module" data-admin-module-section="dashboardPanels" data-workspace-container="dashboard">
-<article class="panel panel-wide admin-module" data-workspace-node="true" data-workspace-target="activity" id="activity"><header><div><span class="eyebrow">APPLICATION FLOW</span><h2>7-Day Applications Overview</h2></div><span class="live-chip">● Live</span></header><div class="bar-chart" id="applicationsChart"></div></article>
+<article class="panel panel-wide admin-module activity-trend-panel" data-workspace-node="true" data-workspace-target="activity" id="activity">
+  <header class="activity-trend-head">
+    <div>
+      <span class="eyebrow">APPLICATION MOMENTUM</span>
+      <h2>Application Trend</h2>
+      <p class="activity-trend-subtitle">Explore daily application volume across any month.</p>
+    </div>
+    <div class="activity-trend-actions">
+      <button class="trend-view-btn active" type="button" data-trend-range="7">7D</button>
+      <button class="trend-view-btn" type="button" data-trend-range="30">30D</button>
+      <button class="trend-view-btn" type="button" data-trend-range="month">Month</button>
+      <label class="trend-month-picker" title="Choose month">
+        <span>Calendar</span>
+        <input id="activityMonthPicker" type="month" aria-label="Choose application trend month">
+      </label>
+    </div>
+  </header>
+  <div class="activity-summary-strip">
+    <div><small>Selected period</small><strong id="activityPeriodLabel">—</strong></div>
+    <div><small>Total applications</small><strong id="activityPeriodTotal">0</strong></div>
+    <div><small>Peak day</small><strong id="activityPeakDay">—</strong></div>
+    <div><small>Daily average</small><strong id="activityDailyAverage">0</strong></div>
+  </div>
+  <div class="activity-trend-layout">
+    <section class="activity-calendar-card" aria-label="Application calendar">
+      <div class="activity-calendar-head">
+        <button id="activityPrevMonth" type="button" aria-label="Previous month">‹</button>
+        <strong id="activityCalendarTitle">—</strong>
+        <button id="activityNextMonth" type="button" aria-label="Next month">›</button>
+      </div>
+      <div class="activity-calendar-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+      <div id="activityCalendarGrid" class="activity-calendar-grid"></div>
+      <div class="activity-calendar-legend"><span><i class="low"></i> 0</span><span><i class="mid"></i> Some</span><span><i class="high"></i> Peak</span></div>
+    </section>
+    <section class="activity-bars-card" aria-label="Application bar chart">
+      <div class="activity-bars-head"><div><span class="eyebrow">DAILY VOLUME</span><strong id="activityBarsTitle">—</strong></div><span class="trend-total-chip" id="activityTrendTotalChip">0 applications</span></div>
+      <div class="activity-chart-scroll"><div id="applicationsChart" class="bar-chart activity-bar-chart"></div></div>
+      <div class="activity-chart-axis-note">Scroll horizontally on smaller screens to inspect every day in the selected period.</div>
+    </section>
+  </div>
+</article>
 <article class="panel admin-module" data-workspace-node="true" data-workspace-target="analytics" id="analytics"><header><div><span class="eyebrow">COLLEGE INSIGHTS</span><h2>Top Colleges</h2></div></header><div class="rank-list" id="topColleges"><p class="empty">No data yet…</p></div></article>
 <article class="panel live-panel admin-module" data-workspace-node="true" data-workspace-target="liveVisitors" id="liveVisitors"><header><div><span class="eyebrow">PRESENCE</span><h2>Active Visitors</h2></div><button aria-label="Refresh dashboard and clear abandoned sessions" class="icon-action refresh-action" id="refreshDashboardButton" type="button"><span>↻</span><small>Refresh</small></button></header><div class="visitor-list" id="visitorList"><p class="empty">Waiting for visitors…</p></div></article>
 <article class="panel admin-module application-visitor-panel" data-workspace-node="true" data-workspace-target="applicationVisitors" id="applicationVisitors"><header><div><span class="eyebrow">APPLICATION TRAFFIC</span><h2>Landing Page Traffic</h2></div><span class="live-chip">● Tracking</span></header><div class="application-visitor-stat"><strong id="applicationVisitorCount">0</strong><span>Visitors who opened the application form</span></div><div class="application-visitor-note"><b>Traffic metrics</b><p>The main dashboard card counts unique landing-page visitors. Refreshing the same browser does not increase the count. This panel separately shows unique visitors who opened the application form, so you can compare overall traffic with application intent.</p></div></article>

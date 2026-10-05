@@ -645,6 +645,183 @@ function renderRank(target, map) {
     : '<p class="empty">No data yet.</p>';
 }
 
+let activityTrendRange = "7";
+let activityTrendMonthKey = "";
+
+function getActivityMonthKey(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: IST_TIME_ZONE, year: "numeric", month: "2-digit" }).format(date);
+}
+
+function getActivityMonthParts(monthKey) {
+  const parts = String(monthKey || "").split("-").map(Number);
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  }
+  return { year: parts[0], month: parts[1] };
+}
+
+function daysInActivityMonth(year, month) {
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function activityMonthLabel(monthKey) {
+  const {year, month} = getActivityMonthParts(monthKey);
+  return new Intl.DateTimeFormat("en-IN", { month: "long", year: "numeric", timeZone: IST_TIME_ZONE })
+    .format(new Date(Date.UTC(year, month - 1, 15, 6, 30, 0)));
+}
+
+function getActivityCalendarData(daily, monthKey) {
+  const {year, month} = getActivityMonthParts(monthKey);
+  const totalDays = daysInActivityMonth(year, month);
+  const firstDay = new Date(Date.UTC(year, month - 1, 1, 6, 30, 0)).getUTCDay();
+  const values = [];
+  for (let i = 0; i < firstDay; i++) values.push(null);
+  for (let day = 1; day <= totalDays; day++) {
+    const key = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    values.push({day, key, count: daily[key] || 0});
+  }
+  while (values.length % 7 !== 0) values.push(null);
+  return values;
+}
+
+function renderActivityCalendar(daily, monthKey) {
+  const grid = el("activityCalendarGrid");
+  const title = el("activityCalendarTitle");
+  if (!grid || !title) return;
+  const todayKey = getTodayISTKey();
+  const cells = getActivityCalendarData(daily, monthKey);
+  const counts = cells.filter(Boolean).map(v => v.count);
+  const max = Math.max(1, ...counts);
+  title.textContent = activityMonthLabel(monthKey);
+
+  grid.innerHTML = cells.map(cell => {
+    if (!cell) return '<div class="activity-day empty" aria-hidden="true"></div>';
+    const ratio = cell.count / max;
+    const level = cell.count === 0 ? 0 : ratio >= .75 ? 4 : ratio >= .5 ? 3 : ratio >= .25 ? 2 : 1;
+    const today = cell.key === todayKey ? " today" : "";
+    const has = cell.count > 0 ? " has-count" : "";
+    return `<div class="activity-day level-${level}${today}${has}" title="${cell.count} application${cell.count === 1 ? "" : "s"} on ${cell.key}">
+      <span class="day-num">${cell.day}</span><span class="day-count">${cell.count || ""}</span>
+    </div>`;
+  }).join("");
+}
+
+function renderActivityBars(daily, points, total, periodLabel) {
+  const chart = E.applicationsChart;
+  if (!chart) return;
+  const max = Math.max(1, ...points.map(v => v.count));
+  const dayLabel = v => new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", timeZone: IST_TIME_ZONE }).format(new Date(v.time));
+  chart.innerHTML = points.map(point => {
+    const height = point.count ? Math.max(6, Math.round((point.count / max) * 100)) : 2;
+    const label = activityTrendRange === "7" ? new Intl.DateTimeFormat("en-IN", { weekday: "short", timeZone: IST_TIME_ZONE }).format(new Date(point.time)) : dayLabel(point);
+    return `<div class="chart-day" title="${point.count} application${point.count === 1 ? "" : "s"} on ${esc(point.key)}">
+      <span class="chart-count">${point.count}</span>
+      <div class="chart-bar-track"><span class="chart-bar-bg"></span><span class="chart-bar" style="height:${height}%"></span></div>
+      <small class="chart-label">${esc(label)}</small>
+    </div>`;
+  }).join("");
+  const title = el("activityBarsTitle");
+  const chip = el("activityTrendTotalChip");
+  if (title) title.textContent = periodLabel;
+  if (chip) chip.textContent = `${total.toLocaleString("en-IN")} application${total === 1 ? "" : "s"}`;
+}
+
+function updateActivitySummary(points, periodLabel) {
+  const total = points.reduce((sum, item) => sum + item.count, 0);
+  const peak = points.reduce((best, item) => item.count > best.count ? item : best, points[0] || {count:0, time:Date.now(), key:""});
+  const avg = points.length ? (total / points.length) : 0;
+  const periodEl = el("activityPeriodLabel");
+  const totalEl = el("activityPeriodTotal");
+  const peakEl = el("activityPeakDay");
+  const avgEl = el("activityDailyAverage");
+  if (periodEl) periodEl.textContent = periodLabel;
+  if (totalEl) totalEl.textContent = total.toLocaleString("en-IN");
+  if (peakEl) peakEl.textContent = peak.count ? `${peak.count} · ${new Intl.DateTimeFormat("en-IN", {day:"2-digit", month:"short", timeZone: IST_TIME_ZONE}).format(new Date(peak.time))}` : "—";
+  if (avgEl) avgEl.textContent = avg.toFixed(1);
+}
+
+function renderActivityTrend() {
+  const daily = {};
+  applications.forEach(app => {
+    const timestamp = asMs(app.submittedAtMs || app.submittedAt || app.timestamp);
+    if (timestamp) {
+      const key = getISTDateKey(timestamp);
+      daily[key] = (daily[key] || 0) + 1;
+    }
+  });
+
+  if (!activityTrendMonthKey) activityTrendMonthKey = getActivityMonthKey(new Date());
+  const {year, month} = getActivityMonthParts(activityTrendMonthKey);
+  const monthDays = daysInActivityMonth(year, month);
+  const points = [];
+
+  if (activityTrendRange === "7") {
+    const today = getTodayISTKey();
+    const [ty, tm, td] = today.split("-").map(Number);
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(Date.UTC(ty, tm - 1, td, 6, 30, 0));
+      date.setUTCDate(date.getUTCDate() - i);
+      const key = getISTDateKey(date.getTime());
+      points.push({key, count: daily[key] || 0, time: date.getTime()});
+    }
+  } else if (activityTrendRange === "30") {
+    const end = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const date = new Date(end.getTime() - i * 86400000);
+      const key = getISTDateKey(date.getTime());
+      points.push({key, count: daily[key] || 0, time: date.getTime()});
+    }
+  } else {
+    for (let day = 1; day <= monthDays; day++) {
+      const key = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      const time = Date.UTC(year, month - 1, day, 6, 30, 0);
+      points.push({key, count: daily[key] || 0, time});
+    }
+  }
+
+  const periodLabel = activityTrendRange === "7"
+    ? "Last 7 days"
+    : activityTrendRange === "30"
+      ? "Last 30 days"
+      : activityMonthLabel(activityTrendMonthKey);
+
+  renderActivityBars(daily, points, points.reduce((sum, item) => sum + item.count, 0), periodLabel);
+  updateActivitySummary(points, periodLabel);
+  renderActivityCalendar(daily, activityTrendMonthKey);
+  const picker = el("activityMonthPicker");
+  if (picker && picker.value !== activityTrendMonthKey) picker.value = activityTrendMonthKey;
+}
+
+function moveActivityMonth(offset) {
+  const {year, month} = getActivityMonthParts(activityTrendMonthKey || getActivityMonthKey(new Date()));
+  const date = new Date(Date.UTC(year, month - 1 + offset, 1, 6, 30, 0));
+  activityTrendMonthKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+  activityTrendRange = "month";
+  renderActivityTrend();
+  document.querySelectorAll("[data-trend-range]").forEach(btn => btn.classList.toggle("active", btn.dataset.trendRange === "month"));
+}
+
+function setupActivityTrendControls() {
+  activityTrendMonthKey = getActivityMonthKey(new Date());
+  el("activityMonthPicker")?.addEventListener("change", event => {
+    activityTrendMonthKey = event.target.value || getActivityMonthKey(new Date());
+    activityTrendRange = "month";
+    document.querySelectorAll("[data-trend-range]").forEach(btn => btn.classList.toggle("active", btn.dataset.trendRange === "month"));
+    renderActivityTrend();
+  });
+  document.querySelectorAll("[data-trend-range]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activityTrendRange = btn.dataset.trendRange || "7";
+      document.querySelectorAll("[data-trend-range]").forEach(item => item.classList.toggle("active", item === btn));
+      renderActivityTrend();
+    });
+  });
+  el("activityPrevMonth")?.addEventListener("click", () => moveActivityMonth(-1));
+  el("activityNextMonth")?.addEventListener("click", () => moveActivityMonth(1));
+  renderActivityTrend();
+}
+
 function renderApplications(newIds = new Set()) {
   const college = {};
   const domain = {};
@@ -672,20 +849,7 @@ function renderApplications(newIds = new Set()) {
 
   renderRank(E.topColleges, college);
   renderRank(E.topDomains, domain);
-
-  const today = getTodayISTKey();
-  const days = [...Array(7)].map((_, index) => {
-    const [year, month, day] = today.split("-").map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day, 6, 30, 0) - (6 - index) * 24 * 60 * 60 * 1000);
-    return { date, key: getISTDateKey(date.getTime()) };
-  });
-  const max = Math.max(1, ...days.map(item => daily[item.key] || 0));
-
-  E.applicationsChart.innerHTML = days.map(({ date, key }) => {
-    const count = daily[key] || 0;
-    return `<div class="chart-day" title="${count} applications"><span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span><small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${count}</small></div>`;
-  }).join("");
-
+  renderActivityTrend();
 }
 
 function getCallStatus(app) {
@@ -2225,6 +2389,7 @@ function setupUI() {
   window.setInterval(tick, 1000);
 
   el("refreshDashboardButton")?.addEventListener("click", performFullRefresh);
+  setupActivityTrendControls();
   el("exportApplicationsButton")?.addEventListener("click", exportApplicationsCsv);
   el("exportCrmButton")?.addEventListener("click", exportCrmCsv);
   el("syncCrmSheetsBtn")?.addEventListener("click", syncCrmToSheets);

@@ -2136,6 +2136,66 @@ body.application-modal-open .application-card.wizard-shell:after{
 }
 </style>
 
+
+<style id="footer-professional-overhaul">
+/* Professional responsive footer overhaul — presentation only. */
+.site-footer{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  background:linear-gradient(180deg,#0d1b2c 0%,#0b1726 100%)!important;
+  color:#c7d2dc!important;
+  border-top:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:0 -18px 50px rgba(9,22,38,.08);
+}
+.site-footer .footer-inner{
+  width:min(1240px,calc(100% - 48px));
+  margin:0 auto;
+  padding:42px 0 30px;
+  display:grid;
+  grid-template-columns:minmax(260px,1.1fr) minmax(240px,1fr) minmax(290px,1.1fr) auto;
+  align-items:center;
+  gap:34px;
+}
+.footer-brand-block{min-width:0}
+.site-footer .footer-brand{display:inline-flex;align-items:center;gap:12px;min-width:0}
+.site-footer .footer-brand .brand-mark{width:50px;height:50px;border-radius:13px;object-fit:contain;flex:0 0 auto}
+.site-footer .footer-brand strong{display:block!important;margin:0;color:#f7fbff!important;font:800 17px Manrope,sans-serif!important;letter-spacing:.3px!important}
+.site-footer .footer-brand small{display:block!important;margin-top:5px;color:#91a5b6!important;font:700 8px Inter,sans-serif!important;letter-spacing:1.2px!important}
+.footer-brand-block>p{margin:13px 0 0;max-width:310px;color:#91a3b4!important;font-size:11px!important;line-height:1.7!important}
+.footer-program-block{min-width:0;padding-left:2px;border-left:1px solid rgba(255,255,255,.09);padding-right:12px}
+.footer-kicker{display:block;color:#6f86a0;font-size:8px;font-weight:900;letter-spacing:1.5px;margin-bottom:9px}
+.footer-program-block strong{display:block;color:#d7e0e8;font-size:11px;font-weight:700;line-height:1.55}
+.footer-links{display:flex!important;align-items:center;justify-content:flex-end;gap:10px!important;flex-wrap:wrap;min-width:0}
+.footer-links>a{display:inline-flex!important;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid rgba(185,205,225,.16);border-radius:10px;background:rgba(255,255,255,.035);color:#cbd6df!important;text-decoration:none;font-size:10px!important;font-weight:800!important;white-space:nowrap;transition:transform .2s ease,border-color .2s ease,background .2s ease,color .2s ease}
+.footer-links>a:hover{transform:translateY(-2px);border-color:rgba(255,187,112,.48);background:rgba(255,187,112,.07);color:#ffc477!important}
+.footer-links .admin-login-link{gap:6px;padding:0 13px!important;border-color:rgba(255,193,121,.28)!important;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03))!important;color:#ffe0bb!important;box-shadow:0 10px 24px rgba(0,0,0,.14)}
+.footer-links .admin-login-link span{font-size:12px;line-height:1}
+#backToTop{width:42px!important;height:42px!important;display:grid!important;place-items:center!important;border:1px solid rgba(255,193,121,.32)!important;border-radius:12px!important;background:#fff4e5!important;color:#a85e25!important;font-weight:900!important;font-size:18px!important;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.18);transition:transform .2s ease,box-shadow .2s ease}
+#backToTop:hover{transform:translateY(-3px)!important;box-shadow:0 14px 28px rgba(0,0,0,.25)!important}
+.footer-bottom{width:min(1240px,calc(100% - 48px));margin:0 auto;border-top:1px solid rgba(255,255,255,.07);padding:15px 0 19px;display:flex;align-items:center;justify-content:space-between;gap:20px;color:#71869a;font-size:8px;letter-spacing:.2px}
+.footer-bottom span:last-child{text-align:right}
+@media(max-width:1080px){
+  .site-footer .footer-inner{grid-template-columns:1.15fr .95fr;gap:26px 30px;padding:34px 0 26px}
+  .footer-program-block{border-left:0;border-top:1px solid rgba(255,255,255,.09);padding:18px 0 0}
+  .footer-links{justify-content:flex-start!important}
+  #backToTop{justify-self:end}
+}
+@media(max-width:640px){
+  .site-footer .footer-inner{width:calc(100% - 30px);grid-template-columns:1fr;gap:20px;padding:30px 0 20px}
+  .site-footer .footer-brand .brand-mark{width:44px;height:44px}
+  .site-footer .footer-brand strong{font-size:15px!important}
+  .footer-brand-block>p{max-width:100%;font-size:10px!important;margin-top:10px}
+  .footer-program-block{padding-top:16px;padding-right:0}
+  .footer-links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important}
+  .footer-links>a{width:100%;min-height:40px;padding:0 9px!important}
+  .footer-links .admin-login-link{grid-column:1/-1}
+  #backToTop{width:100%!important;height:42px!important;justify-self:stretch}
+  .footer-bottom{width:calc(100% - 30px);padding:13px 0 calc(18px + env(safe-area-inset-bottom));display:grid;gap:6px;font-size:8px;line-height:1.5}
+  .footer-bottom span:last-child{text-align:left}
+}
+</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -2496,11 +2556,34 @@ body.application-modal-open .application-card.wizard-shell:after{
 <section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your next project can start with one minute.</h2><p>No prerequisite knowledge required. Choose your domain and start your application.</p></div><button class="open-application" type="button">Start Application <span>→</span></button></section>
 </main>
 
-<footer id="contact">
-  <a class="footer-brand" href="#home"><img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge"><span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span></a>
-  <p>Practical learning and career preparation for students.</p>
-  <div><small>© 2026 InternsForge Internship Programme</small><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a></nav></div>
-  <button id="backToTop" type="button" aria-label="Back to top">↑</button>
+<footer id="contact" class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand-block">
+      <a class="footer-brand" href="#home">
+        <img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge">
+        <span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span>
+      </a>
+      <p>Practical learning and career preparation for students.</p>
+    </div>
+
+    <div class="footer-program-block">
+      <span class="footer-kicker">INTERNSHIP PROGRAMME 2026</span>
+      <strong>© 2026 InternsForge Internship Programme</strong>
+    </div>
+
+    <nav class="footer-links" aria-label="Footer links">
+      <a href="privacy.html">Privacy</a>
+      <a href="terms.html">Terms</a>
+      <a class="admin-login-link" href="login.html" aria-label="Open admin login"><span aria-hidden="true">↗</span> Admin Panel</a>
+    </nav>
+
+    <button id="backToTop" type="button" aria-label="Back to top" title="Back to top">↑</button>
+  </div>
+
+  <div class="footer-bottom">
+    <span>InternsForge · Learn · Build · Grow</span>
+    <span>Student-focused learning &amp; career preparation</span>
+  </div>
 </footer>
 
 <button class="floating-cta" id="floatingCta" type="button"><span>Applications Open</span><strong>Apply in 60 Seconds →</strong></button>

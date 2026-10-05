@@ -2753,17 +2753,17 @@ function handleMobileOperationsAction(action) {
   if((action==="analytics"||action==="domains") && typeof open==="function") return open("analytics");
 }
 
-/* === Single top-right navigation + focused popup workspace === */
+/* === Stable top-right navigation + focused popup workspace === */
 setupAbandonedDashboardActions();
 
 (function setupCompactAdminWorkspace(){
   const menu = document.getElementById('adminModuleMenu');
   const hint = document.getElementById('adminModuleHint');
   const modal = document.getElementById('adminModuleModal');
-  const modalBody = document.getElementById('adminModuleModalBody');
   const modalTitle = document.getElementById('adminModuleModalTitle');
   const modalSubtitle = document.getElementById('adminModuleModalSubtitle');
   const closeBtn = document.getElementById('closeAdminModuleModal');
+  const modalBody = document.getElementById('adminModuleModalBody');
   if(!menu || !modal || !modalBody) return;
 
   const titles = {
@@ -2773,7 +2773,7 @@ setupAbandonedDashboardActions();
     analytics: ['College Insights', 'See which colleges are generating applications.'],
     liveVisitors: ['Live Visitors', 'Monitor active visitors and application sessions.'],
     landingPage: ['Open Landing Page', 'Return to the public InternsForge landing page.'],
-    applicationVisitors: ['Total Application Visitors', 'See how many unique browser sessions have opened the application form.'],
+    applicationVisitors: ['Application Form Visitors', 'See unique browser sessions that opened the application form.'],
     applications: ['Recent Applications', 'Review the latest submitted applications.'],
     domainInsights: ['Domain Insights', 'See application distribution by internship domain.'],
     referrals: ['Referral Management', 'Referral performance, leaderboard and friends joined.'],
@@ -2781,62 +2781,54 @@ setupAbandonedDashboardActions();
     settings: ['Settings & Data Controls', 'Notifications, system health and data controls.']
   };
 
-  const nodesFor = target => {
-    if(target === 'referrals') return [...document.querySelectorAll('.admin-referral-module')];
-    if(target === 'applicationCRM') return [document.getElementById('applicationCRM')];
-    if(target === 'abandonedApplications') return [document.getElementById('abandonedApplications')];
-    return [document.getElementById(target)];
+  const selectorByTarget = {
+    applicationCRM: '[data-workspace-target="applicationCRM"]',
+    abandonedApplications: '[data-workspace-target="abandonedApplications"]',
+    activity: '[data-workspace-target="activity"]',
+    analytics: '[data-workspace-target="analytics"]',
+    liveVisitors: '[data-workspace-target="liveVisitors"]',
+    applicationVisitors: '[data-workspace-target="applicationVisitors"]',
+    applications: '[data-workspace-target="applications"]',
+    domainInsights: '[data-workspace-target="domainInsights"]',
+    referrals: '[data-workspace-target="referrals"]',
+    sheetsRecovery: '[data-workspace-target="sheetsRecovery"]',
+    settings: '[data-workspace-target="settings"]'
   };
 
-  const moved = new Map();
+  function workspaceNodes(target){
+    const selector = selectorByTarget[target];
+    return selector ? [...modalBody.querySelectorAll(selector)] : [];
+  }
+
+  function hideAllWorkspaceNodes(){
+    modalBody.querySelectorAll('[data-workspace-node="true"]').forEach(node => { node.hidden = true; });
+  }
+
+  function showWorkspaceNodes(target){
+    hideAllWorkspaceNodes();
+    workspaceNodes(target).forEach(node => { node.hidden = false; });
+  }
 
   function clearHint(){
     if(hint) hint.hidden = true;
   }
 
-  function restoreModules(){
-    [...moved.entries()].forEach(([node, placeholder]) => {
-      if(placeholder.parentNode){
-        placeholder.parentNode.insertBefore(node, placeholder.nextSibling);
-        placeholder.remove();
-      }
-    });
-    moved.clear();
-  }
-
-  function closeModule(){
-    modal.classList.remove('show');
-    modal.setAttribute('aria-hidden','true');
-    document.body.classList.remove('module-modal-open');
-    menu.open = false;
-    window.setTimeout(() => {
-      restoreModules();
-      if(hint){
-        hint.hidden = false;
-        hint.innerHTML = '<strong>Workspace ready</strong><span>Open <b>Control Hub</b> and choose a module. It will open in a focused popup, keeping this dashboard compact.</span>';
-      }
-    }, 180);
-  }
-
   function openModule(target){
     if(target === 'dashboard'){
       closeModule();
-      window.scrollTo({top:0,behavior:'smooth'});
+      window.scrollTo({top:0, behavior:'smooth'});
       return;
     }
 
-    const nodes = nodesFor(target).filter(Boolean);
-    if(!nodes.length) return;
+    if(target === 'landingPage'){
+      menu.open = false;
+      window.location.href = 'index.html';
+      return;
+    }
 
-    restoreModules();
-    modalBody.innerHTML = '';
-    nodes.forEach(node => {
-      const placeholder = document.createComment(`InternsForge module placeholder: ${node.id || node.className}`);
-      node.parentNode.insertBefore(placeholder,node);
-      moved.set(node,placeholder);
-      modalBody.appendChild(node);
-    });
+    if(!selectorByTarget[target]) return;
 
+    showWorkspaceNodes(target);
     const [title, subtitle] = titles[target] || ['Workspace', 'Focused admin module.'];
     if(modalTitle) modalTitle.textContent = title;
     if(modalSubtitle) modalSubtitle.textContent = subtitle;
@@ -2845,30 +2837,31 @@ setupAbandonedDashboardActions();
     modal.classList.add('show');
     modal.setAttribute('aria-hidden','false');
     document.body.classList.add('module-modal-open');
-    window.setTimeout(() => closeBtn?.focus(), 50);
+    window.setTimeout(() => closeBtn?.focus(), 30);
   }
 
-  menu.querySelectorAll('[data-admin-module]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = btn.dataset.adminModule;
-      if(target === 'landingPage'){
-        menu.open = false;
-        window.location.href = 'index.html';
-        return;
-      }
-      openModule(target);
-    });
-  });
-
-  menu.querySelector('[data-admin-close-hub]')?.addEventListener('click', event => {
-    event.preventDefault();
+  function closeModule(){
+    modal.classList.remove('show');
+    modal.setAttribute('aria-hidden','true');
+    document.body.classList.remove('module-modal-open');
     menu.open = false;
-    clearHint?.();
-  });
+    hideAllWorkspaceNodes();
+    if(hint){
+      hint.hidden = false;
+      hint.innerHTML = '<strong>Workspace ready</strong><span>Open <b>Control Hub</b> and choose a module. Detailed workspaces stay focused and do not duplicate on the dashboard.</span>';
+    }
+  }
 
-  document.addEventListener('click', event => {
-    if (!menu.open) return;
-    if (!menu.contains(event.target)) menu.open = false;
+  hideAllWorkspaceNodes();
+
+  // Bind both the Control Hub menu buttons and the quick-operation cards.
+  // The previous redesign only bound the header menu, which made the visible
+  // dashboard cards look clickable but do nothing.
+  document.querySelectorAll('[data-admin-module]').forEach(btn => {
+    btn.addEventListener('click', event => {
+      event.preventDefault();
+      openModule(btn.dataset.adminModule);
+    });
   });
 
   closeBtn?.addEventListener('click', closeModule);
@@ -2879,33 +2872,10 @@ setupAbandonedDashboardActions();
     if(event.key === 'Escape' && modal.classList.contains('show')) closeModule();
   });
 
-  // The old left navigation and mobile bottom navigation are intentionally removed.
-  document.querySelectorAll('.side-nav,.sidebar,.bottom-nav,.menu-toggle').forEach(node => node.remove());
-
-  // Keep desktop behavior unchanged. On mobile, the full application CRM (including lead cards)
-  // is hidden from the dashboard and is opened only through the dedicated Applications launcher.
-  const mobileQuery = window.matchMedia('(max-width: 700px)');
-  function syncMobileApplicationVisibility(){
-    const crm = document.getElementById('applicationCRM');
-    if(!crm) return;
-    if(mobileQuery.matches){
-      if(!moved.has(crm)) crm.classList.add('mobile-application-drawer-source');
-    }else{
-      crm.classList.remove('mobile-application-drawer-source');
-    }
-  }
-  syncMobileApplicationVisibility();
-  mobileQuery.addEventListener?.('change', syncMobileApplicationVisibility);
-
-  // Keep the dashboard itself compact for the existing modules.
-  document.querySelectorAll('.dashboard-grid.admin-module,#sheetsRecovery.admin-module,#settings.admin-module,.admin-referral-module').forEach(node => {
-    if(!moved.has(node)) node.classList.add('compact-hidden-module');
-  });
-
   const mobileOpenApplicationsBtn = document.getElementById('mobileOpenApplicationsBtn');
   mobileOpenApplicationsBtn?.addEventListener('click', () => openModule('applicationCRM'));
 
+  // Small-screen cockpit uses the same workspace opener as desktop.
   window.openAdminModule = openModule;
   window.closeAdminModule = closeModule;
 })();
-

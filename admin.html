@@ -2,10 +2,54 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>InternsForge — Admin Command Center</title>
+<title>InternsForge — Operations Center</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="dashboard.css">
+
+<style id="internsforge-admin-redesign">
+:root{
+  --if-bg:#070b12;
+  --if-panel:#0d1420;
+  --if-panel-2:#111a27;
+  --if-border:rgba(148,163,184,.14);
+  --if-text:#eef4fb;
+  --if-muted:#91a0b4;
+  --if-accent:#f5b942;
+  --if-accent-2:#ffd978;
+  --if-green:#36d399;
+  --if-blue:#62a8ff;
+  --if-shadow:0 18px 50px rgba(0,0,0,.26);
+}
+html,body{background:radial-gradient(circle at 15% -10%,rgba(245,185,66,.09),transparent 30%),radial-gradient(circle at 100% 0,rgba(98,168,255,.08),transparent 32%),var(--if-bg)!important;color:var(--if-text)!important}
+body.admin-page{min-height:100vh}
+.app-shell,.workspace{background:transparent!important}
+.workspace{max-width:1500px!important;margin:0 auto!important;padding:22px 26px 40px!important}
+.topbar{position:sticky!important;top:0;z-index:20;margin:-22px -26px 24px!important;padding:16px 26px!important;background:rgba(7,11,18,.86)!important;backdrop-filter:blur(18px);border-bottom:1px solid var(--if-border)!important}
+.welcome h1{font:800 22px/1.1 Manrope,Inter,sans-serif!important;letter-spacing:-.03em}.welcome p{color:var(--if-muted)!important}
+.topbar-tools{gap:10px!important}.connection,.clock,.sound-quick-toggle,.portal-btn,.admin-logout-btn{border:1px solid var(--if-border)!important;background:rgba(17,26,39,.74)!important;color:var(--if-text)!important;border-radius:12px!important}
+.portal-btn{padding:10px 14px!important}.admin-logout-btn{padding:10px 14px!important}
+.hero{position:relative!important;overflow:visible!important;border:1px solid rgba(245,185,66,.18)!important;border-radius:26px!important;background:linear-gradient(135deg,rgba(245,185,66,.11),rgba(98,168,255,.055) 42%,rgba(17,26,39,.9))!important;box-shadow:var(--if-shadow)!important;padding:30px!important}
+.hero:before{content:"";position:absolute;inset:0;border-radius:26px;background:linear-gradient(120deg,transparent 35%,rgba(255,255,255,.04) 50%,transparent 65%);pointer-events:none}
+.hero h2{font:800 clamp(30px,4vw,48px)/1.05 Manrope,Inter,sans-serif!important;letter-spacing:-.045em!important;margin:8px 0 12px!important}.hero p{max-width:720px;color:#adbacb!important;font-size:15px!important}
+.hero-actions{display:flex;gap:14px;align-items:flex-end}.hero-health{min-width:220px;padding:14px 16px;border:1px solid var(--if-border);border-radius:16px;background:rgba(8,13,21,.6)!important}.hero-health strong{color:var(--if-green)!important}.hero-module-menu{position:relative;z-index:30}.hero-module-menu>summary{min-width:150px;justify-content:center;cursor:pointer;border:1px solid rgba(245,185,66,.4)!important;background:linear-gradient(180deg,#f7c85f,#eaa52e)!important;color:#17120a!important;border-radius:16px!important;padding:14px 18px!important;box-shadow:0 8px 24px rgba(234,165,46,.16)!important}
+.hero-module-dropdown{right:0!important;top:calc(100% + 10px)!important;width:min(380px,92vw)!important;max-height:72vh;overflow:auto;border:1px solid var(--if-border)!important;background:rgba(11,18,29,.98)!important;box-shadow:0 25px 60px rgba(0,0,0,.45)!important;border-radius:18px!important;padding:10px!important}.hero-module-dropdown button{border-radius:11px!important;color:#eaf0f7!important}.hero-module-dropdown button:hover{background:rgba(245,185,66,.12)!important;color:#ffd978!important}
+.metric-grid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px!important;margin:18px 0 22px!important}.metric{min-height:112px!important;border:1px solid var(--if-border)!important;border-radius:18px!important;background:linear-gradient(180deg,rgba(17,26,39,.95),rgba(13,20,32,.95))!important;box-shadow:0 10px 30px rgba(0,0,0,.18)!important}.metric p{color:#9eacc0!important}.metric h3{font-size:30px!important;color:#fff!important}.metric small{color:#6f8097!important}
+.quick-ops{border:1px solid var(--if-border);background:rgba(13,20,32,.76);border-radius:24px;padding:22px;box-shadow:var(--if-shadow);margin:0 0 24px}.quick-ops-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:16px}.quick-ops-head h3{margin:4px 0 6px;font:800 24px/1.1 Manrope,Inter,sans-serif}.quick-ops-head p{margin:0;color:var(--if-muted);font-size:13px}.quick-ops-live{display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border-radius:999px;border:1px solid rgba(54,211,153,.22);background:rgba(54,211,153,.07);color:#7ce6b5;font-size:12px;font-weight:800}.quick-ops-live i{width:7px;height:7px;border-radius:50%;background:var(--if-green);box-shadow:0 0 0 4px rgba(54,211,153,.08)}
+.quick-ops-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.quick-card{position:relative;text-align:left;display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:15px 15px;border:1px solid var(--if-border);background:linear-gradient(145deg,#111a27,#0c1320);color:var(--if-text);border-radius:16px;cursor:pointer;transition:transform .18s ease,border-color .18s ease,background .18s ease}.quick-card:hover{transform:translateY(-2px);border-color:rgba(245,185,66,.38);background:linear-gradient(145deg,#172233,#101925)}.quick-card.quick-primary{border-color:rgba(245,185,66,.38);box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}.quick-icon{width:38px;height:38px;display:grid;place-items:center;border-radius:12px;background:rgba(245,185,66,.1);color:var(--if-accent-2);font-size:20px}.quick-card b{display:block;font-size:14px}.quick-card small{display:block;margin-top:3px;color:#8797aa;font-size:11px;line-height:1.35}.quick-card em{font-style:normal;color:#78879a;font-size:11px;font-weight:700;white-space:nowrap}
+/* Do not render detailed workspaces on the home screen: one source node is reused inside the focused workspace modal. */
+body:not(.module-modal-open) .source-workspace-module,
+body:not(.module-modal-open) #applicationCRM,
+body:not(.module-modal-open) #abandonedApplications,
+body:not(.module-modal-open) .compact-hidden-module{display:none!important}
+.admin-module-hint{display:none!important}
+.admin-module-modal{padding:20px!important;background:rgba(3,6,10,.78)!important;backdrop-filter:blur(12px)}
+.admin-module-modal-card{width:min(1440px,96vw)!important;max-height:92vh!important;background:#0b121d!important;border:1px solid rgba(148,163,184,.18)!important;border-radius:24px!important;box-shadow:0 30px 90px rgba(0,0,0,.55)!important;overflow:hidden!important}.admin-module-modal-header{padding:18px 22px!important;background:linear-gradient(180deg,#111a27,#0e1622)!important;border-bottom:1px solid var(--if-border)!important}.admin-module-modal-body{padding:18px!important;background:#0a1019!important}.admin-module-modal-body .compact-hidden-module,.admin-module-modal-body .source-workspace-module{display:block!important}.admin-module-modal-body .crm-section,.admin-module-modal-body .abandoned-dashboard{display:block!important}.admin-module-modal-body .admin-referral-module{display:block!important}
+.crm-section,.abandoned-dashboard,.panel,.student-detail-card,.application-history-card{background:linear-gradient(180deg,#101925,#0c141f)!important;border-color:var(--if-border)!important;color:var(--if-text)!important}.section-head h2,.panel h2{font-family:Manrope,Inter,sans-serif!important}.crm-toolbar,.crm-assignment-toolbar{background:rgba(255,255,255,.025)!important;border-color:var(--if-border)!important}.crm-search input,.crm-toolbar select,.crm-assignment-toolbar select,.referral-metrics article,.settings-grid button,.notification-settings,.system-health-grid article{background:#0c1521!important;border-color:var(--if-border)!important;color:var(--if-text)!important}.crm-table,.table-wrap table{background:#0c141f!important}.crm-table th,.table-wrap th{background:#111b29!important;color:#9db0c7!important}.crm-table td,.table-wrap td{border-color:var(--if-border)!important}.panel-action,.primary-action{border-radius:10px!important}.primary-action{background:linear-gradient(180deg,#f7c85f,#eaa52e)!important;color:#19130a!important}.quick-card:focus-visible,.hero-module-menu summary:focus-visible{outline:2px solid var(--if-accent);outline-offset:2px}
+footer{border-top:1px solid var(--if-border)!important;color:#718197!important;margin-top:26px!important}
+@media(max-width:1100px){.metric-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.quick-ops-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{padding:24px}.hero-actions{flex-wrap:wrap}.hero-health{flex:1}}
+@media(max-width:700px){.workspace{padding:14px 12px 28px!important}.topbar{margin:-14px -12px 16px!important;padding:13px 14px!important}.welcome h1{font-size:18px!important}.welcome p{font-size:11px!important}.portal-btn{display:none}.hero{border-radius:20px!important;padding:20px!important}.hero h2{font-size:30px!important}.hero-actions{align-items:stretch;flex-direction:column}.hero-health{width:auto}.metric-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px!important}.metric{min-height:96px!important}.metric h3{font-size:24px!important}.quick-ops{padding:16px;border-radius:18px}.quick-ops-grid{grid-template-columns:1fr}.quick-ops-head{align-items:flex-start}.quick-card{padding:13px}.admin-module-modal{padding:8px!important}.admin-module-modal-card{width:100%!important;max-height:96vh!important;border-radius:18px!important}.admin-module-modal-body{padding:10px!important}.crm-table-wrap,.table-wrap{overflow:auto!important}}
+</style>
 </head>
 <body class="admin-page">
 <div class="app-shell">
@@ -22,11 +66,11 @@
 </header>
 <main>
 <section class="hero" id="dashboard">
-  <div><span class="eyebrow">REAL-TIME CONTROL CENTER</span><h2>Internship Operations Dashboard</h2><p>Choose a workspace below when you need it. Your dashboard stays compact until you open a module.</p></div>
+  <div><span class="eyebrow">REAL-TIME CONTROL CENTER</span><h2>Internship Operations Center</h2><p>A focused command center for applications, counselors, referrals, recovery and live traffic.</p></div>
   <div class="hero-actions">
     <div class="hero-health"><span>System Health</span><strong><i></i> Live & Synced</strong><small id="lastUpdatedText">Waiting for data…</small></div>
     <details class="hero-module-menu" id="adminModuleMenu">
-      <summary aria-label="Open Control Hub"><span class="hub-button-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span class="hub-button-label">Operations</span><span class="hub-button-chevron" aria-hidden="true">⌄</span></summary>
+      <summary aria-label="Open Control Hub"><span class="hub-button-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span class="hub-button-label">Control Hub</span><span class="hub-button-chevron" aria-hidden="true">⌄</span></summary>
       <div class="hero-module-dropdown" role="menu">
         <button type="button" data-admin-module="applicationCRM">▤ <span>Application CRM</span></button>
         <button type="button" data-admin-module="activity">⌁ <span>Applications Activity</span></button>
@@ -58,6 +102,23 @@
   <article class="metric"><span class="metric-icon rose">×</span><div><p>Abandoned</p><h3 id="abandonedCount">0</h3><small>Expired incomplete forms</small></div></article>
   </section>
 
+<section class="quick-ops" aria-label="Quick operations">
+  <div class="quick-ops-head">
+    <div><span class="eyebrow">WORKSPACES</span><h3>What do you need to manage?</h3><p>Open one workspace at a time. No repeated sections, no long scrolling.</p></div>
+    <span class="quick-ops-live"><i></i> Live</span>
+  </div>
+  <div class="quick-ops-grid">
+    <button type="button" class="quick-card quick-primary" data-admin-module="applicationCRM"><span class="quick-icon">▤</span><span><b>Application CRM</b><small>Search, assign, call & follow up</small></span><em>Open →</em></button>
+    <button type="button" class="quick-card" data-admin-module="activity"><span class="quick-icon">⌁</span><span><b>Application Activity</b><small>7-day application flow</small></span><em>View →</em></button>
+    <button type="button" class="quick-card" data-admin-module="referrals"><span class="quick-icon">♙</span><span><b>Referral Management</b><small>Codes, joins & performance</small></span><em>View →</em></button>
+    <button type="button" class="quick-card" data-admin-module="abandonedApplications"><span class="quick-icon">↻</span><span><b>Lead Recovery</b><small>Recover incomplete applications</small></span><em>Recover →</em></button>
+    <button type="button" class="quick-card" data-admin-module="analytics"><span class="quick-icon">◫</span><span><b>College Insights</b><small>Top colleges & trends</small></span><em>View →</em></button>
+    <button type="button" class="quick-card" data-admin-module="liveVisitors"><span class="quick-icon">◉</span><span><b>Live Visitors</b><small>Active sessions right now</small></span><em>View →</em></button>
+    <button type="button" class="quick-card" data-admin-module="sheetsRecovery"><span class="quick-icon">☁</span><span><b>Google Sheets</b><small>Recover & sync application data</small></span><em>Open →</em></button>
+    <button type="button" class="quick-card" data-admin-module="settings"><span class="quick-icon">⚙</span><span><b>Settings</b><small>Alerts, health & data controls</small></span><em>Open →</em></button>
+  </div>
+</section>
+
 <!-- Mobile-only application launcher. Lead cards stay hidden until this is opened. -->
 <section class="mobile-app-launcher" aria-label="Applications launcher">
   <div class="mobile-app-launcher-copy">
@@ -72,7 +133,7 @@
   </button>
 </section>
 
-<section class="crm-section" id="applicationCRM">
+<section class="crm-section source-workspace-module" id="applicationCRM">
   <div class="section-head crm-head">
     <div><span class="eyebrow">APPLICATION CRM <b class="crm-live-badge">● LIVE SYNC</b></span><h2>Application Management</h2><p>Search, filter, contact, assign and follow up without leaving the dashboard.</p></div>
     <div class="crm-head-actions">
@@ -124,7 +185,7 @@
   <div class="crm-footer"><span id="crmResultCount">0 applications</span><small id="crmSyncStatus">● Firebase live • CRM edits are pushed to Google Sheets automatically. Bulk sync is available above.</small></div>
 </section>
 
-<section class="panel admin-module abandoned-dashboard" id="abandonedApplications">
+<section class="panel admin-module source-workspace-module abandoned-dashboard" id="abandonedApplications">
   <div class="section-head abandoned-head">
     <div><span class="eyebrow">ABANDONED APPLICATIONS <b class="crm-live-badge">● LIVE</b></span><h2>Abandoned Application Management</h2><p>Search, filter, review and recover students who started but did not submit an application.</p></div>
     <div class="crm-head-actions"><button id="exportAbandonedButton" class="panel-action" type="button">Export CSV</button><button id="refreshAbandonedButton" class="panel-action" type="button">↻ Refresh</button></div>
@@ -151,8 +212,8 @@
   <div class="crm-footer"><span id="abResultCount">0 abandoned applications</span><small>Persistent recovery records are updated in real time; recovered submissions remain available through the recovery-status filter.</small></div>
 </section>
 
-<div id="adminModuleHint" class="admin-module-hint"><strong>Workspace ready</strong><span>Open <b>Control Hub</b> and choose a module. It will open in a focused popup, keeping this dashboard compact.</span></div>
-<section class="dashboard-grid admin-module" data-admin-module-section="dashboardPanels">
+<div id="adminModuleHint" class="admin-module-hint"><strong>Choose an operation</strong><span>Open a workspace from the cards below. Detailed tables open in a focused workspace.</span></div>
+<section class="dashboard-grid admin-module source-workspace-module" data-admin-module-section="dashboardPanels">
   <article class="panel panel-wide admin-module" id="activity"><header><div><span class="eyebrow">APPLICATION FLOW</span><h2>7-Day Applications Overview</h2></div><span class="live-chip">● Live</span></header><div id="applicationsChart" class="bar-chart"></div></article>
   <article class="panel admin-module" id="analytics"><header><div><span class="eyebrow">COLLEGE INSIGHTS</span><h2>Top Colleges</h2></div></header><div id="topColleges" class="rank-list"><p class="empty">No data yet…</p></div></article>
   <article class="panel live-panel admin-module" id="liveVisitors"><header><div><span class="eyebrow">PRESENCE</span><h2>Active Visitors</h2></div><button id="refreshDashboardButton" class="icon-action refresh-action" type="button" aria-label="Refresh dashboard and clear abandoned sessions"><span>↻</span><small>Refresh</small></button></header><div id="visitorList" class="visitor-list"><p class="empty">Waiting for visitors…</p></div></article>
@@ -163,14 +224,14 @@
     </header><div id="recentApplications" class="application-list"><p class="empty">No applications yet…</p></div></article>
   <article class="panel admin-module" id="domainInsights"><header><div><span class="eyebrow">DOMAIN INSIGHTS</span><h2>Applications by Domain</h2></div></header><div id="topDomains" class="rank-list"><p class="empty">No data yet…</p></div></article>
 </section>
-<section class="section-head admin-referral-module" id="referralOverview"><div><span class="eyebrow">REFERRAL MANAGEMENT</span><h2>Referral Performance</h2><p>Live referral profiles, joins and reward eligibility.</p></div></section>
-<section class="referral-metrics admin-referral-module"><article><span>Total Codes</span><strong id="totalReferralCodes">0</strong></article><article><span>Successful Referrals</span><strong id="successfulReferrals">0</strong></article><article><span>Referral Conversion</span><strong id="referralConversionRate">0%</strong></article><article><span>Top Ambassador</span><strong id="topAmbassador">—</strong><small id="topAmbassadorCount">No referrals yet</small></article></section>
-<section class="two-col admin-referral-module">
+<section class="section-head admin-referral-module source-workspace-module" id="referralOverview"><div><span class="eyebrow">REFERRAL MANAGEMENT</span><h2>Referral Performance</h2><p>Live referral profiles, joins and reward eligibility.</p></div></section>
+<section class="referral-metrics admin-referral-module source-workspace-module"><article><span>Total Codes</span><strong id="totalReferralCodes">0</strong></article><article><span>Successful Referrals</span><strong id="successfulReferrals">0</strong></article><article><span>Referral Conversion</span><strong id="referralConversionRate">0%</strong></article><article><span>Top Ambassador</span><strong id="topAmbassador">—</strong><small id="topAmbassadorCount">No referrals yet</small></article></section>
+<section class="two-col admin-referral-module source-workspace-module">
 <article class="panel" id="referralLeaderboard"><header><div><span class="eyebrow">TOP PERFORMERS</span><h2>Referral Leaderboard</h2></div></header><div class="table-wrap"><table><thead><tr><th>#</th><th>Student</th><th>Code</th><th>Joined</th><th>Status</th></tr></thead><tbody id="referralLeaderboardBody"><tr><td colspan="5" class="empty">No referral data yet…</td></tr></tbody></table></div></article>
 <article class="panel" id="referralFriends"><header><div><span class="eyebrow">REFERRAL ACTIVITY</span><h2>Friends Joined</h2></div><input id="referralSearch" type="search" placeholder="Search"></header><div class="table-wrap"><table><thead><tr><th>Applicant</th><th>Referred By</th><th>College</th><th>Domain</th><th>Joined</th></tr></thead><tbody id="referralFriendsBody"><tr><td colspan="5" class="empty">No referred applications yet…</td></tr></tbody></table></div></article>
 </section>
 
-<section class="panel admin-module" id="sheetsRecovery" style="margin-top:25px;">
+<section class="panel admin-module source-workspace-module" id="sheetsRecovery" style="margin-top:25px;">
   <div class="panel-header">
     <h2>📊 Google Sheets Recovery</h2>
     <span>Today</span>
@@ -181,7 +242,7 @@
   <div id="syncTodaySheetsStatus" style="margin-top:12px;color:#94a3b8;"></div>
 </section>
 
-<section class="panel settings admin-module" id="settings">
+<section class="panel settings admin-module source-workspace-module" id="settings">
 <header><div><span class="eyebrow">ADMINISTRATION</span><h2>Settings & Data Controls</h2></div></header>
 
 <div class="notification-settings">
@@ -267,5 +328,5 @@
 <div id="refreshOverlay" class="refresh-overlay" aria-hidden="true">
   <div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Cleaning abandoned sessions and loading fresh data…</small></div>
 </div>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20260915-v150-abandoned-dropdown-stable"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20261005-ui-redesign-v1"></script>
 </body></html>

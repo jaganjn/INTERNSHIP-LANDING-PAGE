@@ -1,10 +1,6 @@
-INTERNSFORGE APPLICATION SECTION REDESIGN
+InternsForge Admin UI Redesign — 2026-10-05
 
-Replace BOTH files together:
-- admin.js
-- dashboard.css
+Frontend-only redesign. Backend logic, Firebase rules, Google Apps Script, Sheets routing, and data models were not changed.
 
-This update redesigns the Applications launcher/section and the Application CRM container.
-Existing Firebase, Google Sheets, Apps Script, authentication, CRM data paths, and delete flow are preserved.
-
-After deployment: hard refresh with Ctrl+Shift+R.
+Replace admin.html with the included file and keep the existing dashboard.css, firebase.js, push-config.js, and admin.js deployment.
+The included admin.js is the existing V7 frontend controller; it was not modified.

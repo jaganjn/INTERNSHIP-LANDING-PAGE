@@ -821,6 +821,79 @@ function handleCounselorSelect(select, onValue) {
   return value;
 }
 
+async function verifyCounselorRoutingViaJsonp_(firebaseKey, applicationId, counselor, requestId, timeoutMs = 20000) {
+  const fKey = String(firebaseKey || "").trim();
+  const appId = String(applicationId || "").trim();
+  const counselorName = String(counselor || "").trim();
+  const reqId = String(requestId || "").trim();
+  if (!fKey) throw new Error("Missing Firebase application key for routing verification.");
+  if (!appId) throw new Error("Missing Application ID for routing verification.");
+  if (!counselorName) throw new Error("Missing counselor name for routing verification.");
+
+  const started = Date.now();
+  let lastMessage = "Waiting for counselor sheet routing…";
+
+  while (Date.now() - started < timeoutMs) {
+    try {
+      const result = await new Promise((resolve, reject) => {
+        const callbackName = `__ifRouteVerify_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const script = document.createElement("script");
+        let settled = false;
+        const cleanup = () => {
+          try { delete window[callbackName]; } catch (_) {}
+          script.remove();
+        };
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error("Routing verification request timed out."));
+        }, 7000);
+        window[callbackName] = payload => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          cleanup();
+          resolve(payload || {});
+        };
+        script.onerror = () => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          cleanup();
+          reject(new Error("Could not reach the Apps Script verification endpoint."));
+        };
+        const params = new URLSearchParams({
+          action: "verifyCounselorRouting",
+          applicationId: appId,
+          firebaseKey: fKey,
+          counselorName,
+          requestId: reqId,
+          callback: callbackName,
+          _: String(Date.now())
+        });
+        script.src = `${SHEETS_RECOVERY_ENDPOINT}?${params.toString()}`;
+        document.head.appendChild(script);
+      });
+
+      if (result && result.verified === true && String(result.assignedTo || "").trim().toLowerCase() === counselorName.toLowerCase()) {
+        return result;
+      }
+      if (result && result.status === "error") {
+        lastMessage = result.message || "Apps Script verification returned an error.";
+      } else if (result && result.message) {
+        lastMessage = result.message;
+      }
+    } catch (error) {
+      lastMessage = error.message || String(error);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+
+  throw new Error(`${lastMessage} The counselor sheet could not be verified by the Apps Script endpoint.`);
+}
+
 async function assignApplicationToCounselor(appId, counselor, source = "row") {
   const app = applications.find(item => item.id === appId);
   if (!app) return false;
@@ -831,8 +904,38 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
 
   const statusEl = el("crmSyncStatus");
   if (statusEl) { statusEl.textContent = `● Assigning ${app.name || "lead"} to ${clean || "Unassigned"}…`; statusEl.className = "crm-syncing"; }
+
+  const requestId = (window.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `route-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
   try {
-    await db.ref(`submittedApplications/${appId}`).update({ assignedTo: clean });
+    // 1) Firebase owns the live assignment state. Mark the source so the
+    // realtime CRM -> Sheets listener does NOT echo this assignment into Master.
+    await db.ref(`submittedApplications/${appId}`).update({
+      assignedTo: clean,
+      updatedAtMs: Date.now(),
+      syncSource: "dashboard-assignment"
+    });
+
+    // 2) The Apps Script endpoint handles ONLY counselor-sheet routing.
+    // It never modifies Master Sheet1 for this dashboard assignment.
+    await fetch(SHEETS_RECOVERY_ENDPOINT, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify({
+        action: "routeApplicationToCounselor",
+        requestId: requestId,
+        application: {...app, applicationId: app.applicationId || app.id, assignedTo: clean},
+        firebaseKey: appId,
+        previousAssignedTo: old,
+        source: source || "dashboard"
+      })
+    });
+
+    await verifyCounselorRoutingViaJsonp_(appId, app.applicationId || app.id, clean, requestId);
+
     await logApplicationActivity(appId, {
       action: "Lead reassigned",
       field: "Assigned To",
@@ -840,18 +943,32 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
       newValue: clean || "",
       summary: `Lead assignment changed from ${old || "Unassigned"} to ${clean || "Unassigned"}`
     });
+
     app.assignedTo = clean;
     const visibleSelect = document.querySelector(`.crm-assign-select[data-app-id="${CSS.escape(String(appId))}"]`);
     if (visibleSelect) visibleSelect.value = clean || "";
     if (statusEl) { statusEl.textContent = `● Lead assigned • ${clean || "Unassigned"}`; statusEl.className = "crm-synced"; }
     updateCrmSelectionUI();
     queueMobileCockpitRender(0);
-    showToast("Lead assigned", `${app.name || "Student"} → ${clean || "Unassigned"}. The counselor sheet will update automatically.`, "success", 4500);
+    showToast("Lead assigned", `${app.name || "Student"} → ${clean || "Unassigned"}. Counselor sheet updated; Master Sheet1 was not changed.`, "success", 4500);
     return true;
   } catch (error) {
+    // Do not leave Firebase assigned when the counselor-sheet route did not
+    // confirm. The backend also performs its own best-effort sheet cleanup.
+    try {
+      await db.ref(`submittedApplications/${appId}`).update({
+        assignedTo: old,
+        updatedAtMs: Date.now(),
+        syncSource: "dashboard-assignment"
+      });
+      app.assignedTo = old;
+    } catch (rollbackError) {
+      console.error("Firebase assignment rollback failed:", rollbackError);
+    }
+
     console.error("Lead assignment failed:", error);
     if (statusEl) { statusEl.textContent = "● Assignment failed."; statusEl.className = "crm-sync-error"; }
-    showToast("Assignment failed", error?.message || "Firebase denied the assignment.", "error", 6000);
+    showToast("Assignment failed", error?.message || "Unable to route the lead to the counselor sheet.", "error", 7000);
     return false;
   }
 }
@@ -1347,7 +1464,30 @@ async function saveApplicationCRM() {
     statusEl.textContent = "Saving…";
     const before = {...app};
     const changes = buildActivityChanges(before, updates);
-    await db.ref(`submittedApplications/${activeApplicationId}`).update(updates);
+    if (assignmentChanged) {
+      // Save ordinary CRM fields first without changing Assigned To.
+      const crmOnly = {...updates};
+      delete crmOnly.assignedTo;
+      if (Object.keys(crmOnly).length) {
+        await db.ref(`submittedApplications/${activeApplicationId}`).update({
+          ...crmOnly,
+          updatedAtMs: Date.now(),
+          syncSource: "dashboard-crm"
+        });
+      }
+
+      // Route the assignment through the counselor-only path so Master Sheet1
+      // keeps its existing Assigned To value.
+      const target = String(updates.assignedTo || "").trim();
+      await assignApplicationToCounselor(activeApplicationId, target, "modal");
+    } else {
+      await db.ref(`submittedApplications/${activeApplicationId}`).update({
+        ...updates,
+        updatedAtMs: Date.now(),
+        syncSource: "dashboard-crm"
+      });
+    }
+
     Object.assign(app, updates);
     if (updates.assignedTo) rememberCounselor(updates.assignedTo);
 
@@ -1979,9 +2119,12 @@ function listeners() {
     if (E.applicationVisitorCountMetric) E.applicationVisitorCountMetric.textContent = displayCount;
   });
 
-  // Near-real-time CRM -> Google Sheets sync. This listens only for future Firebase record changes, so opening the dashboard does not re-send all existing applications.
+  // Near-real-time CRM -> Google Sheets sync. Dashboard assignment writes carry
+  // syncSource=dashboard-assignment, so the assignment itself never updates Master.
   db.ref("submittedApplications").on("child_changed", snapshot => {
     const app = { id: snapshot.key, ...(snapshot.val() || {}) };
+    const source = String(app.syncSource || "").trim().toLowerCase();
+    if (source === "dashboard-assignment") return;
     const statusEl = el("crmSyncStatus");
     if (statusEl) { statusEl.textContent = "● Syncing CRM change to Google Sheets…"; statusEl.className = "crm-syncing"; }
     sendApplicationUpdateToSheets(app)

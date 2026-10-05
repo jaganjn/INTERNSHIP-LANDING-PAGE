@@ -1,5 +1,5 @@
-# InternsForge V13.7 – Abandoned Dashboard Data Loading Fix
+InternsForge Admin — Stable UI Trend Build
 
-The Abandoned Applications dashboard now uses persistent `abandonedApplications` records as the primary source and falls back to eligible legacy/incomplete `liveVisitors` sessions from older V13.x versions. Submitted/recovered sessions are excluded. The admin.js cache version is bumped so browsers load the corrected script.
+This build restores the functional V7 admin.html/admin.js baseline and changes only the UI layer for the mobile operations trend: a full month calendar, 7D/30D/month views, month navigation, and a redesigned daily volume bar chart. Firebase, Apps Script, Google Sheets, counselor routing, referral logic, and backend files are not modified.
 
-No Firebase data is deleted.
+Replace admin.html, admin.js, and dashboard.css. firebase.js, push-config.js, and firebase-messaging-sw.js are included unchanged for convenience.

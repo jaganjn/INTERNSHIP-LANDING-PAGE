@@ -1548,3 +1548,71 @@ body.module-modal-open{overflow:hidden}
   .admin-page #mobileOpenApplicationsBtn{animation:applicationCtaPulse 3.8s ease-in-out infinite}
   @keyframes applicationCtaPulse{0%,100%{box-shadow:0 12px 30px rgba(55,78,220,.25),inset 0 1px 0 rgba(255,255,255,.18)}50%{box-shadow:0 16px 36px rgba(55,78,220,.34),0 0 0 5px rgba(79,114,255,.045),inset 0 1px 0 rgba(255,255,255,.18)}}
 }
+
+/* =========================================================
+   InternsForge Trend UX v3 — UI ONLY
+   Replaces the cramped 7-day bars with a calendar + period chart.
+   No backend/data logic is changed.
+   ========================================================= */
+#mobileOperationsCockpit .mo-trend-shell{display:grid;gap:16px}
+#mobileOperationsCockpit .mo-trend-controls{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px;border:1px solid rgba(105,139,189,.18);border-radius:14px;background:rgba(5,14,27,.7)}
+#mobileOperationsCockpit .mo-trend-control-group{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#mobileOperationsCockpit .mo-trend-control-group button,
+#mobileOperationsCockpit .mo-trend-month,
+#mobileOperationsCockpit .mo-trend-nav{border:1px solid #223a5d;border-radius:9px;background:#0d1c31;color:#aac0dc;font:800 9px Inter,sans-serif;padding:8px 10px;cursor:pointer}
+#mobileOperationsCockpit .mo-trend-today{border:1px solid #223a5d;border-radius:9px;background:#0d1c31;color:#aac0dc;font:800 9px Inter,sans-serif;padding:8px 10px;cursor:pointer}
+#mobileOperationsCockpit .mo-trend-today:hover{border-color:#5d7dff;color:#fff}
+#mobileOperationsCockpit .mo-trend-control-group button.active{color:#fff;background:linear-gradient(135deg,#355ff0,#644cff);border-color:#5d7dff;box-shadow:0 6px 18px rgba(77,96,255,.22)}
+#mobileOperationsCockpit .mo-trend-nav{display:inline-grid;place-items:center;width:32px;height:32px;padding:0;font-size:13px}
+#mobileOperationsCockpit .mo-trend-month{min-width:132px}
+#mobileOperationsCockpit .mo-trend-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+#mobileOperationsCockpit .mo-trend-stat{padding:12px;border:1px solid #19304f;border-radius:12px;background:linear-gradient(145deg,#0f1d31,#0a1627)}
+#mobileOperationsCockpit .mo-trend-stat small{display:block;color:#67809e;text-transform:uppercase;letter-spacing:.08em;font-size:7px;font-weight:900}
+#mobileOperationsCockpit .mo-trend-stat strong{display:block;color:#f3f7ff;font:800 17px Manrope,sans-serif;margin-top:4px}
+#mobileOperationsCockpit .mo-trend-stat em{display:block;color:#6f87a5;font-size:7px;font-style:normal;margin-top:2px}
+#mobileOperationsCockpit .mo-trend-calendar{border:1px solid #1a2f4d;border-radius:14px;overflow:hidden;background:#081526}
+#mobileOperationsCockpit .mo-cal-head{display:grid;grid-template-columns:repeat(7,1fr);background:#0d1b2d;border-bottom:1px solid #19304d}
+#mobileOperationsCockpit .mo-cal-head span{text-align:center;padding:9px 2px;color:#6f89a8;font-size:7px;font-weight:900;letter-spacing:.05em}
+#mobileOperationsCockpit .mo-cal-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+#mobileOperationsCockpit .mo-cal-day{position:relative;min-height:58px;padding:7px 5px;border-right:1px solid rgba(30,51,80,.72);border-bottom:1px solid rgba(30,51,80,.72);background:#09182a;transition:transform .12s ease,border-color .12s ease,background .12s ease}
+#mobileOperationsCockpit .mo-cal-day:nth-child(7n){border-right:0}
+#mobileOperationsCockpit .mo-cal-day:hover{background:#10233b;border-color:#35598a;z-index:2}
+#mobileOperationsCockpit .mo-cal-day.is-out{background:#07111f;color:#334762}
+#mobileOperationsCockpit .mo-cal-day.is-today{box-shadow:inset 0 0 0 1px #5f83ff;background:#0e2036}
+#mobileOperationsCockpit .mo-cal-day.is-selected{box-shadow:inset 0 0 0 2px #f4bd4f;background:#14253a}
+#mobileOperationsCockpit .mo-cal-num{display:flex;align-items:center;justify-content:space-between;color:#93a9c3;font-size:8px;font-weight:800}
+#mobileOperationsCockpit .mo-cal-day.is-out .mo-cal-num{color:#3b4e68}
+#mobileOperationsCockpit .mo-cal-count{margin-top:7px;display:inline-grid;min-width:22px;height:20px;padding:0 5px;place-items:center;border-radius:7px;background:#12263f;color:#84a8da;font-size:8px;font-weight:900}
+#mobileOperationsCockpit .mo-cal-count.level-1{background:rgba(67,109,255,.18);color:#8ea9ff}
+#mobileOperationsCockpit .mo-cal-count.level-2{background:rgba(67,109,255,.28);color:#a9bcff}
+#mobileOperationsCockpit .mo-cal-count.level-3{background:rgba(87,151,255,.4);color:#d7e2ff}
+#mobileOperationsCockpit .mo-cal-count.level-4{background:linear-gradient(135deg,#466fff,#7a5cff);color:#fff;box-shadow:0 5px 16px rgba(71,92,255,.28)}
+#mobileOperationsCockpit .mo-trend-chart-wrap{padding:14px;border:1px solid #1a2f4d;border-radius:14px;background:#081526}
+#mobileOperationsCockpit .mo-trend-chart-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:10px}
+#mobileOperationsCockpit .mo-trend-chart-title b{font:800 11px Manrope;color:#edf4ff}
+#mobileOperationsCockpit .mo-trend-chart-title small{font-size:7px;color:#607995}
+#mobileOperationsCockpit .mo-bars{position:relative;display:flex;align-items:flex-end;gap:7px;min-height:220px;padding:18px 8px 0;border-bottom:1px solid #213754;overflow-x:auto;scrollbar-width:thin}
+#mobileOperationsCockpit .mo-gridline{position:absolute;left:0;right:0;height:1px;background:rgba(79,108,144,.14);pointer-events:none}
+#mobileOperationsCockpit .mo-gridline.g1{top:25%}#mobileOperationsCockpit .mo-gridline.g2{top:50%}#mobileOperationsCockpit .mo-gridline.g3{top:75%}
+#mobileOperationsCockpit .mo-bar-item{flex:0 0 34px;height:210px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px}
+#mobileOperationsCockpit .mo-bar-value{font-size:7px;color:#b7c9df;font-weight:900;min-height:9px}
+#mobileOperationsCockpit .mo-bar-track{position:relative;width:100%;height:168px;border-radius:10px 10px 4px 4px;background:linear-gradient(180deg,rgba(45,74,115,.13),rgba(45,74,115,.03));display:flex;align-items:flex-end;overflow:hidden}
+#mobileOperationsCockpit .mo-bar-fill{width:100%;min-height:3px;border-radius:9px 9px 3px 3px;background:linear-gradient(180deg,#7b92ff 0%,#536df6 45%,#344fe1 100%);box-shadow:0 -8px 20px rgba(81,101,255,.18);transition:height .25s ease,filter .18s ease}
+#mobileOperationsCockpit .mo-bar-item:hover .mo-bar-fill{filter:brightness(1.16)}
+#mobileOperationsCockpit .mo-bar-label{font-size:7px;color:#647b99;white-space:nowrap}
+#mobileOperationsCockpit .mo-bar-item.is-today .mo-bar-label{color:#f5c45a;font-weight:900}
+#mobileOperationsCockpit .mo-trend-note{display:flex;justify-content:space-between;gap:10px;padding-top:10px;color:#647c9a;font-size:7px}
+#mobileOperationsCockpit .mo-trend-note b{color:#b9cae2}
+@media(max-width:700px){
+  #mobileOperationsCockpit .mo-trend-summary{grid-template-columns:repeat(2,1fr)}
+  #mobileOperationsCockpit .mo-cal-day{min-height:52px;padding:6px 4px}
+  #mobileOperationsCockpit .mo-bar-item{flex-basis:30px}
+  #mobileOperationsCockpit .mo-bars{gap:6px;min-height:190px}
+}
+@media(max-width:420px){
+  #mobileOperationsCockpit .mo-trend-control-group{width:100%}
+  #mobileOperationsCockpit .mo-trend-controls{align-items:stretch}
+  #mobileOperationsCockpit .mo-trend-month{flex:1}
+  #mobileOperationsCockpit .mo-cal-day{min-height:46px}
+  #mobileOperationsCockpit .mo-cal-count{min-width:18px;height:18px;padding:0 4px}
+}

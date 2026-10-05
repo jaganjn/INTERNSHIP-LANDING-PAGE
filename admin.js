@@ -673,169 +673,19 @@ function renderApplications(newIds = new Set()) {
   renderRank(E.topColleges, college);
   renderRank(E.topDomains, domain);
 
-  renderApplicationTrend(daily);
-}
-
-
-let applicationTrendMode = "7";
-let applicationTrendMonth = "";
-let applicationTrendReady = false;
-let applicationTrendSelectedDay = "";
-
-function trendMonthKeyFromDate(date) {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
-  return `${y}-${m}`;
-}
-
-function trendKeyToParts(key) {
-  const [y, m] = String(key || "").split("-").map(Number);
-  return {year: y || new Date().getFullYear(), month: (m || (new Date().getMonth() + 1)) - 1};
-}
-
-function trendDateFromKey(key) {
-  const [y, m, d] = String(key).split("-").map(Number);
-  return new Date(Date.UTC(y, (m || 1) - 1, d || 1));
-}
-
-function trendDayKey(date) {
-  return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,"0")}-${String(date.getUTCDate()).padStart(2,"0")}`;
-}
-
-function shiftTrendMonth(key, delta) {
-  const p = trendKeyToParts(key);
-  return trendMonthKeyFromDate(new Date(Date.UTC(p.year, p.month + delta, 1)));
-}
-
-function getTrendRangeKeys(mode) {
-  const todayKey = getTodayISTKey();
-  const today = trendDateFromKey(todayKey);
-  if (mode === "month") {
-    const {year, month} = trendKeyToParts(applicationTrendMonth);
-    const days = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-    return Array.from({length: days}, (_, i) => trendDayKey(new Date(Date.UTC(year, month, i + 1))));
-  }
-  const count = mode === "30" ? 30 : 7;
-  return Array.from({length: count}, (_, index) => trendDayKey(new Date(today.getTime() - (count - 1 - index) * 86400000)));
-}
-
-function formatTrendMonth(key) {
-  const {year, month} = trendKeyToParts(key);
-  return new Intl.DateTimeFormat("en-IN", {month:"long", year:"numeric", timeZone:"UTC"}).format(new Date(Date.UTC(year, month, 1)));
-}
-
-function formatTrendDayLabel(key) {
-  const d = trendDateFromKey(key);
-  return new Intl.DateTimeFormat("en-IN", {weekday:"short", timeZone:"UTC"}).format(d);
-}
-
-function setupApplicationTrendControls() {
-  if (applicationTrendReady) return;
-  const monthInput = el("activityMonthPicker");
-  if (!monthInput) return;
-  applicationTrendReady = true;
-  applicationTrendMonth = trendMonthKeyFromDate(trendDateFromKey(getTodayISTKey()));
-  monthInput.value = applicationTrendMonth;
-
-  document.querySelectorAll("[data-trend-range]").forEach(button => {
-    button.addEventListener("click", () => {
-      applicationTrendMode = button.dataset.trendRange || "7";
-      document.querySelectorAll("[data-trend-range]").forEach(b => b.classList.toggle("active", b === button));
-      renderApplications();
-    });
+  const today = getTodayISTKey();
+  const days = [...Array(7)].map((_, index) => {
+    const [year, month, day] = today.split("-").map(Number);
+    const date = new Date(Date.UTC(year, month - 1, day, 6, 30, 0) - (6 - index) * 24 * 60 * 60 * 1000);
+    return { date, key: getISTDateKey(date.getTime()) };
   });
-  monthInput.addEventListener("change", () => {
-    applicationTrendMonth = monthInput.value || applicationTrendMonth;
-    applicationTrendMode = "month";
-    document.querySelectorAll("[data-trend-range]").forEach(b => b.classList.toggle("active", b.dataset.trendRange === "month"));
-    renderApplications();
-  });
-  el("activityPrevMonth")?.addEventListener("click", () => {
-    applicationTrendMonth = shiftTrendMonth(applicationTrendMonth, -1);
-    monthInput.value = applicationTrendMonth;
-    applicationTrendMode = "month";
-    document.querySelectorAll("[data-trend-range]").forEach(b => b.classList.toggle("active", b.dataset.trendRange === "month"));
-    renderApplications();
-  });
-  el("activityNextMonth")?.addEventListener("click", () => {
-    applicationTrendMonth = shiftTrendMonth(applicationTrendMonth, 1);
-    monthInput.value = applicationTrendMonth;
-    applicationTrendMode = "month";
-    document.querySelectorAll("[data-trend-range]").forEach(b => b.classList.toggle("active", b.dataset.trendRange === "month"));
-    renderApplications();
-  });
-}
+  const max = Math.max(1, ...days.map(item => daily[item.key] || 0));
 
-function renderApplicationTrend(daily) {
-  setupApplicationTrendControls();
-  if (!applicationTrendMonth) applicationTrendMonth = trendMonthKeyFromDate(trendDateFromKey(getTodayISTKey()));
-  const grid = el("activityCalendarGrid");
-  const monthTitle = el("activityCalendarTitle");
-  const periodLabel = el("activityTrendPeriodLabel");
-  const totalEl = el("activityTrendTotal");
-  const peakEl = el("activityTrendPeak");
-  const avgEl = el("activityTrendAverage");
-  const totalChip = el("activityTrendTotalChip");
-  const bars = el("applicationsChart");
-  const barsTitle = el("activityBarsTitle");
-  const scale = el("activityTrendScale");
-  if (!grid || !bars) return;
-
-  const {year, month} = trendKeyToParts(applicationTrendMonth);
-  const monthName = formatTrendMonth(applicationTrendMonth);
-  if (monthTitle) monthTitle.textContent = monthName;
-  const monthInput = el("activityMonthPicker");
-  if (monthInput && monthInput.value !== applicationTrendMonth) monthInput.value = applicationTrendMonth;
-
-  const daysInMonth = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
-  const firstDay = new Date(Date.UTC(year, month, 1)).getUTCDay();
-  const monthKeys = Array.from({length: daysInMonth}, (_, i) => trendDayKey(new Date(Date.UTC(year, month, i + 1))));
-  const monthCounts = monthKeys.map(key => Number(daily[key] || 0));
-  const monthMax = Math.max(1, ...monthCounts);
-  const todayKey = getTodayISTKey();
-
-  let cells = "";
-  for (let i = 0; i < firstDay; i++) cells += '<div class="trend-day blank" aria-hidden="true"></div>';
-  monthKeys.forEach((key, index) => {
-    const count = Number(daily[key] || 0);
-    const intensity = count === 0 ? "" : count >= monthMax * 0.7 ? " high" : " mid";
-    const today = key === todayKey ? " today" : "";
-    const selected = key === applicationTrendSelectedDay ? " selected" : "";
-    cells += `<button type="button" class="trend-day${count ? " has-data" : ""}${intensity}${today}${selected}" data-trend-day="${key}" title="${count} applications on ${key}"><span class="day-number">${index + 1}</span><span class="day-count">${count || "—"}</span></button>`;
-  });
-  grid.innerHTML = cells;
-  grid.querySelectorAll("[data-trend-day]").forEach(btn => btn.addEventListener("click", () => {
-    applicationTrendSelectedDay = btn.dataset.trendDay || "";
-    const dataCount = Number(daily[applicationTrendSelectedDay] || 0);
-    if (peakEl) peakEl.textContent = `${dataCount} on ${formatTrendDayLabel(applicationTrendSelectedDay)} ${trendDateFromKey(applicationTrendSelectedDay).getUTCDate()}`;
-    grid.querySelectorAll("[data-trend-day]").forEach(b => b.classList.toggle("selected", b === btn));
-  }));
-
-  const keys = getTrendRangeKeys(applicationTrendMode);
-  const counts = keys.map(key => Number(daily[key] || 0));
-  const total = counts.reduce((sum, value) => sum + value, 0);
-  const max = Math.max(1, ...counts);
-  const peakIndex = counts.reduce((best, value, idx) => value > counts[best] ? idx : best, 0);
-  const peakCount = counts[peakIndex] || 0;
-  const peakKey = keys[peakIndex] || "";
-  const period = applicationTrendMode === "month" ? monthName : applicationTrendMode === "30" ? "Last 30 days" : "Last 7 days";
-  const avg = counts.length ? (total / counts.length) : 0;
-
-  if (periodLabel) periodLabel.textContent = period;
-  if (totalEl) totalEl.textContent = String(total);
-  if (peakEl) peakEl.textContent = peakKey ? `${peakCount} on ${formatTrendDayLabel(peakKey)} ${trendDateFromKey(peakKey).getUTCDate()}` : "—";
-  if (avgEl) avgEl.textContent = avg.toFixed(avg % 1 ? 1 : 0);
-  if (totalChip) totalChip.textContent = `${total} applications`;
-  if (barsTitle) barsTitle.textContent = period;
-  if (scale) scale.textContent = `${max} max`;
-
-  bars.innerHTML = keys.map(key => {
-    const count = Number(daily[key] || 0);
-    const pct = max > 0 ? (count / max) * 100 : 0;
-    const d = trendDateFromKey(key);
-    const dateLabel = `${d.getUTCDate()}/${String(d.getUTCMonth()+1).padStart(2,"0")}`;
-    return `<div class="trend-bar-col" title="${count} applications on ${key}"><div class="trend-bar-value">${count}</div><div class="trend-bar-track"><span class="trend-bar-fill${count === 0 ? " zero" : ""}" style="height:${count === 0 ? 2 : Math.max(4, pct)}%"></span></div><div class="trend-bar-label">${formatTrendDayLabel(key)}</div><div class="trend-bar-date">${dateLabel}</div></div>`;
+  E.applicationsChart.innerHTML = days.map(({ date, key }) => {
+    const count = daily[key] || 0;
+    return `<div class="chart-day" title="${count} applications"><span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span><small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${count}</small></div>`;
   }).join("");
+
 }
 
 function getCallStatus(app) {
@@ -2745,142 +2595,187 @@ async function recoverAllFirebaseToSheets(){
    V3.9 — MOBILE OPERATIONS COCKPIT
    Mobile-only analytics/control layer. Desktop is untouched.
    ========================================================== */
+let mobileTrendView = "month";
+let mobileTrendMonthKey = getTodayISTKey().slice(0,7);
+let mobileTrendSelectedKey = getTodayISTKey();
+
+function getTrendMonthParts(key) {
+  const m = String(key || '').match(/^(\d{4})-(\d{2})$/);
+  if (!m) {
+    const today = new Date();
+    return {year:today.getFullYear(), month:today.getMonth()};
+  }
+  return {year:Number(m[1]), month:Number(m[2]) - 1};
+}
+
+function trendDateKeyUTC(year, month, day) {
+  return getISTDateKey(Date.UTC(year, month, day, 6, 30, 0));
+}
+
+function formatTrendMonth(key) {
+  const {year, month} = getTrendMonthParts(key);
+  return new Intl.DateTimeFormat("en-IN", {month:"long", year:"numeric"}).format(new Date(Date.UTC(year, month, 1, 6, 30)));
+}
+
+function shiftTrendMonth(key, delta) {
+  const {year, month} = getTrendMonthParts(key);
+  const d = new Date(Date.UTC(year, month + delta, 1, 6, 30));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`;
+}
+
+function getTrendDailyMap() {
+  const map = {};
+  applications.forEach(app => {
+    const ts = asMs(app.submittedAtMs || app.submittedAt || app.timestamp);
+    if (!ts) return;
+    const key = getISTDateKey(ts);
+    if (key) map[key] = (map[key] || 0) + 1;
+  });
+  return map;
+}
+
+function buildTrendRange(view, monthKey) {
+  const map = getTrendDailyMap();
+  const {year, month} = getTrendMonthParts(monthKey);
+  let keys = [];
+  if (view === "7d" || view === "30d") {
+    const n = view === "7d" ? 7 : 30;
+    const today = getTodayISTKey().split('-').map(Number);
+    for (let i=n-1; i>=0; i--) {
+      const d = new Date(Date.UTC(today[0], today[1]-1, today[2]-i, 6, 30));
+      keys.push(getISTDateKey(d.getTime()));
+    }
+  } else {
+    const daysInMonth = new Date(Date.UTC(year, month+1, 0, 6, 30)).getUTCDate();
+    for (let day=1; day<=daysInMonth; day++) keys.push(trendDateKeyUTC(year, month, day));
+  }
+  return keys.map(key=>({key,count:map[key]||0}));
+}
+
+function renderTrendCalendar(monthKey, dailyMap) {
+  const {year, month} = getTrendMonthParts(monthKey);
+  const first = new Date(Date.UTC(year, month, 1, 6, 30));
+  const firstKey = getISTDateKey(first.getTime());
+  const parts = firstKey.split('-').map(Number);
+  const weekday = new Date(Date.UTC(parts[0], parts[1]-1, parts[2])).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(year, month+1, 0, 6, 30)).getUTCDate();
+  const prevDays = new Date(Date.UTC(year, month, 0, 6, 30)).getUTCDate();
+  const cells = [];
+  const monthCounts = [];
+  for (let day=1; day<=daysInMonth; day++) monthCounts.push(dailyMap[trendDateKeyUTC(year, month, day)] || 0);
+  const max = Math.max(1, ...monthCounts);
+  for (let i=weekday-1; i>=0; i--) {
+    const d = prevDays - i;
+    cells.push(`<div class="mo-cal-day is-out"><div class="mo-cal-num"><span>${d}</span></div><span class="mo-cal-count">—</span></div>`);
+  }
+  const todayKey = getTodayISTKey();
+  for (let day=1; day<=daysInMonth; day++) {
+    const key = trendDateKeyUTC(year, month, day);
+    const count = dailyMap[key] || 0;
+    const ratio = count/max;
+    const level = count===0 ? 0 : ratio <= .25 ? 1 : ratio <= .5 ? 2 : ratio <= .8 ? 3 : 4;
+    const classes = ['mo-cal-day', key===todayKey?'is-today':'', key===mobileTrendSelectedKey?'is-selected':''].filter(Boolean).join(' ');
+    cells.push(`<button type="button" class="${classes}" data-trend-date="${key}"><div class="mo-cal-num"><span>${day}</span>${key===todayKey?'<i>Today</i>':''}</div><span class="mo-cal-count level-${level}">${count}</span></button>`);
+  }
+  const totalCells = Math.ceil(cells.length/7)*7;
+  const lastMonthDate = new Date(Date.UTC(year, month+1, 1, 6, 30));
+  for (let i=cells.length; i<totalCells; i++) {
+    cells.push(`<div class="mo-cal-day is-out"><div class="mo-cal-num"><span>${i-cells.length+1}</span></div><span class="mo-cal-count">—</span></div>`);
+  }
+  return `<div class="mo-trend-calendar"><div class="mo-cal-head">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<span>${d}</span>`).join('')}</div><div class="mo-cal-grid">${cells.join('')}</div></div>`;
+}
+
 function renderMobileOperationsCockpit() {
   const root = document.getElementById("mobileOperationsCockpit");
   if (!root) return;
 
-  const counts = {
-    notContacted:0,new:0,connected:0,callback:0,details:0,followup:0,
-    interested:0,notInterested:0,notPicking:0,paid:0,enrolled:0,rnr:0,invalid:0,due:0
-  };
-  const counselorCounts = {};
-  const domainCounts = {};
-
+  const counts = {notContacted:0,new:0,connected:0,callback:0,details:0,followup:0,interested:0,notInterested:0,notPicking:0,paid:0,enrolled:0,rnr:0,invalid:0,due:0};
+  const counselorCounts = {}, domainCounts = {};
   applications.forEach(app => {
     const status = getCallStatus(app);
-    const map = {
-      "Not Contacted":"notContacted","New":"new","Connected":"connected",
-      "Callback":"callback","Details Shared":"details","Follow-up":"followup",
-      "Interested":"interested","Not Interested":"notInterested",
-      "Not Picking":"notPicking","Paid / Pre-Reg":"paid",
-      "Enrolled":"enrolled","RNR":"rnr","Invalid Number":"invalid"
-    };
-    if (map[status]) counts[map[status]]++;
-    if (isFollowUpDue(app)) counts.due++;
-    const counselor = String(app.assignedTo || "").trim() || "Unassigned";
-    counselorCounts[counselor] = (counselorCounts[counselor] || 0) + 1;
-    const domain = String(app.domain || "").trim() || "Unspecified";
-    domainCounts[domain] = (domainCounts[domain] || 0) + 1;
+    const map = {"Not Contacted":"notContacted","New":"new","Connected":"connected","Callback":"callback","Details Shared":"details","Follow-up":"followup","Interested":"interested","Not Interested":"notInterested","Not Picking":"notPicking","Paid / Pre-Reg":"paid","Enrolled":"enrolled","RNR":"rnr","Invalid Number":"invalid"};
+    if(map[status]) counts[map[status]]++;
+    if(isFollowUpDue(app)) counts.due++;
+    const counselor=String(app.assignedTo||'').trim()||'Unassigned'; counselorCounts[counselor]=(counselorCounts[counselor]||0)+1;
+    const domain=String(app.domain||'').trim()||'Unspecified'; domainCounts[domain]=(domainCounts[domain]||0)+1;
   });
+  const visitorRows=Object.entries(visitors||{}).map(([id,v])=>({id,...v,state:sessionState(v,Date.now())}));
+  const liveVisitors=visitorRows.filter(v=>v.state==='active'||v.state==='filling').length;
+  const fillingVisitors=visitorRows.filter(v=>v.state==='filling').length;
+  const total=applications.length;
+  const contacted=counts.connected+counts.callback+counts.details+counts.followup+counts.interested+counts.notInterested+counts.paid+counts.enrolled;
+  const contactedRate=total?Math.round(contacted/total*100):0;
+  const enrolledRate=total?Math.round(counts.enrolled/total*100):0;
+  const interestedRate=contacted?Math.round(counts.interested/contacted*100):0;
+  const paidRate=counts.interested?Math.round(counts.paid/counts.interested*100):0;
+  const pct=(n,d)=>d?Math.min(100,Math.round(n/d*100)):0;
+  const topCounselors=Object.entries(counselorCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const topDomains=Object.entries(domainCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
-  const visitorRows = Object.entries(visitors || {}).map(([id,v]) => ({
-    id,...v,state:sessionState(v,Date.now())
-  }));
-  const liveVisitors = visitorRows.filter(v => v.state === "active" || v.state === "filling").length;
-  const fillingVisitors = visitorRows.filter(v => v.state === "filling").length;
-  const total = applications.length;
-  const contacted = counts.connected + counts.callback + counts.details +
-    counts.followup + counts.interested + counts.notInterested + counts.paid + counts.enrolled;
-  const contactedRate = total ? Math.round(contacted/total*100) : 0;
-  const enrolledRate = total ? Math.round(counts.enrolled/total*100) : 0;
-  const interestedRate = contacted ? Math.round(counts.interested/contacted*100) : 0;
-  const paidRate = counts.interested ? Math.round(counts.paid/counts.interested*100) : 0;
-  const pct = (n,d) => d ? Math.min(100,Math.round(n/d*100)) : 0;
+  const dailyMap=getTrendDailyMap();
+  const range=buildTrendRange(mobileTrendView,mobileTrendMonthKey);
+  const periodTotal=range.reduce((s,d)=>s+d.count,0);
+  const peak=Math.max(0,...range.map(d=>d.count));
+  const peakItem=range.find(d=>d.count===peak && peak>0);
+  const avg=range.length ? (periodTotal/range.length).toFixed(1) : '0.0';
+  const maxBar=Math.max(1,...range.map(d=>d.count));
+  const todayKey=getTodayISTKey();
+  const barRange = mobileTrendView === 'month' ? range : range;
 
-  const topCounselors = Object.entries(counselorCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const topDomains = Object.entries(domainCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
-
-  const todayKey = getTodayISTKey();
-  const days = [...Array(7)].map((_,i)=>{
-    const [y,m,d] = todayKey.split("-").map(Number);
-    const date = new Date(Date.UTC(y,m-1,d,6,30,0)-(6-i)*86400000);
-    return {key:getISTDateKey(date.getTime()),date};
-  });
-  const daily = days.map(item=>({
-    ...item,
-    count:applications.filter(app=>getISTDateKey(asMs(app.submittedAtMs||app.submittedAt||app.timestamp))===item.key).length
-  }));
-  const maxDay = Math.max(1,...daily.map(d=>d.count));
-
-  root.innerHTML = `
-    <section class="mo-status-strip">
-      <i></i><div><strong>Operations live</strong><span>Firebase • CRM • Counselor network synced</span></div>
-      <time>${new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</time>
-    </section>
-
-    <section class="mo-hero-card">
-      <div class="mo-hero-copy">
-        <span class="mo-kicker">MOBILE OPERATIONS</span>
-        <h2>Command your pipeline.</h2>
-        <p>Priorities, conversion and team workload — without opening a full workspace.</p>
-      </div>
-      <div class="mo-hero-orbit"><span></span><b>${total}</b><small>LEADS</small></div>
-    </section>
-
+  root.innerHTML=`
+    <section class="mo-status-strip"><i></i><div><strong>Operations live</strong><span>Firebase • CRM • Counselor network synced</span></div><time>${new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</time></section>
+    <section class="mo-hero-card"><div class="mo-hero-copy"><span class="mo-kicker">MOBILE OPERATIONS</span><h2>Command your pipeline.</h2><p>Priorities, conversion and workload — without opening the full workspace.</p></div><div class="mo-hero-orbit"><span></span><b>${total}</b><small>LEADS</small></div></section>
     <section class="mo-priority-grid">
-      <button class="mo-priority-card urgent" data-mo-action="due"><span>↗</span><div><small>FOLLOW-UPS DUE</small><strong>${counts.due}</strong><em>${counts.due?"Needs attention":"All clear"}</em></div></button>
+      <button class="mo-priority-card urgent" data-mo-action="due"><span>↗</span><div><small>FOLLOW-UPS DUE</small><strong>${counts.due}</strong><em>${counts.due?'Needs attention':'All clear'}</em></div></button>
       <button class="mo-priority-card" data-mo-action="notContacted"><span>◎</span><div><small>NOT CONTACTED</small><strong>${counts.notContacted}</strong><em>${pct(counts.notContacted,total)}% of pipeline</em></div></button>
       <button class="mo-priority-card success" data-mo-action="interested"><span>✦</span><div><small>INTERESTED</small><strong>${counts.interested}</strong><em>${interestedRate}% of contacted</em></div></button>
       <button class="mo-priority-card violet" data-mo-action="enrolled"><span>✓</span><div><small>ENROLLED</small><strong>${counts.enrolled}</strong><em>${enrolledRate}% overall</em></div></button>
     </section>
-
     <section class="mo-section">
       <div class="mo-section-head"><div><span class="mo-kicker">PIPELINE INTELLIGENCE</span><h3>Conversion funnel</h3></div><button class="mo-link-btn" data-mo-action="crm">Open CRM</button></div>
-      <div class="mo-funnel">
-        ${[
-          ["all","All leads",total,100],["contacted","Contacted",contacted,contactedRate],
-          ["interested","Interested",counts.interested,pct(counts.interested,total)],
-          ["paid","Paid / Pre-Reg",counts.paid,pct(counts.paid,total)],
-          ["enrolled","Enrolled",counts.enrolled,enrolledRate]
-        ].map(x=>`<div class="mo-funnel-row"><span><i class="mo-funnel-dot ${x[0]}"></i>${x[1]}</span><b>${x[2]}</b><em>${x[3]}%</em><div><span style="width:${x[3]}%"></span></div></div>`).join("")}
-      </div>
+      <div class="mo-funnel">${[["all","All leads",total,100],["contacted","Contacted",contacted,contactedRate],["interested","Interested",counts.interested,pct(counts.interested,total)],["paid","Paid / Pre-Reg",counts.paid,pct(counts.paid,total)],["enrolled","Enrolled",counts.enrolled,enrolledRate]].map(x=>`<div class="mo-funnel-row"><span><i class="mo-funnel-dot ${x[0]}"></i>${x[1]}</span><b>${x[2]}</b><em>${x[3]}%</em><div><span style="width:${x[3]}%"></span></div></div>`).join('')}</div>
       <div class="mo-insight-line"><span><b>${paidRate}%</b> interested → paid/pre-reg</span><span><b>${liveVisitors}</b> live visitors</span></div>
     </section>
-
-    <section class="mo-section">
-      <div class="mo-section-head"><div><span class="mo-kicker">LIVE PULSE</span><h3>Today at a glance</h3></div><span class="mo-live-pill">● ${fillingVisitors} filling now</span></div>
-      <div class="mo-mini-stats">
-        <div><span>Live visitors</span><strong>${liveVisitors}</strong><small>active now</small></div>
-        <div><span>New leads</span><strong>${counts.new}</strong><small>status: New</small></div>
-        <div><span>Callbacks</span><strong>${counts.callback}</strong><small>waiting response</small></div>
-        <div><span>Not picking</span><strong>${counts.notPicking}</strong><small>retry queue</small></div>
+    <section class="mo-section"><div class="mo-section-head"><div><span class="mo-kicker">LIVE PULSE</span><h3>Today at a glance</h3></div><span class="mo-live-pill">● ${fillingVisitors} filling now</span></div><div class="mo-mini-stats"><div><span>Live visitors</span><strong>${liveVisitors}</strong><small>active now</small></div><div><span>New leads</span><strong>${counts.new}</strong><small>status: New</small></div><div><span>Callbacks</span><strong>${counts.callback}</strong><small>waiting response</small></div><div><span>Not picking</span><strong>${counts.notPicking}</strong><small>retry queue</small></div></div></section>
+    <section class="mo-section mo-trend-shell">
+      <div class="mo-section-head"><div><span class="mo-kicker">APPLICATION ACTIVITY</span><h3>Calendar & daily trend</h3></div><span class="mo-trend-total">${periodTotal} applications</span></div>
+      <div class="mo-trend-controls">
+        <div class="mo-trend-control-group">
+          <button type="button" class="${mobileTrendView==='7d'?'active':''}" data-trend-view="7d">7D</button>
+          <button type="button" class="${mobileTrendView==='30d'?'active':''}" data-trend-view="30d">30D</button>
+          <button type="button" class="${mobileTrendView==='month'?'active':''}" data-trend-view="month">MONTH</button>
+        </div>
+        <div class="mo-trend-control-group">
+          <button type="button" class="mo-trend-nav" data-trend-prev aria-label="Previous month">‹</button>
+          <input class="mo-trend-month" type="month" value="${mobileTrendMonthKey}" aria-label="Choose trend month">
+          <button type="button" class="mo-trend-nav" data-trend-next aria-label="Next month">›</button>
+          <button type="button" class="mo-trend-today" data-trend-today>Today</button>
+        </div>
+      </div>
+      <div class="mo-trend-summary">
+        <div class="mo-trend-stat"><small>Selected period</small><strong>${periodTotal}</strong><em>submitted applications</em></div>
+        <div class="mo-trend-stat"><small>Peak day</small><strong>${peak}</strong><em>${peakItem ? esc(peakItem.key) : 'No data'}</em></div>
+        <div class="mo-trend-stat"><small>Daily average</small><strong>${avg}</strong><em>per displayed day</em></div>
+        <div class="mo-trend-stat"><small>View</small><strong>${mobileTrendView.toUpperCase()}</strong><em>${formatTrendMonth(mobileTrendMonthKey)}</em></div>
+      </div>
+      ${mobileTrendView==='month' ? renderTrendCalendar(mobileTrendMonthKey,dailyMap) : `<div class="mo-trend-calendar" style="padding:14px;color:#86a0bd;font-size:8px">Calendar is always available in MONTH view. Switch to MONTH to browse every day of a selected month.</div>`}
+      <div class="mo-trend-chart-wrap">
+        <div class="mo-trend-chart-title"><b>Daily application volume</b><small>${barRange.length} displayed day${barRange.length===1?'':'s'}</small></div>
+        <div class="mo-bars"><span class="mo-gridline g1"></span><span class="mo-gridline g2"></span><span class="mo-gridline g3"></span>${barRange.map(d=>{const height=d.count?Math.max(4,Math.round(d.count/maxBar*100)):1; const label=d.key.slice(5).replace('-','/'); return `<div class="mo-bar-item ${d.key===todayKey?'is-today':''}" title="${esc(d.key)}: ${d.count} applications"><span class="mo-bar-value">${d.count||''}</span><div class="mo-bar-track"><span class="mo-bar-fill" style="height:${height}%"></span></div><span class="mo-bar-label">${label}</span></div>`}).join('')}</div>
+        <div class="mo-trend-note"><span>Click a calendar day to highlight it.</span><span><b>${todayKey}</b> = today</span></div>
       </div>
     </section>
+    <section class="mo-split-grid"><article class="mo-section mo-compact-panel"><div class="mo-section-head"><div><span class="mo-kicker">TEAM LOAD</span><h3>Counselors</h3></div><button class="mo-link-btn" data-mo-action="crm">Manage</button></div><div class="mo-rank-list">${topCounselors.length?topCounselors.map(([name,count])=>`<div class="mo-rank"><span>${esc(String(name).trim().charAt(0).toUpperCase())}</span><div><strong>${esc(name)}</strong><small>${count} lead${count===1?'':'s'}</small></div><b>${pct(count,total)}%</b></div>`).join(''):'<div class="mo-empty">No assignments yet.</div>'}</div></article><article class="mo-section mo-compact-panel"><div class="mo-section-head"><div><span class="mo-kicker">DEMAND MIX</span><h3>Top domains</h3></div><button class="mo-link-btn" data-mo-action="domains">View</button></div><div class="mo-domain-list">${topDomains.length?topDomains.map(([name,count])=>`<div class="mo-domain-row"><span>${esc(name)}</span><b>${count}</b><div><i style="width:${pct(count,total)}%"></i></div></div>`).join(''):'<div class="mo-empty">No domain data yet.</div>'}</div></article></section>
+    <section class="mo-section mo-actions-panel"><div class="mo-section-head"><div><span class="mo-kicker">ACTION DECK</span><h3>Power tools</h3></div></div><div class="mo-tool-grid"><button data-mo-action="crm"><span>▤</span><b>Applications</b><small>${total} leads</small></button><button data-mo-action="due"><span>◷</span><b>Follow-ups</b><small>${counts.due} due</small></button><button data-mo-action="activity"><span>⌁</span><b>Live Activity</b><small>${periodTotal} shown</small></button><button data-mo-action="analytics"><span>◫</span><b>Analytics</b><small>College insights</small></button><button data-mo-action="export"><span>⇩</span><b>Export CRM</b><small>CSV snapshot</small></button><button data-mo-action="refresh"><span>↻</span><b>Refresh</b><small>Sync live data</small></button></div></section>
+    <section class="mo-bottom-health"><span><i></i> System healthy</span><small>Live dashboard • ${new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</small></section>`;
 
-    <section class="mo-section">
-      <div class="mo-section-head"><div><span class="mo-kicker">7-DAY MOMENTUM</span><h3>Application trend</h3></div><span class="mo-trend-total">${daily.reduce((s,d)=>s+d.count,0)} this week</span></div>
-      <div class="mo-trend-chart">${daily.map(d=>`<div class="mo-trend-day"><div class="mo-trend-bar"><span style="height:${Math.max(7,Math.round(d.count/maxDay*100))}%"></span></div><strong>${d.count}</strong><small>${d.date.toLocaleDateString("en-IN",{weekday:"short"}).slice(0,3)}</small></div>`).join("")}</div>
-    </section>
-
-    <section class="mo-split-grid">
-      <article class="mo-section mo-compact-panel">
-        <div class="mo-section-head"><div><span class="mo-kicker">TEAM LOAD</span><h3>Counselors</h3></div><button class="mo-link-btn" data-mo-action="crm">Manage</button></div>
-        <div class="mo-rank-list">${topCounselors.length ? topCounselors.map(([name,count])=>`<div class="mo-rank"><span>${esc(String(name).trim().charAt(0).toUpperCase())}</span><div><strong>${esc(name)}</strong><small>${count} lead${count===1?"":"s"}</small></div><b>${pct(count,total)}%</b></div>`).join("") : '<div class="mo-empty">No assignments yet.</div>'}</div>
-      </article>
-      <article class="mo-section mo-compact-panel">
-        <div class="mo-section-head"><div><span class="mo-kicker">DEMAND MIX</span><h3>Top domains</h3></div><button class="mo-link-btn" data-mo-action="domains">View</button></div>
-        <div class="mo-domain-list">${topDomains.length ? topDomains.map(([name,count])=>`<div class="mo-domain-row"><span>${esc(name)}</span><b>${count}</b><div><i style="width:${pct(count,total)}%"></i></div></div>`).join("") : '<div class="mo-empty">No domain data yet.</div>'}</div>
-      </article>
-    </section>
-
-    <section class="mo-section mo-actions-panel">
-      <div class="mo-section-head"><div><span class="mo-kicker">ACTION DECK</span><h3>Power tools</h3></div></div>
-      <div class="mo-tool-grid">
-        <button data-mo-action="crm"><span>▤</span><b>Applications</b><small>${total} leads</small></button>
-        <button data-mo-action="due"><span>◷</span><b>Follow-ups</b><small>${counts.due} due</small></button>
-        <button data-mo-action="activity"><span>⌁</span><b>Live Activity</b><small>7-day flow</small></button>
-        <button data-mo-action="analytics"><span>◫</span><b>Analytics</b><small>College insights</small></button>
-        <button data-mo-action="export"><span>⇩</span><b>Export CRM</b><small>CSV snapshot</small></button>
-        <button data-mo-action="refresh"><span>↻</span><b>Refresh</b><small>Sync live data</small></button>
-      </div>
-    </section>
-
-    <section class="mo-bottom-health"><span><i></i> System healthy</span><small>Live dashboard • ${new Date().toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit",second:"2-digit"})}</small></section>
-  `;
-
-  root.querySelectorAll("[data-mo-action]").forEach(btn=>{
-    btn.addEventListener("click",()=>handleMobileOperationsAction(btn.dataset.moAction));
-  });
+  root.querySelectorAll('[data-mo-action]').forEach(btn=>btn.addEventListener('click',()=>handleMobileOperationsAction(btn.dataset.moAction)));
+  root.querySelectorAll('[data-trend-view]').forEach(btn=>btn.addEventListener('click',()=>{ mobileTrendView=btn.dataset.trendView; renderMobileOperationsCockpit(); }));
+  root.querySelector('[data-trend-prev]')?.addEventListener('click',()=>{mobileTrendMonthKey=shiftTrendMonth(mobileTrendMonthKey,-1);mobileTrendView='month';renderMobileOperationsCockpit();});
+  root.querySelector('[data-trend-next]')?.addEventListener('click',()=>{mobileTrendMonthKey=shiftTrendMonth(mobileTrendMonthKey,1);mobileTrendView='month';renderMobileOperationsCockpit();});
+  root.querySelector('[data-trend-today]')?.addEventListener('click',()=>{mobileTrendMonthKey=getTodayISTKey().slice(0,7);mobileTrendSelectedKey=getTodayISTKey();mobileTrendView='month';renderMobileOperationsCockpit();});
+  root.querySelector('.mo-trend-month')?.addEventListener('change',e=>{ if(/^\d{4}-\d{2}$/.test(e.target.value)){ mobileTrendMonthKey=e.target.value; mobileTrendView='month'; renderMobileOperationsCockpit(); }});
+  root.querySelectorAll('[data-trend-date]').forEach(btn=>btn.addEventListener('click',()=>{ mobileTrendSelectedKey=btn.dataset.trendDate; }));
 }
 
 function handleMobileOperationsAction(action) {
@@ -2905,7 +2800,6 @@ function handleMobileOperationsAction(action) {
 
 /* === Single top-right navigation + focused popup workspace === */
 setupAbandonedDashboardActions();
-setupApplicationTrendControls();
 
 (function setupCompactAdminWorkspace(){
   const menu = document.getElementById('adminModuleMenu');
@@ -2920,7 +2814,7 @@ setupApplicationTrendControls();
   const titles = {
     applicationCRM: ['Application CRM', 'Search, contact, assign and manage every submitted application.'],
     abandonedApplications: ['Abandoned Applications', 'Search, review, contact and recover incomplete applications.'],
-    activity: ['Applications Activity', 'Calendar-based application volume and daily momentum.'],
+    activity: ['Applications Activity', 'Live application flow and the last 7 days.'],
     analytics: ['College Insights', 'See which colleges are generating applications.'],
     liveVisitors: ['Live Visitors', 'Monitor active visitors and application sessions.'],
     landingPage: ['Open Landing Page', 'Return to the public InternsForge landing page.'],

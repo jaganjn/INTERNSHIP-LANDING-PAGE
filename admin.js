@@ -838,9 +838,36 @@ async function waitForCounselorRoutingReceipt_(firebaseKey, applicationId, couns
 
   while (Date.now() - started < timeoutMs) {
     try {
-      // The Apps Script route publishes its receipt under the Firebase
-      // application key. This uses the authenticated Firebase read that the
-      // dashboard already relies on for submittedApplications.
+      // PRIMARY: publicStats routing receipt. The Firebase rules allow public
+      // reads here, so this remains available even if submittedApplications
+      // validation/read policy differs between deployments.
+      const publicSnapshot = await db
+        .ref(`publicStats/assignmentRouting/${reqId}`)
+        .once("value");
+      const publicReceipt = publicSnapshot.val();
+      if (publicReceipt) {
+        const publicStatus = String(publicReceipt.status || "").trim().toLowerCase();
+        const publicAssigned = String(publicReceipt.assignedTo || "").trim();
+        if (publicStatus === "success" && publicAssigned.toLowerCase() === counselorName.toLowerCase()) {
+          return {
+            status: "success",
+            verified: true,
+            requestId: reqId,
+            applicationId: appId,
+            firebaseApplicationKey: fKey,
+            assignedTo: publicAssigned,
+            counselorSheet: publicReceipt.counselorSheet || "",
+            counselorRow: Number(publicReceipt.counselorRow || 0),
+            source: "publicStats-assignment-receipt"
+          };
+        }
+        if (publicStatus === "error" || publicStatus === "failed") {
+          throw new Error(publicReceipt.message || "Counselor sheet routing failed.");
+        }
+        if (publicReceipt.message) lastMessage = String(publicReceipt.message);
+      }
+
+      // BACKWARD COMPATIBILITY: inspect the application-level receipt.
       const rootSnapshot = await db
         .ref(`submittedApplications/${fKey}`)
         .once("value");

@@ -1,21 +1,10 @@
-INTERNSFORGE ASSIGNMENT RECEIPT V2
+INTERNSFORGE ASSIGNMENT RECEIPT V3
 
-This version fixes the remaining “routing receipt was not confirmed” problem.
+1. Replace Code.gs with this version.
+2. Replace admin.js with this version.
+3. Deploy Apps Script Web App as a NEW VERSION; Execute as Me; Who has access: Anyone.
+4. Hard refresh the Admin Dashboard (Ctrl+F5).
 
-FILES
-- Code.gs   -> Apps Script backend; REQUIRED for V2 receipt marker.
-- admin.js  -> Dashboard verification; checks the new top-level marker first and the legacy nested receipt second.
-
-DEPLOY ORDER
-1. Replace Code.gs in the Apps Script project with this Code.gs.
-2. Deploy -> Manage deployments -> Web app -> Edit / New version.
-3. Execute as: Me.
-4. Who has access: Anyone.
-5. Deploy the new version.
-6. Replace only admin.js in the Admin Dashboard.
-7. Hard refresh the dashboard (Ctrl+F5).
-
-ROUTING FLOW
-Admin -> Firebase assignedTo -> Apps Script routeApplicationToCounselor -> counselor sheet -> Firebase top-level assignmentRouting* marker -> Admin confirmation.
-
-The backend still does not write dashboard assignments into Master Sheet1.
+Change: routing receipts are now written primarily to /publicStats/assignmentRouting/{requestId}.
+The existing application-level receipt paths remain as backwards-compatible mirrors.
+No Master Sheet1 assignment is performed by the dashboard routing endpoint.

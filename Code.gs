@@ -2221,7 +2221,36 @@ function routeApplicationToCounselor(raw) {
       assignmentRoutingSource: "Apps Script"
     };
 
+    let publicWritten = false;
     let rootWritten = false;
+
+    // PRIMARY RECEIPT: publicStats is intentionally used for the routing
+    // acknowledgement because the current Firebase rules allow authenticated
+    // server writes there and public reads. This avoids submittedApplications
+    // child validation/read-policy issues during the browser verification step.
+    const publicReceipt = {
+      status: String(status || ""),
+      requestId: requestId,
+      assignedTo: assignedTo,
+      counselorSheet: String(payload.counselorSheet || ""),
+      counselorRow: Number(payload.counselorRow || 0),
+      updatedAtMs: Number(payload.updatedAtMs || Date.now()),
+      message: String(payload.message || payload.error || ""),
+      source: "Apps Script"
+    };
+
+    try {
+      firebaseRestPatch(
+        "/publicStats/assignmentRouting/" + encodeURIComponent(requestId),
+        publicReceipt
+      );
+      publicWritten = true;
+    } catch (publicReceiptError) {
+      console.error("Public assignment receipt write failed:", publicReceiptError);
+      publicReceipt.message = String(publicReceiptError && publicReceiptError.message || publicReceiptError);
+    }
+
+    // BACKWARD COMPATIBILITY: also mirror the receipt on the application record.
     try {
       firebaseRestPatch(
         "/submittedApplications/" + encodeURIComponent(firebaseApplicationKey),
@@ -2229,7 +2258,6 @@ function routeApplicationToCounselor(raw) {
       );
       rootWritten = true;
 
-      // Keep the richer nested receipt for compatibility with older dashboards.
       try {
         firebaseRestPatch(
           "/submittedApplications/" + encodeURIComponent(firebaseApplicationKey) + "/assignmentRouting",
@@ -2239,14 +2267,14 @@ function routeApplicationToCounselor(raw) {
         console.warn("Nested assignment receipt write skipped:", nestedReceiptError);
       }
     } catch (receiptError) {
-      console.error("Assignment routing Firebase marker write failed:", receiptError);
+      console.error("Application routing marker write skipped:", receiptError);
       rootMarker.assignmentRoutingMessage = String(receiptError && receiptError.message || receiptError);
-      // Do not throw here; sheet routing may already have completed. The
-      // returned Apps Script result still exposes the actual routing status.
     }
 
-    payload.receiptWritten = rootWritten;
-    payload.receiptVersion = "ASSIGNMENT-RECEIPT-V2";
+    payload.receiptWritten = publicWritten || rootWritten;
+    payload.publicReceiptWritten = publicWritten;
+    payload.rootReceiptWritten = rootWritten;
+    payload.receiptVersion = "ASSIGNMENT-RECEIPT-V3-PUBLIC-STATS";
     return payload;
   }
 

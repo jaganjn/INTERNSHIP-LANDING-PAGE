@@ -1970,17 +1970,172 @@ footer nav a:hover{color:#ffbb70!important}
 </style>
 
 
-<style id="initial-application-popup-ux">
-/* Entry-popup enhancement only: preserve the existing application form layout,
-   fields, CTA behavior, validation and submission flow. */
-body.initial-application-popup .application-zone{animation:initialApplicationBackdropIn .42s ease-out both}
-body.initial-application-popup .application-card.wizard-shell{animation:initialApplicationCardIn .62s cubic-bezier(.18,.82,.22,1) both}
-body.initial-application-popup .application-card.wizard-shell::after{content:"";position:absolute;inset:-1px;border-radius:inherit;pointer-events:none;box-shadow:0 0 0 1px rgba(86,112,234,.18),0 0 0 0 rgba(86,112,234,.22);animation:initialApplicationGlow 1.6s ease-out .18s 1 both}
-@keyframes initialApplicationBackdropIn{from{opacity:0}to{opacity:1}}
-@keyframes initialApplicationCardIn{0%{opacity:0;transform:translateY(22px) scale(.965)}70%{opacity:1;transform:translateY(-2px) scale(1.006)}100%{opacity:1;transform:none}}
-@keyframes initialApplicationGlow{0%{box-shadow:0 0 0 1px rgba(86,112,234,.18),0 0 0 0 rgba(86,112,234,.20)}55%{box-shadow:0 0 0 1px rgba(86,112,234,.24),0 0 0 12px rgba(86,112,234,.04)}100%{box-shadow:0 0 0 1px rgba(86,112,234,.10),0 0 0 0 rgba(86,112,234,0)}}
-@media(prefers-reduced-motion:reduce){body.initial-application-popup .application-zone,body.initial-application-popup .application-card.wizard-shell{animation:none!important}body.initial-application-popup .application-card.wizard-shell::after{animation:none!important}}
+<style id="internsforge-application-popup-v2">
+/* ==========================================================
+   APPLICATION POPUP V2 — PRESENTATION ONLY
+   Existing application HTML / fields / JS remain untouched.
+   ========================================================== */
+.final-cta .open-application,
+.final-cta .open-application:hover,
+.final-cta .open-application:focus-visible{
+  min-height:54px!important;
+  padding:0 21px!important;
+  border-radius:13px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:14px!important;
+  text-decoration:none!important;
+  font-weight:800!important;
+  font-size:14px!important;
+  border:0!important;
+  cursor:pointer!important;
+  color:#fff!important;
+  background:linear-gradient(100deg,var(--blue),var(--violet),#bc3fc8)!important;
+  box-shadow:0 14px 35px rgba(82,71,224,.24)!important;
+  transform:none!important;
+}
+.final-cta .open-application:hover{transform:translateY(-2px)!important;box-shadow:0 18px 42px rgba(82,71,224,.32)!important}
+
+/* Professional modal frame */
+body.application-modal-open .application-zone{
+  padding:22px!important;
+  background:rgba(7,17,34,.78)!important;
+  backdrop-filter:blur(16px)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+  animation:ifModalBackdropIn .28s ease-out both;
+}
+body.application-modal-open .application-zone:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 12% 18%,rgba(86,115,235,.18),transparent 31%),
+    radial-gradient(circle at 88% 80%,rgba(183,68,210,.16),transparent 30%),
+    linear-gradient(180deg,rgba(255,255,255,.025),transparent 45%);
+}
+body.application-modal-open .application-card.wizard-shell{
+  position:relative!important;
+  z-index:4!important;
+  width:min(1060px,100%)!important;
+  max-width:1060px!important;
+  max-height:min(90dvh,900px)!important;
+  overflow:auto!important;
+  padding:22px!important;
+  border-radius:30px!important;
+  border:1px solid rgba(255,255,255,.60)!important;
+  background:linear-gradient(180deg,#fff 0%,#f8faff 100%)!important;
+  box-shadow:0 40px 120px rgba(2,13,35,.42),0 0 0 1px rgba(80,105,190,.08)!important;
+  animation:ifApplicationModalIn .42s cubic-bezier(.18,.82,.24,1) both;
+}
+body.application-modal-open .application-card.wizard-shell:before{
+  content:"";
+  position:absolute;
+  left:22px;right:22px;top:0;height:4px;
+  border-radius:0 0 999px 999px;
+  background:linear-gradient(90deg,#506bea,#7b4bdd,#bb50c9);
+  box-shadow:0 6px 22px rgba(82,90,220,.22);
+}
+body.application-modal-open .application-card.wizard-shell:after{
+  content:"NEW APPLICATION";
+  position:absolute;
+  right:72px;top:13px;
+  padding:6px 9px;
+  border:1px solid #dfe5f2;
+  border-radius:999px;
+  background:rgba(255,255,255,.92);
+  color:#5b6b85;
+  font-size:8px;font-weight:900;letter-spacing:1.25px;
+  pointer-events:none;
+}
+
+/* Desktop: professional two-column shell around the unchanged form fields */
+@media(min-width:901px){
+  body.application-modal-open .application-card.wizard-shell{
+    display:grid!important;
+    grid-template-columns:260px minmax(0,1fr)!important;
+    grid-template-rows:auto auto auto auto!important;
+    column-gap:22px!important;
+    align-content:start!important;
+  }
+  body.application-modal-open .application-card.wizard-shell > .draft-banner{grid-column:1/-1!important}
+  body.application-modal-open .application-card.wizard-shell > .wizard-head{
+    grid-column:1!important;grid-row:2!important;
+    padding:8px 8px 0!important;
+    align-self:start!important;
+  }
+  body.application-modal-open .application-card.wizard-shell > .wizard-hero{
+    grid-column:1!important;grid-row:3!important;
+    margin:12px 0 0!important;
+    min-height:210px!important;
+    align-self:stretch!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:space-between!important;
+  }
+  body.application-modal-open .application-card.wizard-shell > .application-progress-four{
+    grid-column:1!important;grid-row:4!important;
+    margin:14px 4px 6px!important;
+    padding:14px!important;
+    border:1px solid #dfe6f1!important;
+    border-radius:18px!important;
+    background:#fff!important;
+    align-self:start!important;
+  }
+  body.application-modal-open .application-card.wizard-shell > form{
+    grid-column:2!important;grid-row:2 / span 3!important;
+    min-width:0!important;
+    margin:0!important;
+    padding:2px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell > #message{
+    grid-column:1/-1!important;
+  }
+  body.application-modal-open .application-card.wizard-shell .wizard-hero .wizard-copy h2{
+    font-size:25px!important;letter-spacing:-.7px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell .wizard-hero .wizard-copy p{
+    font-size:11px!important;line-height:1.6!important;
+  }
+  body.application-modal-open .application-card.wizard-shell .step-panel{
+    border:1px solid #e0e6f0!important;
+    border-radius:22px!important;
+    background:#fff!important;
+    padding:22px!important;
+    box-shadow:0 8px 28px rgba(25,43,76,.045)!important;
+  }
+}
+
+/* Mobile / tablet: preserve a single-column, touch-first form */
+@media(max-width:900px){
+  body.application-modal-open .application-card.wizard-shell{
+    max-height:calc(100dvh - 28px)!important;
+  }
+  body.application-modal-open .application-card.wizard-shell:after{right:56px;top:11px;font-size:7px}
+}
+@media(max-width:600px){
+  body.application-modal-open .application-zone{padding:8px!important}
+  body.application-modal-open .application-card.wizard-shell{
+    width:100%!important;
+    max-width:100%!important;
+    max-height:calc(100dvh - 16px)!important;
+    border-radius:22px!important;
+    padding:13px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell:before{left:13px;right:13px}
+  body.application-modal-open .application-card.wizard-shell:after{right:48px;top:10px}
+  body.application-modal-open .application-card.wizard-shell > .wizard-hero{margin-top:11px!important;border-radius:19px!important}
+}
+
+@keyframes ifModalBackdropIn{from{opacity:0}to{opacity:1}}
+@keyframes ifApplicationModalIn{from{opacity:0;transform:translateY(22px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){
+  body.application-modal-open .application-zone,
+  body.application-modal-open .application-card.wizard-shell{animation:none!important}
+}
 </style>
+
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -3604,6 +3759,7 @@ console.info('SkillPath guided form build: Final V11');
     applicationCard?.setAttribute('aria-label','Internship application');
     window.setTimeout(()=>document.getElementById('name')?.focus(),120);
   }
+  window.__internsforgeOpenApplication = openApplication;
   let closeConfirmOpen = false;
   let pendingExit = null;
   let allowHistoryNavigation = false;
@@ -4186,31 +4342,39 @@ console.info('SkillPath guided form build: Final V11');
 </script>
 
 
-<script id="initial-application-popup-js">
-(function(){
-  'use strict';
-  const KEY='internsforge_initial_application_popup_shown_v1';
-  const reduce=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const launch=()=>{
-    try{
-      if(sessionStorage.getItem(KEY)==='1') return;
-      if(document.body.classList.contains('application-modal-open')) return;
-      const opener=document.querySelector('.open-application');
-      if(!opener) return;
-      sessionStorage.setItem(KEY,'1');
-      document.body.classList.add('initial-application-popup');
-      // Use the same existing CTA that students already use manually.
-      // Nothing about the application form itself is replaced.
-      opener.click();
-      window.setTimeout(()=>document.body.classList.remove('initial-application-popup'), reduce?250:1800);
-    }catch(error){
-      console.warn('Initial application popup could not open:',error);
+<script id="internsforge-new-user-application-popup-v2">
+(function setupNewVisitorApplicationPopup(){
+  const AUTO_OPEN_KEY = 'internsforge_application_popup_seen_v2';
+  const params = new URLSearchParams(window.location.search);
+  const forceOpen = params.get('apply') === '1' || params.get('openApplication') === '1';
+  const zone = document.querySelector('.application-zone');
+  const hasApplication = !!document.getElementById('internshipForm');
+  if (!zone || !hasApplication) return;
+
+  let alreadySeen = false;
+  try { alreadySeen = localStorage.getItem(AUTO_OPEN_KEY) === '1'; } catch (_) {}
+  if (alreadySeen && !forceOpen) return;
+
+  // Do not interfere with a student who has already opened the application through
+  // an existing CTA while the landing page is still settling.
+  const open = () => {
+    if (document.body.classList.contains('application-modal-open')) return;
+    if (typeof window.__internsforgeOpenApplication === 'function') {
+      window.__internsforgeOpenApplication();
+      return;
     }
+    // Existing openApplication() is scoped inside the page script, so trigger the
+    // exact existing CTA path instead of duplicating application logic.
+    const trigger = document.querySelector('.open-application, #floatingCta');
+    if (trigger) trigger.click();
+    try { localStorage.setItem(AUTO_OPEN_KEY, '1'); } catch (_) {}
   };
-  const start=()=>window.setTimeout(launch, reduce?350:900);
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',start,{once:true});
-  else start();
+
+  // First entry feels intentional rather than intrusive: brief settle time,
+  // then the unchanged application form opens inside the professional modal.
+  window.setTimeout(open, forceOpen ? 220 : 900);
 })();
 </script>
+
 </body>
 </html>

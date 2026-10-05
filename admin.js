@@ -822,102 +822,47 @@ function handleCounselorSelect(select, onValue) {
   return value;
 }
 
-async function waitForCounselorRoutingReceipt_(firebaseKey, applicationId, counselor, requestId, timeoutMs = 20000) {
+async function routeApplicationToCounselorViaJsonp_(firebaseKey, counselor, previousAssignedTo, requestId, timeoutMs = 20000) {
   const fKey = String(firebaseKey || "").trim();
-  const appId = String(applicationId || "").trim();
   const counselorName = String(counselor || "").trim();
+  const previous = String(previousAssignedTo || "").trim();
   const reqId = String(requestId || "").trim();
-
-  if (!fKey) throw new Error("Missing Firebase application key for routing verification.");
-  if (!appId) throw new Error("Missing Application ID for routing verification.");
-  if (!counselorName) throw new Error("Missing counselor name for routing verification.");
+  if (!fKey) throw new Error("Missing Firebase application key for counselor routing.");
+  if (!counselorName) throw new Error("Missing counselor name for counselor routing.");
   if (!reqId) throw new Error("Missing assignment routing request ID.");
 
-  const started = Date.now();
-  let lastMessage = "Waiting for the counselor sheet routing receipt…";
+  return new Promise((resolve, reject) => {
+    const callbackName = `__ifRoute_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const script = document.createElement("script");
+    let settled = false;
+    const cleanup = () => {
+      try { delete window[callbackName]; } catch (_) {}
+      script.remove();
+    };
+    const finish = (err, result) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      cleanup();
+      if (err) reject(err); else resolve(result || {});
+    };
+    const timer = setTimeout(() => finish(new Error("Apps Script counselor routing request timed out. Check the deployed Web App version and access setting.")), timeoutMs);
 
-  while (Date.now() - started < timeoutMs) {
-    try {
-      // PRIMARY: publicStats routing receipt. The Firebase rules allow public
-      // reads here, so this remains available even if submittedApplications
-      // validation/read policy differs between deployments.
-      const publicSnapshot = await db
-        .ref(`publicStats/assignmentRouting/${reqId}`)
-        .once("value");
-      const publicReceipt = publicSnapshot.val();
-      if (publicReceipt) {
-        const publicStatus = String(publicReceipt.status || "").trim().toLowerCase();
-        const publicAssigned = String(publicReceipt.assignedTo || "").trim();
-        if (publicStatus === "success" && publicAssigned.toLowerCase() === counselorName.toLowerCase()) {
-          return {
-            status: "success",
-            verified: true,
-            requestId: reqId,
-            applicationId: appId,
-            firebaseApplicationKey: fKey,
-            assignedTo: publicAssigned,
-            counselorSheet: publicReceipt.counselorSheet || "",
-            counselorRow: Number(publicReceipt.counselorRow || 0),
-            source: "publicStats-assignment-receipt"
-          };
-        }
-        if (publicStatus === "error" || publicStatus === "failed") {
-          throw new Error(publicReceipt.message || "Counselor sheet routing failed.");
-        }
-        if (publicReceipt.message) lastMessage = String(publicReceipt.message);
-      }
+    window[callbackName] = payload => finish(null, payload);
+    script.onerror = () => finish(new Error("Could not reach the Apps Script counselor routing endpoint. Redeploy the Web App and make sure Who has access is Anyone."));
 
-      // BACKWARD COMPATIBILITY: inspect the application-level receipt.
-      const rootSnapshot = await db
-        .ref(`submittedApplications/${fKey}`)
-        .once("value");
-      const root = rootSnapshot.val() || {};
-
-      const rootRequestId = String(root.assignmentRoutingRequestId || "").trim();
-      const rootStatus = String(root.assignmentRoutingStatus || "").trim().toLowerCase();
-      const rootCounselor = String(root.assignmentRoutingCounselor || "").trim();
-
-      if (rootRequestId === reqId) {
-        if (rootStatus === "success" && rootCounselor.toLowerCase() === counselorName.toLowerCase()) {
-          return {
-            status: "success",
-            verified: true,
-            requestId: reqId,
-            applicationId: appId,
-            firebaseApplicationKey: fKey,
-            assignedTo: rootCounselor,
-            counselorSheet: root.assignmentRoutingSheet || "",
-            counselorRow: Number(root.assignmentRoutingRow || 0),
-            source: "top-level-assignment-receipt"
-          };
-        }
-        if (rootStatus === "error" || rootStatus === "failed") {
-          throw new Error(root.assignmentRoutingMessage || "Counselor sheet routing failed.");
-        }
-        if (root.assignmentRoutingMessage) lastMessage = String(root.assignmentRoutingMessage);
-      }
-
-      // Backward compatibility with the original nested receipt.
-      const receiptSnapshot = await db
-        .ref(`submittedApplications/${fKey}/assignmentRouting`)
-        .once("value");
-      const receipt = receiptSnapshot.val();
-      if (receipt && String(receipt.requestId || "") === reqId) {
-        const status = String(receipt.status || "").trim().toLowerCase();
-        const assignedTo = String(receipt.assignedTo || "").trim();
-        if (status === "success" && assignedTo.toLowerCase() === counselorName.toLowerCase()) return receipt;
-        if (status === "error") throw new Error(receipt.error || receipt.message || "Counselor sheet routing failed.");
-        if (receipt.message) lastMessage = String(receipt.message);
-      }
-    } catch (error) {
-      // Firebase transient/read errors are retried until timeout.
-      lastMessage = error.message || String(error);
-    }
-
-    await new Promise(resolve => setTimeout(resolve, 450));
-  }
-
-  throw new Error(`${lastMessage} The counselor routing receipt was not confirmed.`);
+    const params = new URLSearchParams({
+      action: "routeApplicationToCounselorGet",
+      firebaseKey: fKey,
+      counselorName,
+      previousAssignedTo: previous,
+      requestId: reqId,
+      callback: callbackName,
+      _: String(Date.now())
+    });
+    script.src = `${SHEETS_RECOVERY_ENDPOINT}?${params.toString()}`;
+    document.head.appendChild(script);
+  });
 }
 
 async function assignApplicationToCounselor(appId, counselor, source = "row") {
@@ -944,23 +889,13 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
       syncSource: "dashboard-assignment"
     });
 
-    // 2) The Apps Script endpoint handles ONLY counselor-sheet routing.
-    // It never modifies Master Sheet1 for this dashboard assignment.
-    await fetch(SHEETS_RECOVERY_ENDPOINT, {
-      method: "POST",
-      mode: "no-cors",
-      headers: {"Content-Type":"text/plain;charset=utf-8"},
-      body: JSON.stringify({
-        action: "routeApplicationToCounselor",
-        requestId: requestId,
-        application: {...app, applicationId: app.applicationId || app.id, assignedTo: clean},
-        firebaseKey: appId,
-        previousAssignedTo: old,
-        source: source || "dashboard"
-      })
-    });
-
-    await waitForCounselorRoutingReceipt_(appId, app.applicationId || app.id, clean, requestId);
+    // 2) Route directly through Apps Script JSONP. The server resolves the
+    // canonical application from Firebase and returns the actual Sheet result
+    // in the same request. No no-cors POST and no Firebase receipt polling.
+    const routingResult = await routeApplicationToCounselorViaJsonp_(appId, clean, old, requestId);
+    if (!routingResult || String(routingResult.status || "").toLowerCase() !== "success") {
+      throw new Error(routingResult?.message || routingResult?.error || "Counselor sheet routing failed.");
+    }
 
     await logApplicationActivity(appId, {
       action: "Lead reassigned",

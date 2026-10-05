@@ -1911,6 +1911,58 @@ function verifyCounselorRouting(raw) {
   }
 }
 
+function routeApplicationToCounselorGet_(raw) {
+  raw = raw || {};
+  const firebaseKey = value(raw.firebaseKey || raw.firebaseApplicationId || raw.id);
+  const counselorName = normalizeCounselorName(raw.counselorName || raw.assignedTo || "");
+  const previousAssignedTo = normalizeCounselorName(raw.previousAssignedTo || "");
+  const requestId = value(raw.requestId) || Utilities.getUuid();
+
+  if (!firebaseKey) return {status:"error", requestId:requestId, message:"Firebase application key is required."};
+  if (!counselorName) return {status:"error", requestId:requestId, message:"Counselor name is required."};
+
+  try {
+    // Resolve the canonical application from Firebase on the server. This keeps
+    // the browser request small and removes the need for CORS/no-cors POSTs or
+    // a second receipt-polling round trip.
+    const stored = firebaseRestGet_("/submittedApplications/" + encodeURIComponent(firebaseKey)) || {};
+    if (!stored || typeof stored !== "object" || Object.keys(stored).length === 0) {
+      return {status:"error", requestId:requestId, firebaseApplicationKey:firebaseKey, message:"Application was not found in Firebase for key " + firebaseKey + "."};
+    }
+
+    const applicationId = value(stored.applicationId || stored.applicationID || stored["Application ID"] || stored.id || firebaseKey);
+    const application = Object.assign({}, stored, {
+      id: firebaseKey,
+      applicationId: applicationId,
+      assignedTo: counselorName
+    });
+
+    const result = routeApplicationToCounselor({
+      requestId: requestId,
+      firebaseKey: firebaseKey,
+      previousAssignedTo: previousAssignedTo,
+      application: application
+    });
+
+    return Object.assign({}, result, {
+      transport: "GET-JSONP",
+      verification: "direct-response",
+      version: "V4-DIRECT-ROUTE"
+    });
+  } catch (error) {
+    console.error("Direct GET counselor routing failed:", error);
+    return {
+      status:"error",
+      requestId:requestId,
+      firebaseApplicationKey:firebaseKey,
+      assignedTo:counselorName,
+      message:error.message || String(error),
+      transport:"GET-JSONP",
+      version:"V4-DIRECT-ROUTE"
+    };
+  }
+}
+
 function doGet(e) {
   try {
     const p = (e && e.parameter) ? e.parameter : {};
@@ -1923,7 +1975,11 @@ function doGet(e) {
       const result = verifyCounselorRouting(p);
       return jsonpResponse_(p.callback, result);
     }
-    if (action === 'health') return jsonResponse({status:'online', version:'ASSIGNMENT-RECEIPT-V2', time:nowString(), message:'InternsForge Sheets receiver is healthy.'});
+    if (action === 'routeApplicationToCounselorGet') {
+      const result = routeApplicationToCounselorGet_(p);
+      return jsonpResponse_(p.callback, result);
+    }
+    if (action === 'health') return jsonResponse({status:'online', version:'V4-DIRECT-ROUTE', time:nowString(), message:'InternsForge Sheets receiver is healthy.'});
     return jsonResponse({status:'error', message:'Unknown action: ' + action});
   } catch (error) {
     console.error('GET ERROR', error);

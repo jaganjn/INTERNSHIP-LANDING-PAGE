@@ -841,26 +841,46 @@ async function waitForCounselorRoutingReceipt_(firebaseKey, applicationId, couns
       // The Apps Script route publishes its receipt under the Firebase
       // application key. This uses the authenticated Firebase read that the
       // dashboard already relies on for submittedApplications.
-      const snapshot = await db
+      const rootSnapshot = await db
+        .ref(`submittedApplications/${fKey}`)
+        .once("value");
+      const root = rootSnapshot.val() || {};
+
+      const rootRequestId = String(root.assignmentRoutingRequestId || "").trim();
+      const rootStatus = String(root.assignmentRoutingStatus || "").trim().toLowerCase();
+      const rootCounselor = String(root.assignmentRoutingCounselor || "").trim();
+
+      if (rootRequestId === reqId) {
+        if (rootStatus === "success" && rootCounselor.toLowerCase() === counselorName.toLowerCase()) {
+          return {
+            status: "success",
+            verified: true,
+            requestId: reqId,
+            applicationId: appId,
+            firebaseApplicationKey: fKey,
+            assignedTo: rootCounselor,
+            counselorSheet: root.assignmentRoutingSheet || "",
+            counselorRow: Number(root.assignmentRoutingRow || 0),
+            source: "top-level-assignment-receipt"
+          };
+        }
+        if (rootStatus === "error" || rootStatus === "failed") {
+          throw new Error(root.assignmentRoutingMessage || "Counselor sheet routing failed.");
+        }
+        if (root.assignmentRoutingMessage) lastMessage = String(root.assignmentRoutingMessage);
+      }
+
+      // Backward compatibility with the original nested receipt.
+      const receiptSnapshot = await db
         .ref(`submittedApplications/${fKey}/assignmentRouting`)
         .once("value");
-      const receipt = snapshot.val();
-
+      const receipt = receiptSnapshot.val();
       if (receipt && String(receipt.requestId || "") === reqId) {
         const status = String(receipt.status || "").trim().toLowerCase();
         const assignedTo = String(receipt.assignedTo || "").trim();
-
-        if (status === "success" && assignedTo.toLowerCase() === counselorName.toLowerCase()) {
-          return receipt;
-        }
-
-        if (status === "error") {
-          throw new Error(receipt.error || receipt.message || "Counselor sheet routing failed.");
-        }
-
+        if (status === "success" && assignedTo.toLowerCase() === counselorName.toLowerCase()) return receipt;
+        if (status === "error") throw new Error(receipt.error || receipt.message || "Counselor sheet routing failed.");
         if (receipt.message) lastMessage = String(receipt.message);
-      } else if (receipt && receipt.status) {
-        lastMessage = `Received routing status: ${String(receipt.status)}.`;
       }
     } catch (error) {
       // Firebase transient/read errors are retried until timeout.

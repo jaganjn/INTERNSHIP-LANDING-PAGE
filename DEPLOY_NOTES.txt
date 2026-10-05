@@ -1,24 +1,21 @@
-INTERNSFORGE COUNSELOR ASSIGNMENT FIX — 2026-10-05
+INTERNSFORGE ASSIGNMENT RECEIPT V2
 
-Root cause fixed:
-The V7 backend called assertCounselorLeadSchemaForWrite_() during dashboard assignment, but the V7 Code.gs file did not contain that function. This caused counselor assignment to fail before the lead was written.
+This version fixes the remaining “routing receipt was not confirmed” problem.
 
-Fixes included:
-1. Restored the missing counselor write-barrier/schema validation function.
-2. Added backward-compatible doPost support for both:
-   - routeApplicationToCounselor
-   - assignApplicationToCounselor
-3. Added assignApplicationToCounselor(raw) as a compatibility alias.
-4. Kept Master Sheet1 untouched for dashboard-only assignments.
-5. Kept Firebase assignment + counselor-sheet routing architecture intact.
+FILES
+- Code.gs   -> Apps Script backend; REQUIRED for V2 receipt marker.
+- admin.js  -> Dashboard verification; checks the new top-level marker first and the legacy nested receipt second.
 
-Deployment:
-- Replace Code.gs in the existing Apps Script project with the supplied Code.gs.
-- Deploy a NEW version of the existing Web App deployment (same Web App URL is fine).
-- Execute as the account that owns/has Editor access to the counselor spreadsheets.
-- Access must remain appropriate for your existing dashboard endpoint (typically Web app access: Anyone, according to the existing project setup).
-- Do not change Firebase rules for this fix.
+DEPLOY ORDER
+1. Replace Code.gs in the Apps Script project with this Code.gs.
+2. Deploy -> Manage deployments -> Web app -> Edit / New version.
+3. Execute as: Me.
+4. Who has access: Anyone.
+5. Deploy the new version.
+6. Replace only admin.js in the Admin Dashboard.
+7. Hard refresh the dashboard (Ctrl+F5).
 
-After deployment, test:
-Admin Dashboard -> Application CRM -> select lead -> assign counselor.
-Expected: lead appears in the selected counselor's Leads sheet, while Master Sheet1 is not changed by the dashboard assignment.
+ROUTING FLOW
+Admin -> Firebase assignedTo -> Apps Script routeApplicationToCounselor -> counselor sheet -> Firebase top-level assignmentRouting* marker -> Admin confirmation.
+
+The backend still does not write dashboard assignments into Master Sheet1.

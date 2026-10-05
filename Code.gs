@@ -1906,7 +1906,7 @@ function verifyCounselorRouting(raw) {
   } catch (error) {
     return {
       status:"error", verified:false, applicationId:applicationId, firebaseApplicationKey:firebaseKey, counselor:counselorName, requestId:requestId,
-      message:error.message || String(error), version:"V7-DOGET-CONFLICT-FIX"
+      message:error.message || String(error), version:"ASSIGNMENT-RECEIPT-V2"
     };
   }
 }
@@ -1923,7 +1923,7 @@ function doGet(e) {
       const result = verifyCounselorRouting(p);
       return jsonpResponse_(p.callback, result);
     }
-    if (action === 'health') return jsonResponse({status:'online', version:'V7-DOGET-CONFLICT-FIX', time:nowString(), message:'InternsForge Sheets receiver is healthy.'});
+    if (action === 'health') return jsonResponse({status:'online', version:'ASSIGNMENT-RECEIPT-V2', time:nowString(), message:'InternsForge Sheets receiver is healthy.'});
     return jsonResponse({status:'error', message:'Unknown action: ' + action});
   } catch (error) {
     console.error('GET ERROR', error);
@@ -1948,7 +1948,7 @@ function doPost(e) {
     if (data.action === "deleteAbandonedApplication") return deleteAbandonedApplication(data);
     if (data.action === "registerCounselor") return jsonResponse(registerCounselor(data.counselorName || data.name || "", data.spreadsheetId || data.sheetId || ""));
     if (data.action === "removeCounselor") return jsonResponse(removeCounselor(data.counselorName || data.name || ""));
-    if (data.action === "health") return jsonResponse({status:"online", version:"V7-DOGET-CONFLICT-FIX", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
+    if (data.action === "health") return jsonResponse({status:"online", version:"ASSIGNMENT-RECEIPT-V2", time:nowString(), message:"InternsForge Sheets receiver is healthy."});
     return saveSingleApplication(data);
   } catch (error) {
     console.error("POST ERROR", error);
@@ -2205,24 +2205,48 @@ function routeApplicationToCounselor(raw) {
       previousAssignedTo: previousAssignedTo, assignedTo: assignedTo,
       masterUpdated: false, updatedAtMs: Date.now()
     }, details || {});
+
+    // Durable top-level marker: the dashboard already has an authenticated
+    // listener on submittedApplications. Writing the routing state directly
+    // on the existing application record avoids relying exclusively on a
+    // nested receipt node and is resilient to child-level validation rules.
+    const rootMarker = {
+      assignmentRoutingStatus: String(status || ""),
+      assignmentRoutingRequestId: requestId,
+      assignmentRoutingUpdatedAtMs: payload.updatedAtMs,
+      assignmentRoutingCounselor: assignedTo,
+      assignmentRoutingSheet: String(payload.counselorSheet || ""),
+      assignmentRoutingRow: Number(payload.counselorRow || 0),
+      assignmentRoutingMessage: String(payload.message || payload.error || ""),
+      assignmentRoutingSource: "Apps Script"
+    };
+
+    let rootWritten = false;
     try {
-      // The dashboard polls by Firebase key (`id`), while the counselor sheet
-      // uses the business Application ID. Publish the receipt under the
-      // Firebase key first, and also mirror it under the business ID when the
-      // two identifiers differ for backward compatibility.
       firebaseRestPatch(
-        "/submittedApplications/" + encodeURIComponent(firebaseApplicationKey) + "/assignmentRouting",
-        payload
+        "/submittedApplications/" + encodeURIComponent(firebaseApplicationKey),
+        rootMarker
       );
-      if (applicationId && applicationId !== firebaseApplicationKey) {
+      rootWritten = true;
+
+      // Keep the richer nested receipt for compatibility with older dashboards.
+      try {
         firebaseRestPatch(
-          "/submittedApplications/" + encodeURIComponent(applicationId) + "/assignmentRouting",
+          "/submittedApplications/" + encodeURIComponent(firebaseApplicationKey) + "/assignmentRouting",
           payload
         );
+      } catch (nestedReceiptError) {
+        console.warn("Nested assignment receipt write skipped:", nestedReceiptError);
       }
     } catch (receiptError) {
-      console.warn("Assignment routing receipt write failed:", receiptError);
+      console.error("Assignment routing Firebase marker write failed:", receiptError);
+      rootMarker.assignmentRoutingMessage = String(receiptError && receiptError.message || receiptError);
+      // Do not throw here; sheet routing may already have completed. The
+      // returned Apps Script result still exposes the actual routing status.
     }
+
+    payload.receiptWritten = rootWritten;
+    payload.receiptVersion = "ASSIGNMENT-RECEIPT-V2";
     return payload;
   }
 

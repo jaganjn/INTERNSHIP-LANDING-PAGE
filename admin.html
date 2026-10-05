@@ -57,63 +57,55 @@ footer{border-top:1px solid var(--if-border)!important;color:#718197!important;m
 #applicationModal{z-index:11000!important;}
 @media(max-width:700px){#adminModuleModal{padding:8px!important;}#adminModuleModalBody{padding:10px!important;max-height:calc(96vh - 80px)!important;}#adminModuleModalBody .dashboard-grid{grid-template-columns:1fr!important;}}
 
-/* Application trend explorer */
-.activity-trend-panel{overflow:hidden}
-.activity-trend-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}
-.activity-trend-head h2{margin:4px 0 5px!important}
-.activity-trend-subtitle{margin:0;color:#8494a9;font-size:12px}
-.activity-trend-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap;justify-content:flex-end}
-.trend-view-btn{border:1px solid rgba(148,163,184,.16);background:#0b1420;color:#9eacc0;border-radius:10px;padding:8px 11px;font-size:11px;font-weight:800;cursor:pointer}
-.trend-view-btn:hover{border-color:rgba(245,185,66,.28);color:#ffd978}
-.trend-view-btn.active{border-color:rgba(98,168,255,.45);background:rgba(98,168,255,.12);color:#cfe2ff}
-.trend-month-picker{display:flex;align-items:center;gap:7px;border:1px solid rgba(148,163,184,.16);background:#0b1420;border-radius:10px;padding:5px 8px 5px 10px;color:#77889e;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
-.trend-month-picker input{border:0;outline:0;background:transparent;color:#eaf2fb;font:700 11px Inter,sans-serif;min-width:108px}
-.trend-month-picker input::-webkit-calendar-picker-indicator{filter:invert(1) opacity(.7);cursor:pointer}
-.activity-summary-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0}
-.activity-summary-strip>div{padding:11px 12px;border:1px solid rgba(148,163,184,.11);border-radius:13px;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.01))}
-.activity-summary-strip small{display:block;color:#72849a;font-size:9px;text-transform:uppercase;letter-spacing:.08em}
-.activity-summary-strip strong{display:block;color:#f2f6fb;font-size:15px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.activity-trend-layout{display:grid;grid-template-columns:minmax(290px,34%) minmax(0,66%);gap:14px;align-items:stretch}
-.activity-calendar-card,.activity-bars-card{border:1px solid rgba(148,163,184,.11);background:linear-gradient(180deg,#0b1420,#09111b);border-radius:16px;padding:14px}
-.activity-calendar-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
-.activity-calendar-head strong{font:800 14px Manrope,Inter,sans-serif;color:#eef4fb}
-.activity-calendar-head button{width:30px;height:30px;border-radius:9px;border:1px solid rgba(148,163,184,.12);background:#101b29;color:#d4deea;cursor:pointer;font-size:19px;line-height:1}
-.activity-calendar-head button:hover{border-color:rgba(245,185,66,.28);color:#ffd978}
-.activity-calendar-weekdays,.activity-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
-.activity-calendar-weekdays span{font-size:8px;font-weight:800;text-align:center;color:#64758b;text-transform:uppercase;letter-spacing:.06em;padding-bottom:3px}
-.activity-calendar-grid{grid-auto-rows:minmax(34px,1fr)}
-.activity-day{position:relative;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:34px;border:1px solid rgba(148,163,184,.07);border-radius:8px;background:#0d1824;color:#77889d;cursor:default;transition:transform .15s ease,border-color .15s ease}
-.activity-day.empty{background:transparent;border-color:transparent}
-.activity-day .day-num{font-size:10px;font-weight:800;color:#c9d5e3}
-.activity-day .day-count{font-size:8px;color:#73869c;margin-top:1px}
-.activity-day.today{box-shadow:inset 0 0 0 1px rgba(245,185,66,.55)}
-.activity-day.has-count{cursor:pointer}
-.activity-day.has-count:hover{transform:translateY(-1px);border-color:rgba(98,168,255,.45)}
-.activity-day.level-1{background:linear-gradient(180deg,rgba(98,168,255,.08),rgba(98,168,255,.04))}
-.activity-day.level-2{background:linear-gradient(180deg,rgba(98,168,255,.16),rgba(98,168,255,.06))}
-.activity-day.level-3{background:linear-gradient(180deg,rgba(98,168,255,.28),rgba(98,168,255,.09));border-color:rgba(98,168,255,.24)}
-.activity-day.level-4{background:linear-gradient(180deg,rgba(98,168,255,.42),rgba(98,168,255,.12));border-color:rgba(98,168,255,.4);box-shadow:0 5px 18px rgba(28,95,210,.12)}
-.activity-calendar-legend{display:flex;gap:12px;align-items:center;margin-top:12px;color:#687a91;font-size:9px}
-.activity-calendar-legend span{display:inline-flex;align-items:center;gap:5px}
-.activity-calendar-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;border:1px solid rgba(148,163,184,.1);background:#0d1824}
-.activity-calendar-legend i.mid{background:rgba(98,168,255,.18)}
-.activity-calendar-legend i.high{background:rgba(98,168,255,.4)}
-.activity-bars-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
-.activity-bars-head strong{display:block;margin-top:3px;font:800 14px Manrope,Inter,sans-serif;color:#eef4fb}
-.trend-total-chip{display:inline-flex;align-items:center;padding:7px 10px;border-radius:999px;border:1px solid rgba(54,211,153,.2);background:rgba(54,211,153,.07);color:#7ce6b5;font-size:10px;font-weight:800;white-space:nowrap}
-.activity-chart-scroll{overflow-x:auto;overflow-y:hidden;border-top:1px solid rgba(148,163,184,.08);border-bottom:1px solid rgba(148,163,184,.08);padding:16px 6px 10px}
-.activity-chart-scroll::-webkit-scrollbar{height:6px}.activity-chart-scroll::-webkit-scrollbar-thumb{background:#25364a;border-radius:999px}
-.activity-bar-chart{display:flex!important;align-items:flex-end;gap:9px;min-height:250px;width:max-content;min-width:100%}
-.activity-bar-chart .chart-day{width:26px;min-width:26px;height:226px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px}
-.activity-bar-chart .chart-bar-track{position:relative;width:100%;height:188px;display:flex;align-items:flex-end;justify-content:center}
-.activity-bar-chart .chart-bar-bg{position:absolute;inset:auto 0 0 0;height:100%;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,.008))}
-.activity-bar-chart .chart-bar{position:relative;z-index:1;width:100%;min-height:5px;border-radius:7px 7px 3px 3px;background:linear-gradient(180deg,#7a9cff 0%,#3c64e7 100%);box-shadow:0 8px 18px rgba(60,100,231,.18);transition:height .25s ease,transform .15s ease,filter .15s ease}
-.activity-bar-chart .chart-day:hover .chart-bar{transform:translateY(-2px);filter:brightness(1.12)}
-.activity-bar-chart .chart-count{font-size:9px;font-weight:800;color:#d9e4f4;height:12px;white-space:nowrap}
-.activity-bar-chart .chart-label{font-size:8px;color:#718399;white-space:nowrap}
-.activity-chart-axis-note{padding-top:8px;color:#566a82;font-size:9px}
-@media(max-width:900px){.activity-trend-layout{grid-template-columns:1fr}.activity-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:700px){.activity-trend-head{flex-direction:column}.activity-trend-actions{justify-content:flex-start}.activity-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.activity-calendar-grid{gap:4px}.activity-day{min-height:38px}.activity-bar-chart{gap:8px}.activity-bar-chart .chart-day{width:24px;min-width:24px}}
+/* Application trend redesign v2 */
+.application-trend-explorer{overflow:hidden!important}
+.application-trend-explorer .trend-panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.application-trend-explorer .trend-panel-head h2{margin:4px 0 4px!important}
+.application-trend-explorer .trend-panel-head p{margin:0;color:#8393aa;font-size:12px;max-width:610px;line-height:1.45}
+.trend-head-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.trend-range-tabs{display:flex;gap:4px;padding:4px;border:1px solid rgba(148,163,184,.14);background:#0b1420;border-radius:11px}
+.trend-range-tab{border:0;background:transparent;color:#8392a8;border-radius:8px;padding:8px 10px;font-size:10px;font-weight:800;cursor:pointer}
+.trend-range-tab:hover{color:#dce8f5;background:rgba(255,255,255,.04)}
+.trend-range-tab.active{background:rgba(98,132,255,.16);color:#dbe5ff;box-shadow:inset 0 0 0 1px rgba(98,132,255,.26)}
+.trend-month-input{display:flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid rgba(148,163,184,.14);background:#0b1420;border-radius:11px;color:#77879c;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.trend-month-input input{width:115px;border:0;outline:0;background:transparent;color:#eef4fb;font:700 11px Inter, sans-serif;color-scheme:dark}
+.trend-total-chip{display:inline-flex;align-items:center;justify-content:center;min-width:96px;padding:8px 10px;border-radius:999px;border:1px solid rgba(54,211,153,.18);background:rgba(54,211,153,.065);color:#78dfb1;font-size:10px;font-weight:800;white-space:nowrap}
+.trend-summary-strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:14px 0}
+.trend-summary-strip article{min-height:72px;padding:12px 13px;border:1px solid rgba(148,163,184,.1);border-radius:13px;background:linear-gradient(180deg,#0c1724,#0a1320);display:flex;flex-direction:column;justify-content:center;gap:5px}
+.trend-summary-strip span{font-size:9px;color:#73869d;text-transform:uppercase;letter-spacing:.06em;font-weight:800}
+.trend-summary-strip strong{font-size:16px;color:#f2f6fb;line-height:1.2}
+.trend-main-grid{display:grid;grid-template-columns:minmax(310px,37%) minmax(0,63%);gap:12px;min-width:0}
+.trend-calendar-card,.trend-bars-card{border:1px solid rgba(148,163,184,.1);background:linear-gradient(180deg,#0b1522,#09121d);border-radius:15px;padding:13px;min-width:0}
+.trend-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:11px}
+.trend-card-head strong{display:block;margin-top:3px;font:800 14px Manrope,Inter,sans-serif;color:#edf3f9}
+.trend-card-head small{color:#6e8097;font-size:9px;line-height:1.4;text-align:right;max-width:230px}
+.trend-calendar-nav{display:flex;gap:5px}
+.trend-calendar-nav button{width:29px;height:29px;border-radius:8px;border:1px solid rgba(148,163,184,.12);background:#101b29;color:#dce6f0;font-size:18px;line-height:1;cursor:pointer}
+.trend-calendar-nav button:hover{border-color:rgba(245,185,66,.28);color:#ffd978}
+.trend-weekdays,.trend-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.trend-weekdays span{padding:2px 0 4px;text-align:center;color:#62748a;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.trend-day{position:relative;min-height:44px;padding:6px;border-radius:9px;border:1px solid rgba(148,163,184,.08);background:#0c1724;color:#8495ab;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;cursor:default;overflow:hidden}
+.trend-day.blank{background:transparent;border-color:transparent}
+.trend-day.has-data{background:rgba(77,116,212,.11);border-color:rgba(98,132,255,.12)}
+.trend-day.mid{background:rgba(98,168,255,.19);border-color:rgba(98,168,255,.25);color:#d8e6ff}
+.trend-day.high{background:rgba(98,168,255,.34);border-color:rgba(98,168,255,.45);color:#fff}
+.trend-day.today{box-shadow:inset 0 0 0 1px rgba(245,185,66,.6)}
+.trend-day .day-number{font-size:10px;font-weight:800}
+.trend-day .day-count{font-size:8px;font-weight:800;color:#8fa5bf;align-self:flex-end}
+.trend-day.high .day-count,.trend-day.mid .day-count{color:#f1f6ff}
+.trend-legend{display:flex;gap:11px;flex-wrap:wrap;margin-top:10px;color:#6c7e94;font-size:8px}
+.trend-legend span{display:inline-flex;align-items:center;gap:5px}.trend-legend i{width:9px;height:9px;border-radius:3px;background:#0c1724;border:1px solid rgba(148,163,184,.1)}.trend-legend i.mid{background:rgba(98,168,255,.19)}.trend-legend i.high{background:rgba(98,168,255,.34)}
+.trend-axis{display:flex;justify-content:space-between;gap:8px;margin:-2px 0 6px;color:#65788f;font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.trend-chart-scroll{height:275px;overflow-x:auto;overflow-y:hidden;padding:4px 2px 8px;border-top:1px solid rgba(148,163,184,.08);border-bottom:1px solid rgba(148,163,184,.08)}
+.trend-bars{height:100%;display:flex;align-items:flex-end;gap:8px;min-width:max-content;padding:14px 3px 2px}
+.trend-bar-col{height:100%;width:34px;min-width:34px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;position:relative}
+.trend-bar-track{width:100%;height:205px;display:flex;align-items:flex-end;border-radius:9px 9px 5px 5px;background:rgba(255,255,255,.025);overflow:hidden}
+.trend-bar-fill{width:100%;min-height:3px;border-radius:9px 9px 4px 4px;background:linear-gradient(180deg,#6f8fff 0%,#3d5eea 100%);box-shadow:0 8px 24px rgba(62,92,225,.18)}
+.trend-bar-fill.zero{background:rgba(148,163,184,.08);box-shadow:none}
+.trend-bar-value{font-size:9px;color:#dce5f2;font-weight:800;line-height:1}.trend-bar-label{font-size:8px;color:#71849b;white-space:nowrap}.trend-bar-date{font-size:7px;color:#4f6178;white-space:nowrap}
+.trend-bar-col:hover .trend-bar-fill{filter:brightness(1.15)}
+@media(max-width:1000px){.trend-main-grid{grid-template-columns:1fr}.trend-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.application-trend-explorer .trend-panel-head{flex-direction:column}.trend-head-actions{justify-content:flex-start;width:100%}.trend-summary-strip{grid-template-columns:repeat(2,minmax(0,1fr))}.trend-range-tab{padding:7px 8px}.trend-month-input input{width:104px}.trend-calendar-grid,.trend-weekdays{gap:4px}.trend-day{min-height:39px;padding:5px}.trend-chart-scroll{height:235px}.trend-bar-track{height:168px}.trend-bar-col{width:28px;min-width:28px}.trend-bars{gap:6px}}
 
 </style>
 </head>
@@ -282,46 +274,45 @@ footer{border-top:1px solid var(--if-border)!important;color:#718197!important;m
 </div>
 <div class="crm-footer"><span id="abResultCount">0 abandoned applications</span><small>Persistent recovery records are updated in real time; recovered submissions remain available through the recovery-status filter.</small></div>
 </section><section class="dashboard-grid admin-module source-workspace-module" data-admin-module-section="dashboardPanels" data-workspace-container="dashboard">
-<article class="panel panel-wide admin-module activity-trend-panel" data-workspace-node="true" data-workspace-target="activity" id="activity">
-  <header class="activity-trend-head">
-    <div>
-      <span class="eyebrow">APPLICATION MOMENTUM</span>
-      <h2>Application Trend</h2>
-      <p class="activity-trend-subtitle">Explore daily application volume across any month.</p>
-    </div>
-    <div class="activity-trend-actions">
-      <button class="trend-view-btn active" type="button" data-trend-range="7">7D</button>
-      <button class="trend-view-btn" type="button" data-trend-range="30">30D</button>
-      <button class="trend-view-btn" type="button" data-trend-range="month">Month</button>
-      <label class="trend-month-picker" title="Choose month">
-        <span>Calendar</span>
-        <input id="activityMonthPicker" type="month" aria-label="Choose application trend month">
-      </label>
-    </div>
-  </header>
-  <div class="activity-summary-strip">
-    <div><small>Selected period</small><strong id="activityPeriodLabel">—</strong></div>
-    <div><small>Total applications</small><strong id="activityPeriodTotal">0</strong></div>
-    <div><small>Peak day</small><strong id="activityPeakDay">—</strong></div>
-    <div><small>Daily average</small><strong id="activityDailyAverage">0</strong></div>
+<article class="panel panel-wide admin-module application-trend-explorer" data-workspace-node="true" data-workspace-target="activity" id="activity">
+<header class="trend-panel-head">
+  <div>
+    <span class="eyebrow">APPLICATION MOMENTUM</span>
+    <h2>Application trend</h2>
+    <p>Daily applications by date. Switch between recent activity and a full calendar month.</p>
   </div>
-  <div class="activity-trend-layout">
-    <section class="activity-calendar-card" aria-label="Application calendar">
-      <div class="activity-calendar-head">
-        <button id="activityPrevMonth" type="button" aria-label="Previous month">‹</button>
-        <strong id="activityCalendarTitle">—</strong>
-        <button id="activityNextMonth" type="button" aria-label="Next month">›</button>
-      </div>
-      <div class="activity-calendar-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
-      <div id="activityCalendarGrid" class="activity-calendar-grid"></div>
-      <div class="activity-calendar-legend"><span><i class="low"></i> 0</span><span><i class="mid"></i> Some</span><span><i class="high"></i> Peak</span></div>
-    </section>
-    <section class="activity-bars-card" aria-label="Application bar chart">
-      <div class="activity-bars-head"><div><span class="eyebrow">DAILY VOLUME</span><strong id="activityBarsTitle">—</strong></div><span class="trend-total-chip" id="activityTrendTotalChip">0 applications</span></div>
-      <div class="activity-chart-scroll"><div id="applicationsChart" class="bar-chart activity-bar-chart"></div></div>
-      <div class="activity-chart-axis-note">Scroll horizontally on smaller screens to inspect every day in the selected period.</div>
-    </section>
+  <div class="trend-head-actions">
+    <div class="trend-range-tabs" role="tablist" aria-label="Application trend range">
+      <button class="trend-range-tab active" type="button" data-trend-range="7">7D</button>
+      <button class="trend-range-tab" type="button" data-trend-range="30">30D</button>
+      <button class="trend-range-tab" type="button" data-trend-range="month">Month</button>
+    </div>
+    <label class="trend-month-input" title="Choose calendar month"><span>Month</span><input id="activityMonthPicker" type="month" aria-label="Choose application trend month"></label>
+    <span class="trend-total-chip" id="activityTrendTotalChip">0 applications</span>
   </div>
+</header>
+<div class="trend-summary-strip">
+  <article><span>Selected period</span><strong id="activityTrendPeriodLabel">Last 7 days</strong></article>
+  <article><span>Total applications</span><strong id="activityTrendTotal">0</strong></article>
+  <article><span>Peak day</span><strong id="activityTrendPeak">—</strong></article>
+  <article><span>Daily average</span><strong id="activityTrendAverage">0</strong></article>
+</div>
+<div class="trend-main-grid">
+  <section class="trend-calendar-card" aria-label="Application calendar">
+    <div class="trend-card-head">
+      <div><span class="eyebrow">CALENDAR</span><strong id="activityCalendarTitle">—</strong></div>
+      <div class="trend-calendar-nav"><button id="activityPrevMonth" type="button" aria-label="Previous month">‹</button><button id="activityNextMonth" type="button" aria-label="Next month">›</button></div>
+    </div>
+    <div class="trend-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+    <div id="activityCalendarGrid" class="trend-calendar-grid"></div>
+    <div class="trend-legend"><span><i></i> No activity</span><span><i class="mid"></i> Activity</span><span><i class="high"></i> Peak</span></div>
+  </section>
+  <section class="trend-bars-card" aria-label="Application volume chart">
+    <div class="trend-card-head"><div><span class="eyebrow">DAILY VOLUME</span><strong id="activityBarsTitle">Last 7 days</strong></div><small>Bars are proportional to the busiest day in the selected range.</small></div>
+    <div class="trend-axis"><span>Applications</span><span id="activityTrendScale">0 max</span></div>
+    <div class="trend-chart-scroll"><div id="applicationsChart" class="trend-bars"></div></div>
+  </section>
+</div>
 </article>
 <article class="panel admin-module" data-workspace-node="true" data-workspace-target="analytics" id="analytics"><header><div><span class="eyebrow">COLLEGE INSIGHTS</span><h2>Top Colleges</h2></div></header><div class="rank-list" id="topColleges"><p class="empty">No data yet…</p></div></article>
 <article class="panel live-panel admin-module" data-workspace-node="true" data-workspace-target="liveVisitors" id="liveVisitors"><header><div><span class="eyebrow">PRESENCE</span><h2>Active Visitors</h2></div><button aria-label="Refresh dashboard and clear abandoned sessions" class="icon-action refresh-action" id="refreshDashboardButton" type="button"><span>↻</span><small>Refresh</small></button></header><div class="visitor-list" id="visitorList"><p class="empty">Waiting for visitors…</p></div></article>
@@ -415,5 +406,5 @@ footer{border-top:1px solid var(--if-border)!important;color:#718197!important;m
 <div aria-hidden="true" class="refresh-overlay" id="refreshOverlay">
 <div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Cleaning abandoned sessions and loading fresh data…</small></div>
 </div>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20261005-ui-redesign-v1"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20261005-trend-calendar-v2"></script>
 </body></html>

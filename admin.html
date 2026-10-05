@@ -49,7 +49,6 @@
 </details>
   </div>
 </section>
-<section id="mobileOperationsCockpit" class="mobile-operations-cockpit" aria-label="Mobile operations analytics"></section>
 <section class="metric-grid">
   <article class="metric"><span class="metric-icon blue">◉</span><div><p>Live Visitors</p><h3 id="onlineCount">0</h3><small>Active in last 45 sec</small></div></article>
   <article class="metric"><span class="metric-icon amber">✎</span><div><p>Currently Filling</p><h3 id="fillingCount">0</h3><small>Form in progress</small></div></article>
@@ -153,7 +152,17 @@
 
 <div id="adminModuleHint" class="admin-module-hint"><strong>Workspace ready</strong><span>Open <b>Control Hub</b> and choose a module. It will open in a focused popup, keeping this dashboard compact.</span></div>
 <section class="dashboard-grid admin-module" data-admin-module-section="dashboardPanels">
-  <article class="panel panel-wide admin-module" id="activity"><header><div><span class="eyebrow">APPLICATION FLOW</span><h2>7-Day Applications Overview</h2></div><span class="live-chip">● Live</span></header><div id="applicationsChart" class="bar-chart"></div></article>
+  <article class="panel panel-wide admin-module trend-panel" id="activity">
+  <header class="trend-panel-header">
+    <div>
+      <span class="eyebrow">APPLICATION FLOW</span>
+      <h2>Application Trend</h2>
+      <p class="trend-subtitle">Browse every day, compare periods, and inspect application volume without leaving the dashboard.</p>
+    </div>
+    <span class="live-chip">● Live</span>
+  </header>
+  <div id="applicationsChart" class="trend-workspace"></div>
+</article>
   <article class="panel admin-module" id="analytics"><header><div><span class="eyebrow">COLLEGE INSIGHTS</span><h2>Top Colleges</h2></div></header><div id="topColleges" class="rank-list"><p class="empty">No data yet…</p></div></article>
   <article class="panel live-panel admin-module" id="liveVisitors"><header><div><span class="eyebrow">PRESENCE</span><h2>Active Visitors</h2></div><button id="refreshDashboardButton" class="icon-action refresh-action" type="button" aria-label="Refresh dashboard and clear abandoned sessions"><span>↻</span><small>Refresh</small></button></header><div id="visitorList" class="visitor-list"><p class="empty">Waiting for visitors…</p></div></article>
   <article class="panel admin-module recovery-center-panel" id="applicationRecovery"><header><div><span class="eyebrow">LEAD RECOVERY</span><h2>Application Recovery</h2><p>Recent students who started the application but left or cancelled before submission.</p></div><span class="live-chip">● Live</span></header><div class="recovery-summary" id="recoverySummary"></div><div id="recoveryList" class="recovery-list"><p class="empty">No incomplete applications yet.</p></div></article>
@@ -267,5 +276,5 @@
 <div id="refreshOverlay" class="refresh-overlay" aria-hidden="true">
   <div><span class="refresh-spinner"></span><strong>Refreshing dashboard</strong><small>Cleaning abandoned sessions and loading fresh data…</small></div>
 </div>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20261005-stable-ui-doget-conflict-fix"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script><script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script><script src="firebase.js"></script><script src="push-config.js"></script><script src="admin.js?v=20261005-responsive-trend-v1"></script>
 </body></html>

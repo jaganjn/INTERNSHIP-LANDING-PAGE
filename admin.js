@@ -673,20 +673,220 @@ function renderApplications(newIds = new Set()) {
   renderRank(E.topColleges, college);
   renderRank(E.topDomains, domain);
 
-  const today = getTodayISTKey();
-  const days = [...Array(7)].map((_, index) => {
-    const [year, month, day] = today.split("-").map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day, 6, 30, 0) - (6 - index) * 24 * 60 * 60 * 1000);
-    return { date, key: getISTDateKey(date.getTime()) };
-  });
-  const max = Math.max(1, ...days.map(item => daily[item.key] || 0));
-
-  E.applicationsChart.innerHTML = days.map(({ date, key }) => {
-    const count = daily[key] || 0;
-    return `<div class="chart-day" title="${count} applications"><span class="chart-bar" style="height:${Math.max(4, (count / max) * 100)}%"></span><small>${date.toLocaleDateString("en-IN", { weekday: "short" })}<br>${count}</small></div>`;
-  }).join("");
+  renderDesktopTrend(daily);
 
 }
+
+const desktopTrendState = {
+  view: "month",
+  monthKey: getTodayISTKey().slice(0, 7),
+  selectedKey: getTodayISTKey()
+};
+
+function trendMonthParts(key) {
+  const m = String(key || "").match(/^(\d{4})-(\d{2})$/);
+  if (!m) {
+    const today = new Date();
+    return {year: today.getFullYear(), month: today.getMonth()};
+  }
+  return {year: Number(m[1]), month: Number(m[2]) - 1};
+}
+
+function trendMonthLabel(key) {
+  const {year, month} = trendMonthParts(key);
+  return new Intl.DateTimeFormat("en-IN", {month: "long", year: "numeric", timeZone: IST_TIME_ZONE})
+    .format(new Date(Date.UTC(year, month, 1, 6, 30, 0)));
+}
+
+function shiftTrendMonthKey(key, delta) {
+  const {year, month} = trendMonthParts(key);
+  const d = new Date(Date.UTC(year, month + delta, 1, 6, 30, 0));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+function trendDateKey(year, month, day) {
+  return getISTDateKey(Date.UTC(year, month, day, 6, 30, 0));
+}
+
+function shiftTrendDayKey(key, delta) {
+  const parts = String(key || "").split("-").map(Number);
+  if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return getTodayISTKey();
+  const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], 6, 30, 0));
+  d.setUTCDate(d.getUTCDate() + delta);
+  return getISTDateKey(d.getTime());
+}
+
+function trendRangeKeys(view) {
+  const end = view === "month"
+    ? trendDateKey(trendMonthParts(desktopTrendState.monthKey).year, trendMonthParts(desktopTrendState.monthKey).month + 1, 0)
+    : getTodayISTKey();
+  const count = view === "30d" ? 30 : 7;
+  const start = shiftTrendDayKey(end, -(count - 1));
+  const keys = [];
+  let cursor = start;
+  for (let i = 0; i < count; i++) {
+    keys.push(cursor);
+    cursor = shiftTrendDayKey(cursor, 1);
+  }
+  if (view === "month") {
+    const {year, month} = trendMonthParts(desktopTrendState.monthKey);
+    const daysInMonth = new Date(Date.UTC(year, month + 1, 0, 6, 30, 0)).getUTCDate();
+    return Array.from({length: daysInMonth}, (_, i) => trendDateKey(year, month, i + 1));
+  }
+  return keys;
+}
+
+function formatTrendDayLabel(key, view) {
+  const [y, m, d] = key.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d, 6, 30, 0));
+  return view === "month"
+    ? String(d)
+    : new Intl.DateTimeFormat("en-IN", {weekday: "short", day: "2-digit", month: "short", timeZone: IST_TIME_ZONE}).format(date);
+}
+
+function renderDesktopTrend(daily) {
+  if (!E.applicationsChart) return;
+  const todayKey = getTodayISTKey();
+  if (!desktopTrendState.monthKey) desktopTrendState.monthKey = todayKey.slice(0, 7);
+  if (!desktopTrendState.selectedKey) desktopTrendState.selectedKey = todayKey;
+
+  const {year, month} = trendMonthParts(desktopTrendState.monthKey);
+  const firstDay = new Date(Date.UTC(year, month, 1, 6, 30, 0)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(year, month + 1, 0, 6, 30, 0)).getUTCDate();
+  const previousMonthDays = new Date(Date.UTC(year, month, 0, 6, 30, 0)).getUTCDate();
+  const calendarCells = [];
+
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const day = previousMonthDays - i;
+    const prev = new Date(Date.UTC(year, month, -i, 6, 30, 0));
+    const key = getISTDateKey(prev.getTime());
+    calendarCells.push({day, key, outside: true});
+  }
+  for (let day = 1; day <= daysInMonth; day++) calendarCells.push({day, key: trendDateKey(year, month, day), outside: false});
+  while (calendarCells.length % 7) {
+    const last = calendarCells[calendarCells.length - 1];
+    const next = new Date(Date.UTC(...last.key.split("-").map(Number).map((v,i)=>i===1?v-1:v), 6, 30, 0));
+    next.setUTCDate(next.getUTCDate() + 1);
+    calendarCells.push({day: next.getUTCDate(), key: getISTDateKey(next.getTime()), outside: true});
+  }
+
+  const monthCounts = calendarCells.filter(c => !c.outside).map(c => daily[c.key] || 0);
+  const monthMax = Math.max(1, ...monthCounts);
+  const selectedCount = daily[desktopTrendState.selectedKey] || 0;
+  const selectedLabel = desktopTrendState.selectedKey === todayKey ? "Today" : desktopTrendState.selectedKey;
+
+  const range = trendRangeKeys(desktopTrendState.view);
+  const values = range.map(k => daily[k] || 0);
+  const rangeMax = Math.max(1, ...values);
+  const total = values.reduce((a, b) => a + b, 0);
+  const peak = Math.max(0, ...values);
+  const peakIndex = values.indexOf(peak);
+  const peakKey = peakIndex >= 0 ? range[peakIndex] : "";
+  const average = range.length ? (total / range.length).toFixed(1) : "0.0";
+
+  const calendarHtml = calendarCells.map(cell => {
+    const count = daily[cell.key] || 0;
+    const level = count <= 0 ? 0 : count >= monthMax * .75 ? 4 : count >= monthMax * .5 ? 3 : count >= monthMax * .25 ? 2 : 1;
+    const classes = [
+      "desktop-cal-cell",
+      cell.outside ? "is-outside" : "",
+      cell.key === todayKey ? "is-today" : "",
+      cell.key === desktopTrendState.selectedKey ? "is-selected" : ""
+    ].filter(Boolean).join(" ");
+    return `<button type="button" class="${classes}" data-trend-day="${cell.key}" title="${cell.key}: ${count} application${count === 1 ? "" : "s"}">
+      <span class="desktop-cal-date">${cell.day}</span>
+      <span class="desktop-cal-count level-${level}">${count}</span>
+      ${cell.key === todayKey ? '<span class="desktop-cal-today">Today</span>' : ''}
+    </button>`;
+  }).join("");
+
+  const barsHtml = range.map((key, index) => {
+    const count = daily[key] || 0;
+    const fill = count > 0 ? Math.max(6, (count / rangeMax) * 100) : 3;
+    const isToday = key === todayKey;
+    const label = formatTrendDayLabel(key, desktopTrendState.view);
+    return `<div class="trend-bar-item ${isToday ? 'is-today' : ''}" title="${key}: ${count} application${count === 1 ? '' : 's'}">
+      <span class="trend-bar-value">${count}</span>
+      <div class="trend-bar-track"><i style="height:${fill}%"></i></div>
+      <span class="trend-bar-label">${esc(label)}</span>
+    </div>`;
+  }).join("");
+
+  E.applicationsChart.innerHTML = `
+    <div class="desktop-trend-controls">
+      <div class="desktop-trend-segment" role="tablist" aria-label="Trend period">
+        <button type="button" class="${desktopTrendState.view === '7d' ? 'active' : ''}" data-trend-view="7d">7 DAYS</button>
+        <button type="button" class="${desktopTrendState.view === '30d' ? 'active' : ''}" data-trend-view="30d">30 DAYS</button>
+        <button type="button" class="${desktopTrendState.view === 'month' ? 'active' : ''}" data-trend-view="month">FULL MONTH</button>
+      </div>
+      <div class="desktop-trend-month-controls">
+        <button type="button" class="trend-nav-btn" data-trend-prev aria-label="Previous month">‹</button>
+        <label class="trend-month-picker"><span>${esc(trendMonthLabel(desktopTrendState.monthKey))}</span><input type="month" value="${desktopTrendState.monthKey}" aria-label="Choose month" data-trend-month></label>
+        <button type="button" class="trend-nav-btn" data-trend-next aria-label="Next month">›</button>
+        <button type="button" class="trend-today-btn" data-trend-today>Today</button>
+      </div>
+    </div>
+
+    <div class="desktop-trend-summary">
+      <article><small>Selected period</small><strong>${total}</strong><span>${desktopTrendState.view === 'month' ? trendMonthLabel(desktopTrendState.monthKey) : desktopTrendState.view === '30d' ? 'Last 30 days' : 'Last 7 days'}</span></article>
+      <article><small>Peak day</small><strong>${peak}</strong><span>${peakKey || 'No data'}</span></article>
+      <article><small>Daily average</small><strong>${average}</strong><span>Applications / displayed day</span></article>
+      <article><small>Selected date</small><strong>${selectedCount}</strong><span>${selectedLabel}</span></article>
+    </div>
+
+    <div class="desktop-trend-grid">
+      <section class="desktop-calendar-card">
+        <header><div><span class="trend-kicker">MONTH CALENDAR</span><h3>${esc(trendMonthLabel(desktopTrendState.monthKey))}</h3></div><span class="trend-calendar-note">Click any day</span></header>
+        <div class="desktop-calendar-weekdays">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => `<span>${d}</span>`).join('')}</div>
+        <div class="desktop-calendar-grid">${calendarHtml}</div>
+      </section>
+
+      <section class="desktop-bars-card">
+        <header><div><span class="trend-kicker">APPLICATION VOLUME</span><h3>Daily bar trend</h3></div><span class="trend-calendar-note">${range.length} days</span></header>
+        <div class="desktop-bar-chart" aria-label="Daily application bar chart">
+          <span class="bar-gridline line-25"></span><span class="bar-gridline line-50"></span><span class="bar-gridline line-75"></span>
+          <div class="desktop-bars-scroll">${barsHtml}</div>
+        </div>
+        <div class="desktop-trend-footer"><span>Blue = applications</span><span><b>${desktopTrendState.selectedKey}</b> selected</span></div>
+      </section>
+    </div>
+  `;
+
+  E.applicationsChart.querySelectorAll('[data-trend-view]').forEach(btn => btn.addEventListener('click', () => {
+    desktopTrendState.view = btn.dataset.trendView;
+    renderDesktopTrend(daily);
+  }));
+  E.applicationsChart.querySelector('[data-trend-prev]')?.addEventListener('click', () => {
+    desktopTrendState.monthKey = shiftTrendMonthKey(desktopTrendState.monthKey, -1);
+    desktopTrendState.view = 'month';
+    renderDesktopTrend(daily);
+  });
+  E.applicationsChart.querySelector('[data-trend-next]')?.addEventListener('click', () => {
+    desktopTrendState.monthKey = shiftTrendMonthKey(desktopTrendState.monthKey, 1);
+    desktopTrendState.view = 'month';
+    renderDesktopTrend(daily);
+  });
+  E.applicationsChart.querySelector('[data-trend-today]')?.addEventListener('click', () => {
+    desktopTrendState.monthKey = todayKey.slice(0, 7);
+    desktopTrendState.selectedKey = todayKey;
+    desktopTrendState.view = 'month';
+    renderDesktopTrend(daily);
+  });
+  E.applicationsChart.querySelector('[data-trend-month]')?.addEventListener('change', e => {
+    if (!/^\d{4}-\d{2}$/.test(e.target.value)) return;
+    desktopTrendState.monthKey = e.target.value;
+    const {year: chosenYear, month: chosenMonth} = trendMonthParts(desktopTrendState.monthKey);
+    const selectedDay = Math.min(Number(desktopTrendState.selectedKey.split('-')[2] || 1), new Date(Date.UTC(chosenYear, chosenMonth + 1, 0, 6, 30, 0)).getUTCDate());
+    desktopTrendState.selectedKey = trendDateKey(chosenYear, chosenMonth, selectedDay);
+    desktopTrendState.view = 'month';
+    renderDesktopTrend(daily);
+  });
+  E.applicationsChart.querySelectorAll('[data-trend-day]').forEach(btn => btn.addEventListener('click', () => {
+    desktopTrendState.selectedKey = btn.dataset.trendDay;
+    renderDesktopTrend(daily);
+  }));
+}
+
 
 function getCallStatus(app) {
   return normalizeCallStatus(app?.callStatus);

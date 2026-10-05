@@ -1,19 +1,38 @@
-InternsForge Admin UI — repaired workspace build
+InternsForge Admin Assignment Verification Fix — 2026-10-05
 
-Fixed in the frontend:
-- Quick-operation cards now actually open their workspaces.
-- Workspace sections stay mounted in one stable DOM location; switching modules no longer moves elements and break event handlers.
-- Duplicate dashboard/module rendering removed; detailed modules are shown only inside the focused workspace.
-- The redundant Application Recovery overview card was removed from the main analytics grid; the full Abandoned Applications workspace remains available.
-- Referral workspace remains a single grouped workspace.
-- Mobile Applications launcher uses the same stable CRM opener.
-- Application modal z-index/overlay behavior is preserved for CRM actions.
+Purpose
+-------
+This is an ADMIN-JS-ONLY repair for counselor lead assignment.
 
-Backend unchanged:
-- Firebase rules and database paths
-- Apps Script endpoints
-- Google Sheets sync/routing
-- Counselor assignment/routing logic
-- Firebase authentication/configuration
+Flow after this fix
+-------------------
+Admin Dashboard
+  -> POST routeApplicationToCounselor
+  -> Apps Script writes the selected counselor sheet
+  -> Apps Script writes submittedApplications/<firebaseKey>/assignmentRouting
+  -> Admin Dashboard polls that Firebase receipt
+  -> Assignment is confirmed
 
-Keep the existing dashboard.css, firebase.js, push-config.js and firebase-messaging-sw.js from the working deployment.
+Removed from browser flow
+-------------------------
+The admin browser no longer calls the Apps Script GET/JSONP verification endpoint
+(verifyCounselorRouting). This removes the failing verification dependency shown
+by the "Could not reach the Apps Script verification endpoint" error.
+
+Backend
+-------
+No Code.gs, Firebase Rules, Google Sheets schema, counselor registry, or Apps Script
+endpoint URL changes are included in this package.
+
+Deployment
+----------
+Replace ONLY the existing admin.js with this file.
+Keep the existing backend and admin.html unchanged.
+A hard refresh (Ctrl+F5) is recommended after replacement.
+
+Validation performed
+--------------------
+- Node JavaScript syntax check: PASS
+- JSONP verifier function reference removed: PASS
+- Firebase receipt polling function present: PASS
+- routeApplicationToCounselor POST path preserved: PASS

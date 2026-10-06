@@ -1,4 +1,3 @@
-/* INTERNSFORGE ASSIGNMENT BUILD: DIRECT-ROUTING-V5-20261006 */
 
 document.body.style.visibility = "hidden";
 
@@ -11,7 +10,6 @@ const BROWSER_ALERT_STORAGE_KEY = "apexAdminBrowserAlertsV1";
 const SEEN_APPLICATIONS_KEY = "apexAdminSeenApplicationsV1";
 const PUSH_TOKEN_STORAGE_KEY = "apexAdminPushTokenV1";
 const COUNSELOR_STORAGE_KEY = "internsforgeCounselorsV1";
-const ASSIGNMENT_ROUTING_VERIFY_VERSION = "firebase-receipt-v1";
 const CALL_STATUSES = [
   "Not Contacted",
   "New",
@@ -823,79 +821,55 @@ function handleCounselorSelect(select, onValue) {
   return value;
 }
 
-async function routeApplicationToCounselorViaJsonp_(firebaseKey, counselor, previousAssignedTo, requestId, timeoutMs = 20000) {
-  const fKey = String(firebaseKey || "").trim();
-  const counselorName = String(counselor || "").trim();
-  const previous = String(previousAssignedTo || "").trim();
-  const reqId = String(requestId || "").trim();
-  if (!fKey) throw new Error("Missing Firebase application key for counselor routing.");
-  if (!counselorName) throw new Error("Missing counselor name for counselor routing.");
-  if (!reqId) throw new Error("Missing assignment routing request ID.");
-
-  return new Promise((resolve, reject) => {
-    const callbackName = `__ifRoute_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-    const script = document.createElement("script");
-    let settled = false;
-    const cleanup = () => {
-      try { delete window[callbackName]; } catch (_) {}
-      script.remove();
-    };
-    const finish = (err, result) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      cleanup();
-      if (err) reject(err); else resolve(result || {});
-    };
-    const timer = setTimeout(() => finish(new Error("Apps Script counselor routing request timed out. Check the deployed Web App version and access setting.")), timeoutMs);
-
-    window[callbackName] = payload => finish(null, payload);
-    script.onerror = () => finish(new Error("Could not reach the Apps Script counselor routing endpoint. Redeploy the Web App and make sure Who has access is Anyone."));
-
-    const params = new URLSearchParams({
-      action: "routeApplicationToCounselorGet",
-      firebaseKey: fKey,
-      counselorName,
-      previousAssignedTo: previous,
-      requestId: reqId,
-      callback: callbackName,
-      _: String(Date.now())
-    });
-    script.src = `${SHEETS_RECOVERY_ENDPOINT}?${params.toString()}`;
-    document.head.appendChild(script);
-  });
-}
-
 async function assignApplicationToCounselor(appId, counselor, source = "row") {
   const app = applications.find(item => item.id === appId);
   if (!app) return false;
-  const clean = String(counselor || "").trim();
-  if (clean) rememberCounselor(clean);
-  const old = String(app.assignedTo || "").trim();
-  if (old === clean) return true;
+  const clean = String(counselor || "").replace(/\s+/g, " ").trim();
+  const old = String(app.assignedTo || "").replace(/\s+/g, " ").trim();
+  if (clean === old) return true;
 
   const statusEl = el("crmSyncStatus");
-  if (statusEl) { statusEl.textContent = `● Assigning ${app.name || "lead"} to ${clean || "Unassigned"}…`; statusEl.className = "crm-syncing"; }
+  if (statusEl) {
+    statusEl.textContent = `● Routing ${app.name || "lead"} → ${clean || "Unassigned"}…`;
+    statusEl.className = "crm-syncing";
+  }
+
+  const businessApplicationId = String(app.applicationId || app.applicationID || app.businessApplicationId || app.id || "").trim();
+  if (!businessApplicationId) {
+    showToast("Assignment failed", "This lead does not have a valid Application ID.", "error", 6500);
+    return false;
+  }
 
   const requestId = (window.crypto && crypto.randomUUID)
     ? crypto.randomUUID()
-    : `route-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    : `router-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   try {
-    // 1) Firebase owns the live assignment state. Mark the source so the
-    // realtime CRM -> Sheets listener does NOT echo this assignment into Master.
+    // NEW ROUTER: one small JSONP request. It reads the canonical Master row,
+    // writes only the selected counselor sheet, and returns a real success/error response.
+    const routeResult = await routeLeadThroughNewRouter_(
+      businessApplicationId,
+      clean,
+      old,
+      requestId,
+      20000
+    );
+
+    // Firebase becomes the dashboard's assignment state only after the counselor
+    // sheet write has succeeded. This prevents a failed sheet route from appearing
+    // as a successful assignment in the CRM.
     await db.ref(`submittedApplications/${appId}`).update({
       assignedTo: clean,
       updatedAtMs: Date.now(),
-      syncSource: "dashboard-assignment"
+      syncSource: "dashboard-assignment-v2"
     });
 
-    // 2) Route directly through Apps Script JSONP. The server resolves the
-    // canonical application from Firebase and returns the actual Sheet result
-    // in the same request. No no-cors POST and no Firebase receipt polling.
-    const routingResult = await routeApplicationToCounselorViaJsonp_(appId, clean, old, requestId);
-    if (!routingResult || String(routingResult.status || "").toLowerCase() !== "success") {
-      throw new Error(routingResult?.message || routingResult?.error || "Counselor sheet routing failed.");
+    app.assignedTo = clean;
+    const visibleSelect = document.querySelector(`.crm-assign-select[data-app-id="${CSS.escape(String(appId))}"]`);
+    if (visibleSelect) visibleSelect.value = clean || "";
+    if (statusEl) {
+      statusEl.textContent = `● Assigned • ${clean || "Unassigned"}`;
+      statusEl.className = "crm-synced";
     }
 
     await logApplicationActivity(appId, {
@@ -903,36 +877,89 @@ async function assignApplicationToCounselor(appId, counselor, source = "row") {
       field: "Assigned To",
       oldValue: old || "",
       newValue: clean || "",
-      summary: `Lead assignment changed from ${old || "Unassigned"} to ${clean || "Unassigned"}`
+      summary: `Lead routed to ${clean || "Unassigned"} by the new counselor router${routeResult?.sheet ? ` (${routeResult.sheet})` : ""}`
     });
 
-    app.assignedTo = clean;
-    const visibleSelect = document.querySelector(`.crm-assign-select[data-app-id="${CSS.escape(String(appId))}"]`);
-    if (visibleSelect) visibleSelect.value = clean || "";
-    if (statusEl) { statusEl.textContent = `● Lead assigned • ${clean || "Unassigned"}`; statusEl.className = "crm-synced"; }
     updateCrmSelectionUI();
     queueMobileCockpitRender(0);
-    showToast("Lead assigned", `${app.name || "Student"} → ${clean || "Unassigned"}. Counselor sheet updated; Master Sheet1 was not changed.`, "success", 4500);
+    showToast(
+      "Lead assigned",
+      `${app.name || "Student"} → ${clean || "Unassigned"}. Counselor sheet updated; Master Sheet1 was not changed.`,
+      "success",
+      5000
+    );
     return true;
   } catch (error) {
-    // Do not leave Firebase assigned when the counselor-sheet route did not
-    // confirm. The backend also performs its own best-effort sheet cleanup.
-    try {
-      await db.ref(`submittedApplications/${appId}`).update({
-        assignedTo: old,
-        updatedAtMs: Date.now(),
-        syncSource: "dashboard-assignment"
-      });
-      app.assignedTo = old;
-    } catch (rollbackError) {
-      console.error("Firebase assignment rollback failed:", rollbackError);
+    console.error("New counselor router assignment failed:", error);
+    if (statusEl) {
+      statusEl.textContent = "● Assignment failed.";
+      statusEl.className = "crm-sync-error";
     }
-
-    console.error("Lead assignment failed:", error);
-    if (statusEl) { statusEl.textContent = "● Assignment failed."; statusEl.className = "crm-sync-error"; }
-    showToast("Assignment failed", error?.message || "Unable to route the lead to the counselor sheet.", "error", 7000);
+    showToast(
+      "Assignment failed",
+      error?.message || "The new counselor router could not complete the assignment.",
+      "error",
+      8000
+    );
     return false;
   }
+}
+
+async function routeLeadThroughNewRouter_(applicationId, counselor, previousCounselor, requestId, timeoutMs = 20000) {
+  const endpoint = String(window.INTERNFORGE_COUNSELOR_ROUTER_ENDPOINT || "").trim();
+  if (!endpoint || !/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/.test(endpoint)) {
+    throw new Error("The new counselor router URL is not configured. Set it in routing-config.js and redeploy the Admin Dashboard.");
+  }
+
+  const callbackName = `__ifNewCounselorRouter_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const params = new URLSearchParams({
+    action: "routeLead",
+    applicationId: String(applicationId || "").trim(),
+    counselorName: String(counselor || "").trim(),
+    previousCounselor: String(previousCounselor || "").trim(),
+    requestId: String(requestId || "").trim(),
+    callback: callbackName,
+    _: String(Date.now())
+  });
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    let settled = false;
+    const timer = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error("The new counselor router did not respond within 20 seconds. Check that the NEW Apps Script Web App is deployed with access set to Anyone."));
+    }, timeoutMs);
+
+    function cleanup() {
+      window.clearTimeout(timer);
+      try { delete window[callbackName]; } catch (_) {}
+      script.remove();
+    }
+
+    window[callbackName] = payload => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      const result = payload || {};
+      if (String(result.status || "").toLowerCase() === "success") {
+        resolve(result);
+        return;
+      }
+      reject(new Error(result.message || result.error || "The new counselor router rejected the assignment."));
+    };
+
+    script.onerror = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error("Could not reach the NEW counselor router Web App. Deploy the new router project and put its /exec URL in routing-config.js."));
+    };
+
+    script.src = `${endpoint}?${params.toString()}`;
+    document.head.appendChild(script);
+  });
 }
 
 function selectedCrmIds() {

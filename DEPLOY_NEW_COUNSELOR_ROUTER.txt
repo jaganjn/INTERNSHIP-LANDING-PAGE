@@ -1,0 +1,47 @@
+INTERNFORGE — NEW COUNSELOR ROUTER V1
+
+Why this is new
+----------------
+The old assignment verifier/router code is NOT used by this build. The new router is a standalone Google Apps Script Web App. It reads the canonical lead from Master Sheet1, writes the lead to the selected counselor spreadsheet, verifies the write by Application ID, removes stale copies from other counselor sheets, and returns a JSONP success/error response. Master Sheet1 is never modified by this router.
+
+1) Create a NEW Apps Script project
+-----------------------------------
+Do NOT replace or append to the old Code.gs project. Create a brand-new Google Apps Script project named e.g. “InternsForge Counselor Router V1”.
+
+2) Add CounselorRouter.gs
+--------------------------
+Copy CounselorRouter.gs from this package into the NEW Apps Script project.
+
+3) Deploy it as a Web App
+--------------------------
+Deploy → New deployment → Web app
+Execute as: Me
+Who has access: Anyone
+Deploy and authorize the requested Google permissions.
+Copy the resulting /exec URL.
+
+4) Put the new /exec URL into routing-config.js
+-------------------------------------------------
+Set:
+window.INTERNFORGE_COUNSELOR_ROUTER_ENDPOINT = "https://script.google.com/macros/s/YOUR_NEW_DEPLOYMENT_ID/exec";
+
+5) Redeploy the Admin Dashboard
+-------------------------------
+Upload admin.html, admin.js, and routing-config.js.
+Hard refresh with Ctrl+F5.
+
+6) Test
+--------
+Assign ONE lead to ONE existing counselor. The router will read the lead from Master Sheet1, write/update it in the selected counselor’s Leads sheet, and return an explicit success/error.
+
+Expected success
+----------------
+“Lead assigned — Counselor sheet updated; Master Sheet1 was not changed.”
+
+Expected real errors (instead of generic verifier errors)
+-----------------------------------------------------------
+Examples: counselor not registered, Spreadsheet ID missing, Master Application ID not found, counselor sheet permission denied, or write verification failed.
+
+Important
+---------
+Existing Sheets sync, Firebase CRM, referral, recovery, and other dashboard functions continue using the existing SHEETS_RECOVERY_ENDPOINT. Only counselor assignment uses the NEW router.

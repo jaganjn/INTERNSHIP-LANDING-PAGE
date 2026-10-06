@@ -2073,6 +2073,72 @@ footer nav a:hover{color:#ffbb70!important}
 .final-cta h2{color:#fffaf4!important}
 </style>
 
+
+<style id="if-footer-final-v2">
+/* Final professional footer — presentation-only. */
+.if-footer{
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:0!important;
+  color:#c8d1db!important;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(71,107,151,.16), transparent 30%),
+    radial-gradient(circle at 88% 8%, rgba(255,181,97,.09), transparent 28%),
+    #0b1828!important;
+  border-top:1px solid rgba(255,255,255,.08)!important;
+  box-shadow:0 -18px 60px rgba(10,22,36,.10)!important;
+}
+.if-footer-shell{
+  width:min(1240px, calc(100% - 40px));
+  margin:0 auto;
+  padding:44px 0 22px;
+  display:grid;
+  grid-template-columns:minmax(280px, 1.45fr) repeat(2,minmax(150px,.7fr)) minmax(170px,.8fr);
+  gap:34px;
+}
+.if-footer-main{min-width:0;}
+.if-footer-brand{display:inline-flex!important;align-items:center;gap:12px;margin:0 0 14px;text-decoration:none;}
+.if-footer-brand .brand-mark{width:44px;height:44px;object-fit:contain;border-radius:12px;}
+.if-footer-brand strong{display:block!important;color:#fffaf4!important;font-size:18px!important;font-weight:800!important;letter-spacing:.1px!important;}
+.if-footer-brand small{display:block!important;margin-top:4px;color:#8fa4b7!important;font-size:9px!important;font-weight:700!important;letter-spacing:1.35px!important;}
+.if-footer-description{max-width:370px!important;margin:0!important;color:#93a5b7!important;font-size:12px!important;line-height:1.75!important;}
+.if-footer-label{display:block;color:#8095aa;font-size:9px;font-weight:800;letter-spacing:1.5px;margin-bottom:14px;}
+.if-footer-links{display:grid;gap:10px;}
+.if-footer-links a{display:inline-flex;align-items:center;gap:6px;width:max-content;color:#d4dce5!important;text-decoration:none;font-size:12px!important;font-weight:700!important;transition:color .2s,transform .2s;}
+.if-footer-links a:hover{color:#ffbf7b!important;transform:translateX(2px);}
+.if-footer-action{display:flex;flex-direction:column;align-items:flex-start;}
+.if-footer-cta{display:inline-flex!important;align-items:center;justify-content:center;gap:10px;width:100%;min-height:44px;padding:0 16px;border:1px solid rgba(255,191,122,.22)!important;border-radius:12px!important;background:linear-gradient(135deg,#ff9a41,#ff7a1a)!important;color:#fff!important;font-size:12px!important;font-weight:800!important;box-shadow:0 12px 30px rgba(255,122,26,.18)!important;cursor:pointer;}
+.if-footer-cta span{font-size:16px;line-height:1;}
+.if-footer-top{margin-top:11px;width:44px;height:40px;border-radius:11px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:#e7edf4;cursor:pointer;transition:.2s;}
+.if-footer-top:hover{background:rgba(255,255,255,.1);border-color:rgba(255,191,122,.28);color:#ffbf7b;}
+.if-footer-bottom{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:16px;padding-top:19px;margin-top:4px;border-top:1px solid rgba(255,255,255,.08);color:#72869a;font-size:10px;line-height:1.5;}
+.if-footer-bottom span:last-child{text-align:right;}
+
+@media(max-width:900px){
+  .if-footer-shell{grid-template-columns:1.35fr 1fr 1fr;gap:28px;width:min(100% - 32px,760px);padding:38px 0 20px;}
+  .if-footer-main{grid-column:1/-1;}
+  .if-footer-action{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) 46px;align-items:center;gap:10px;}
+  .if-footer-action .if-footer-label{grid-column:1/-1;margin-bottom:0;}
+  .if-footer-top{margin-top:0;width:46px;height:44px;}
+}
+
+@media(max-width:620px){
+  .if-footer-shell{display:grid;grid-template-columns:1fr;width:min(100% - 28px,520px);padding:34px 0 18px;gap:26px;}
+  .if-footer-main,.if-footer-column,.if-footer-action{grid-column:auto;}
+  .if-footer-description{max-width:100%!important;font-size:11px!important;line-height:1.7!important;}
+  .if-footer-column{padding-top:2px;}
+  .if-footer-label{margin-bottom:10px;}
+  .if-footer-links{gap:9px;}
+  .if-footer-links a{font-size:11px!important;}
+  .if-footer-action{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:10px;}
+  .if-footer-action .if-footer-label{grid-column:1/-1;margin-bottom:0;}
+  .if-footer-cta{min-height:46px;font-size:11px!important;}
+  .if-footer-top{width:44px;height:46px;}
+  .if-footer-bottom{display:grid;justify-content:stretch;gap:7px;font-size:9px;text-align:left;}
+  .if-footer-bottom span:last-child{text-align:left;}
+}
+</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -2433,11 +2499,45 @@ footer nav a:hover{color:#ffbb70!important}
 <section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your next project can start with one minute.</h2><p>No prerequisite knowledge required. Choose your domain and start your application.</p></div><button class="open-application" type="button">Start Application <span>→</span></button></section>
 </main>
 
-<footer id="contact">
-  <a class="footer-brand" href="#home"><img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge"><span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span></a>
-  <p>Practical learning and career preparation for students.</p>
-  <div><small>© 2026 InternsForge Internship Programme</small><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a></nav></div>
-  <button id="backToTop" type="button" aria-label="Back to top">↑</button>
+<footer id="contact" class="if-footer">
+  <div class="if-footer-shell">
+    <div class="if-footer-main">
+      <a class="footer-brand if-footer-brand" href="#home" aria-label="InternsForge home">
+        <img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge">
+        <span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span>
+      </a>
+      <p class="if-footer-description">Practical learning, project experience and career preparation for students and early-career learners.</p>
+    </div>
+
+    <div class="if-footer-column">
+      <span class="if-footer-label">PROGRAMME</span>
+      <div class="if-footer-links">
+        <a href="#programme">Programme</a>
+        <a href="#domains">Career Domains</a>
+        <a href="#application">Application</a>
+      </div>
+    </div>
+
+    <div class="if-footer-column">
+      <span class="if-footer-label">LEGAL &amp; ACCESS</span>
+      <div class="if-footer-links">
+        <a href="privacy.html">Privacy Notice</a>
+        <a href="terms.html">Programme Terms</a>
+        <a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a>
+      </div>
+    </div>
+
+    <div class="if-footer-action">
+      <span class="if-footer-label">GET STARTED</span>
+      <button class="if-footer-cta open-application" type="button">Start Application <span>→</span></button>
+      <button id="backToTop" class="if-footer-top" type="button" aria-label="Back to top">↑</button>
+    </div>
+    
+    <div class="if-footer-bottom">
+      <span>© 2026 InternsForge Internship Programme</span>
+      <span>Build skills. Gain experience. Shape your future.</span>
+    </div>
+  </div>
 </footer>
 
 <button class="floating-cta" id="floatingCta" type="button"><span>Applications Open</span><strong>Apply in 60 Seconds →</strong></button>

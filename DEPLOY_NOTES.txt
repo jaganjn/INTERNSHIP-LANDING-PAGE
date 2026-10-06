@@ -1,22 +1,20 @@
-INTERNSFORGE COUNSELOR ASSIGNMENT — V4 DIRECT ROUTING
+INTERNSFORGE ASSIGNMENT DIRECT ROUTING V5 — 2026-10-06
 
-This version removes Firebase receipt polling from the Admin Dashboard assignment flow.
+The screenshot error text exactly matches the old V7 admin.js verification code.
+This build hard-resets the frontend assignment flow.
 
-Flow:
-1. Admin updates submittedApplications/{firebaseKey}.assignedTo.
-2. Admin calls Apps Script GET/JSONP action: routeApplicationToCounselorGet.
-3. Apps Script reads the canonical application from Firebase using the service account.
-4. Apps Script writes/routes the lead to the selected counselor sheet.
-5. Apps Script returns the actual routing result directly to the browser.
+Replace BOTH:
+  admin.html
+  admin.js
 
-Replace:
-- Code.gs
-- admin.js
+Keep Code.gs from this package (V4 direct-routing backend) and redeploy the Web App as a NEW VERSION if you are not already on this V4 backend.
 
-Then deploy Apps Script as a NEW Web App version:
-- Execute as: Me
-- Who has access: Anyone
+After uploading admin.html/admin.js:
+  1. Hard refresh the admin page with Ctrl+F5.
+  2. If your host uses a service worker/CDN, purge its cache or redeploy the site.
+  3. The page now loads: admin.js?v=20261006-direct-routing-v5-NOCACHE
+  4. The old message "Could not reach the Apps Script verification endpoint." is NOT present in this admin.js.
+  5. The assignment flow calls routeApplicationToCounselorGet through a direct JSONP route and uses its actual response. There is no follow-up verifyCounselorRouting call.
 
-Hard-refresh Admin Dashboard (Ctrl+F5).
-
-The Master Sheet1 dashboard assignment path remains counselor-only; this change does not intentionally write Assigned To into Master Sheet1.
+Build marker:
+  DIRECT-ROUTING-V5-20261006

@@ -337,7 +337,14 @@ footer nav .admin-login-link:hover{
 body.application-modal-open .application-zone{display:flex;position:fixed;inset:0;z-index:1200;max-width:none;width:100%;height:100dvh;margin:0;padding:34px 22px;display:flex;align-items:center;justify-content:center;overflow-y:auto;background:rgba(9,20,43,.72);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 body.application-modal-open .application-zone:before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 20% 20%,rgba(79,102,239,.20),transparent 34%),radial-gradient(circle at 80% 80%,rgba(184,61,202,.18),transparent 36%);pointer-events:none}
 body.application-modal-open .application-intro{display:none}
-body.application-modal-open .application-card{display:block;max-width:760px;width:100%;max-height:calc(100dvh - 68px);overflow:auto;z-index:2;margin:0;padding:30px}
+body.application-modal-open .application-card{
+  display:block;max-width:940px;width:min(940px,calc(100vw - 40px));
+  max-height:calc(100dvh - 40px);overflow:auto;z-index:2;margin:0;
+  padding:142px 34px 34px;border:1px solid rgba(162,180,214,.45);
+  border-radius:28px;background:#fff;
+  box-shadow:0 35px 110px rgba(3,16,38,.42),0 0 0 1px rgba(255,255,255,.6) inset;
+  animation:professionalApplicationIn .42s cubic-bezier(.2,.8,.2,1) both;
+}
 body.application-modal-open .application-close{display:grid;place-items:center}
 body.application-modal-open .secure{display:none}
 body.application-modal-open #message{display:block;position:relative;z-index:3;max-width:760px}
@@ -565,6 +572,103 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
     margin-top:0!important;
   }
 }
+</style>
+
+<style id="professional-application-popup-v1">
+/* PROFESSIONAL APPLICATION POPUP — PRESENTATION ONLY. Existing form/CTA logic is untouched. */
+@keyframes professionalApplicationIn{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes professionalHeaderGlow{0%,100%{opacity:.45}50%{opacity:.85}}
+body.application-modal-open .application-card.wizard-shell{
+  position:relative!important;
+  isolation:isolate;
+}
+body.application-modal-open .application-card.wizard-shell:before{
+  content:"INTERNSFORGE  /  INTERNSHIP PROGRAMME 2026\A APPLICATION PORTAL";
+  white-space:pre-line;
+  position:absolute;z-index:6;left:0;right:0;top:0;height:112px;
+  padding:27px 34px;box-sizing:border-box;color:#fff;
+  font:800 13px/1.65 Manrope,Inter,sans-serif;letter-spacing:1.45px;
+  background:
+    radial-gradient(circle at 86% 20%,rgba(120,150,255,.25),transparent 30%),
+    radial-gradient(circle at 18% 90%,rgba(180,68,210,.18),transparent 34%),
+    linear-gradient(118deg,#0a1830 0%,#102348 58%,#1b1740 100%);
+  border-radius:28px 28px 0 0;
+  box-shadow:0 14px 36px rgba(6,20,46,.18);
+  pointer-events:none;
+}
+body.application-modal-open .application-card.wizard-shell:after{
+  content:"SECURE APPLICATION  •  ABOUT 60 SECONDS";
+  position:absolute;z-index:7;right:26px;top:30px;
+  padding:7px 10px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.09);
+  color:#dce7ff;font:800 9px/1 Inter,sans-serif;letter-spacing:.7px;
+  pointer-events:none;
+}
+body.application-modal-open .application-card.wizard-shell .application-close{
+  right:17px!important;top:77px!important;width:38px;height:38px;
+  border:1px solid rgba(255,255,255,.28)!important;
+  background:rgba(255,255,255,.96)!important;color:#1b2943!important;
+  box-shadow:0 10px 25px rgba(4,18,40,.18)!important;z-index:20!important;
+}
+body.application-modal-open .application-card.wizard-shell .wizard-head{
+  margin:0 0 16px;padding:16px 16px 14px;border:1px solid #e0e6f0;
+  border-radius:16px;background:linear-gradient(180deg,#fbfcff,#f7f9fd);
+}
+body.application-modal-open .application-card.wizard-shell .wizard-chip-row{padding-right:48px}
+body.application-modal-open .application-card.wizard-shell .wizard-time-pill{
+  border:1px solid #dce5f5;background:#fff;color:#4c6191;
+}
+body.application-modal-open .application-card.wizard-shell .wizard-hero{
+  margin:0 0 15px!important;padding:18px 18px!important;
+  border:1px solid #dfe6f2;border-radius:18px;
+  background:linear-gradient(135deg,#f8fbff 0%,#fff 65%);
+  box-shadow:0 12px 30px rgba(24,43,78,.05);
+}
+body.application-modal-open .application-card.wizard-shell .wizard-step-badge{
+  box-shadow:0 12px 25px rgba(79,100,235,.18);
+}
+body.application-modal-open .application-card.wizard-shell .application-progress-four{
+  margin:14px 2px 20px!important;padding:10px 8px;
+  border:1px solid #e0e6ef;border-radius:14px;background:#fff;
+}
+body.application-modal-open .application-card.wizard-shell form{
+  padding-top:0!important;
+}
+body.application-modal-open .application-card.wizard-shell .form-step{
+  padding:18px 2px 0;
+}
+body.application-modal-open .application-card.wizard-shell .step-panel-head{
+  padding:3px 0 6px;
+}
+body.application-modal-open .application-card.wizard-shell .step-actions{
+  position:sticky;bottom:-1px;z-index:9;padding-top:13px;
+  background:linear-gradient(180deg,rgba(255,255,255,.78),#fff 35%);
+}
+body.application-modal-open .application-card.wizard-shell #message{
+  margin-top:12px;
+}
+@media(max-width:600px){
+  body.application-modal-open .application-zone{padding:8px!important;align-items:flex-start!important}
+  body.application-modal-open .application-card.wizard-shell{
+    width:100%!important;max-width:none!important;max-height:calc(100dvh - 16px)!important;
+    min-height:calc(100dvh - 16px);padding:104px 14px 20px!important;
+    border-radius:22px!important;
+  }
+  body.application-modal-open .application-card.wizard-shell:before{
+    height:84px;padding:20px 18px;border-radius:22px 22px 0 0;font-size:10px;line-height:1.55;
+  }
+  body.application-modal-open .application-card.wizard-shell:after{
+    right:55px;top:22px;font-size:7px;padding:6px 8px;
+  }
+  body.application-modal-open .application-card.wizard-shell .application-close{
+    top:19px!important;right:12px!important;width:34px;height:34px;
+  }
+  body.application-modal-open .application-card.wizard-shell .wizard-head{margin-bottom:12px;padding:13px 12px 11px}
+  body.application-modal-open .application-card.wizard-shell .wizard-hero{padding:14px!important}
+  body.application-modal-open .application-card.wizard-shell .application-progress-four{margin:10px 0 14px!important}
+  body.application-modal-open .application-card.wizard-shell .form-step{padding-top:12px}
+}
+@media(prefers-reduced-motion:reduce){body.application-modal-open .application-card.wizard-shell{animation:none!important}}
 </style>
 
 <style id="mobile-motion-stability-fix">
@@ -1969,141 +2073,6 @@ footer nav a:hover{color:#ffbb70!important}
 .final-cta h2{color:#fffaf4!important}
 </style>
 
-
-<style id="internsforge-professional-application-footer-2026-10-06">
-/* =========================================================
-   INTERNFORGE — NEW VISITOR APPLICATION POPUP + FOOTER
-   Presentation-only layer. Existing form fields, CTA handlers,
-   Firebase, Apps Script, referrals and submission logic are untouched.
-   ========================================================= */
-
-/* Keep normal Apply / CTA buttons in the regular site treatment. */
-.final-cta .open-application,
-.footer-apply{
-  color:#fff!important;
-  background:linear-gradient(100deg,var(--blue),var(--violet),#bc3fc8)!important;
-  border:0!important;
-  box-shadow:0 12px 28px rgba(82,71,224,.22)!important;
-}
-.final-cta .open-application:hover,
-.footer-apply:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(82,71,224,.28)!important}
-
-/* Professional popup shell. The existing application card remains the form. */
-body.application-modal-open .application-zone{
-  padding:24px;
-  animation:ifApplicationBackdropIn .35s ease both;
-}
-body.application-modal-open .application-zone:after{
-  content:"";
-  position:absolute;
-  width:min(1080px,92vw);
-  height:82vh;
-  border-radius:34px;
-  border:1px solid rgba(151,174,235,.18);
-  box-shadow:0 0 0 1px rgba(255,255,255,.03) inset;
-  pointer-events:none;
-}
-body.application-modal-open .application-zone{
-  display:grid!important;
-  grid-template-columns:minmax(250px,340px) minmax(0,760px);
-  gap:14px;
-  align-items:stretch;
-}
-.application-modal-rail{display:none}
-body.application-modal-open .application-modal-rail{
-  display:flex;
-  position:relative;
-  z-index:2;
-  width:100%;
-  max-height:min(82vh,860px);
-  align-self:center;
-  flex-direction:column;
-  padding:30px 25px 24px;
-  border:1px solid rgba(166,188,245,.18);
-  border-radius:30px;
-  color:#fff;
-  background:
-    radial-gradient(circle at 10% 8%,rgba(93,125,255,.26),transparent 34%),
-    radial-gradient(circle at 95% 90%,rgba(191,63,203,.22),transparent 34%),
-    linear-gradient(150deg,#132340,#0b1730 68%,#24183d);
-  box-shadow:0 30px 90px rgba(5,14,32,.42),0 1px 0 rgba(255,255,255,.05) inset;
-  overflow:hidden;
-  animation:ifApplicationRailIn .52s cubic-bezier(.2,.8,.2,1) both;
-}
-.application-modal-rail:before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.06),transparent 35%);pointer-events:none}
-.application-rail-brand{display:flex;align-items:center;gap:9px;position:relative;z-index:1}
-.application-rail-brand img{width:38px;height:38px;object-fit:contain;border-radius:11px;background:rgba(255,255,255,.06);padding:4px}
-.application-rail-brand span{font:900 11px/1 Inter,Arial,sans-serif;letter-spacing:1.4px;color:#c6d4f3}
-.application-rail-kicker{position:relative;z-index:1;margin-top:28px;font:800 9px/1.2 Inter,Arial,sans-serif;letter-spacing:1.7px;color:#8da5ff}
-.application-modal-rail h2{position:relative;z-index:1;margin:10px 0 11px;font:800 clamp(27px,2.45vw,37px)/1.06 Manrope,Arial,sans-serif;letter-spacing:-1.4px;color:#fff}
-.application-modal-rail h2 span{background:linear-gradient(90deg,#9fb4ff,#d28cf0);-webkit-background-clip:text;background-clip:text;color:transparent}
-.application-rail-intro{position:relative;z-index:1;margin:0;color:#aebbd1;font:500 12px/1.65 Inter,Arial,sans-serif}
-.application-rail-stats{position:relative;z-index:1;display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:21px 0 18px}
-.application-rail-stats>div{padding:10px 8px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:rgba(255,255,255,.045)}
-.application-rail-stats strong,.application-rail-stats small{display:block}.application-rail-stats strong{font:900 12px Manrope;color:#fff}.application-rail-stats small{margin-top:3px;color:#8e9db8;font-size:8px;line-height:1.35}
-.application-rail-steps{position:relative;z-index:1;display:grid;gap:8px;margin-top:2px}
-.application-rail-steps>div{display:flex;gap:10px;align-items:center;padding:9px 10px;border:1px solid rgba(255,255,255,.06);border-radius:12px;background:rgba(255,255,255,.035)}
-.application-rail-steps>b,.application-rail-steps b{width:30px;height:30px;display:grid;place-items:center;flex:0 0 auto;border-radius:9px;background:rgba(98,123,255,.16);color:#a8baff;font:900 10px Manrope}
-.application-rail-steps span{min-width:0}.application-rail-steps strong,.application-rail-steps small{display:block}.application-rail-steps strong{font-size:10px;color:#fff}.application-rail-steps small{margin-top:2px;color:#8e9db8;font-size:8px}
-.application-rail-trust{position:relative;z-index:1;display:flex;gap:9px;align-items:flex-start;margin-top:auto;padding-top:17px;border-top:1px solid rgba(255,255,255,.08)}
-.application-rail-trust>span{width:24px;height:24px;display:grid;place-items:center;border-radius:8px;background:rgba(49,202,140,.14);color:#59e2ab;font-weight:900;font-size:12px;flex:0 0 auto}
-.application-rail-trust p{margin:0}.application-rail-trust strong,.application-rail-trust small{display:block}.application-rail-trust strong{font-size:9px;color:#e6edf9}.application-rail-trust small{margin-top:3px;color:#8899b5;font-size:8px;line-height:1.45}
-body.application-modal-open .application-card.wizard-shell{
-  align-self:center;
-  max-height:min(86vh,900px);
-  max-width:760px;
-  padding:25px;
-  border:1px solid rgba(139,159,213,.25);
-  border-radius:30px;
-  background:linear-gradient(155deg,rgba(255,255,255,.99),rgba(247,250,255,.98));
-  box-shadow:0 35px 100px rgba(5,14,32,.38),0 1px 0 rgba(255,255,255,.95) inset;
-  animation:ifApplicationCardIn .48s cubic-bezier(.2,.8,.2,1) both;
-}
-body.application-modal-open .application-card.wizard-shell .wizard-head{padding-right:38px}
-body.application-modal-open .application-card.wizard-shell .application-close{width:38px;height:38px;right:14px;top:14px;display:grid;place-items:center;background:#fff;border-color:#d9e2ee;box-shadow:0 8px 20px rgba(25,45,78,.10);transition:.2s}
-body.application-modal-open .application-card.wizard-shell .application-close:hover{transform:rotate(90deg);background:#f7f9fd}
-
-@keyframes ifApplicationBackdropIn{from{opacity:0}to{opacity:1}}
-@keyframes ifApplicationRailIn{from{opacity:0;transform:translateX(-18px) scale(.985)}to{opacity:1;transform:none}}
-@keyframes ifApplicationCardIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
-
-/* Professional footer */
-footer.professional-footer{
-  width:100%!important;
-  max-width:none!important;
-  margin:70px 0 0!important;
-  padding:0!important;
-  border-top:0!important;
-  background:#0d1a2a!important;
-  color:#c6d0da!important;
-}
-.professional-footer-inner{width:min(1240px,calc(100% - 36px));margin:0 auto;padding:42px 0 20px}
-.professional-footer-main{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(140px,.75fr) minmax(155px,.75fr);gap:50px;padding-bottom:30px;border-bottom:1px solid rgba(255,255,255,.08)}
-.professional-footer-brand-block{max-width:520px}.professional-footer .footer-brand{gap:11px}.professional-footer .brand-mark{width:44px;height:44px}.professional-footer .footer-brand strong{color:#fff!important;font-size:15px!important}.professional-footer .footer-brand small{color:#91a0ad!important}.professional-footer-brand-block>p{margin:16px 0 13px;max-width:470px;color:#9eacba!important;font:500 12px/1.7 Inter,Arial,sans-serif}
-.footer-status{display:inline-flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid rgba(75,225,166,.16);border-radius:999px;background:rgba(53,199,141,.06);color:#92b6aa;font-size:9px;font-weight:700}.footer-status span{width:7px;height:7px;border-radius:50%;background:#38d69a;box-shadow:0 0 0 4px rgba(56,214,154,.10)}
-.professional-footer-column{display:grid;align-content:start;gap:10px}.footer-kicker{margin-bottom:4px;color:#6f8df6;font:900 9px Inter,Arial,sans-serif;letter-spacing:1.5px}.professional-footer-column a,.professional-footer-column button{font:650 11px Inter,Arial,sans-serif;color:#becad5!important;text-decoration:none}.professional-footer-column a:hover{color:#fff!important}.professional-footer-column .admin-login-link{color:#d7e0e7!important}.footer-apply{width:max-content!important;min-height:37px;padding:0 12px!important;border-radius:10px!important;cursor:pointer!important;font-weight:800!important;margin-top:3px}.footer-apply b{margin-left:6px}
-.professional-footer-bottom{display:flex;align-items:center;justify-content:space-between;gap:18px;padding-top:18px}.professional-footer-bottom>div{display:flex;align-items:center;gap:13px;flex-wrap:wrap}.professional-footer-bottom small{font-size:9px;color:#8795a4}.professional-footer-bottom span{font-size:8px;color:#667686;padding-left:13px;border-left:1px solid rgba(255,255,255,.10)}.professional-footer-bottom #backToTop{width:38px;height:38px;flex:0 0 auto;border:1px solid rgba(255,255,255,.10)!important;border-radius:11px!important;background:#fff5e9!important;color:#aa5b20!important;cursor:pointer!important;box-shadow:none!important}
-.professional-footer-bottom #backToTop:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(0,0,0,.18)!important}
-
-@media(max-width:900px){
-  body.application-modal-open .application-zone{grid-template-columns:minmax(220px,.62fr) minmax(0,1fr);gap:10px;padding:18px}
-  .application-modal-rail{padding:24px 18px 20px}.application-modal-rail h2{font-size:28px}.application-rail-stats{grid-template-columns:1fr}.application-rail-stats>div{display:flex;align-items:baseline;justify-content:space-between}.application-rail-steps{gap:6px}.application-rail-steps>div{padding:8px}
-  .professional-footer-main{gap:28px}
-}
-@media(max-width:700px){
-  body.application-modal-open .application-zone{display:flex!important;align-items:flex-start;justify-content:center;padding:8px;overflow-y:auto}
-  body.application-modal-open .application-zone:after{display:none}
-  body.application-modal-open .application-modal-rail{display:none}
-  body.application-modal-open .application-card.wizard-shell{width:100%;max-width:none;max-height:calc(100dvh - 16px);margin:0;padding:12px;border-radius:22px}
-  body.application-modal-open .application-card.wizard-shell .application-close{right:8px;top:8px}
-  .professional-footer-inner{width:min(100% - 28px,560px);padding:33px 0 16px}
-  .professional-footer-main{grid-template-columns:1fr;gap:24px;padding-bottom:23px}
-  .professional-footer-column{gap:9px}
-  .footer-apply{width:100%!important}
-  .professional-footer-bottom{align-items:flex-end}.professional-footer-bottom>div{display:grid;gap:6px}.professional-footer-bottom span{padding-left:0;border-left:0}.professional-footer-bottom #backToTop{width:42px;height:42px}
-}
-@media(prefers-reduced-motion:reduce){body.application-modal-open .application-zone,.application-modal-rail,body.application-modal-open .application-card.wizard-shell{animation:none!important}}
-</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -2207,27 +2176,6 @@ footer.professional-footer{
       <div><b>04</b><span><strong>Submit application</strong><small>Send your application directly</small></span></div>
     </div>
   </div>
-
-  <aside class="application-modal-rail" aria-label="Application overview">
-    <div class="application-rail-brand">
-      <img src="internsforge-logo.svg" alt="InternsForge">
-      <span>INTERNSFORGE</span>
-    </div>
-    <div class="application-rail-kicker">INTERNSHIP PROGRAMME 2026</div>
-    <h2>Build your profile.<br><span>Start your next step.</span></h2>
-    <p class="application-rail-intro">A guided application designed for students and fresh graduates. The existing application form stays exactly the same.</p>
-    <div class="application-rail-stats">
-      <div><strong>~60 sec</strong><small>Typical completion</small></div>
-      <div><strong>3 steps</strong><small>Simple guided flow</small></div>
-      <div><strong>Secure</strong><small>Protected submission</small></div>
-    </div>
-    <div class="application-rail-steps">
-      <div><b>01</b><span><strong>Contact</strong><small>Name & WhatsApp</small></span></div>
-      <div><b>02</b><span><strong>Academic</strong><small>College & domain</small></span></div>
-      <div><b>03</b><span><strong>Profile</strong><small>Preferences & submit</small></span></div>
-    </div>
-    <div class="application-rail-trust"><span>✓</span><p><strong>Your information stays protected</strong><small>Used for application review, communication and programme processing.</small></p></div>
-  </aside>
 
   <aside class="application-card wizard-shell" id="apply" data-active-step="1">
     <button class="application-close" id="closeApplication" type="button" aria-label="Close application">×</button>
@@ -2485,39 +2433,11 @@ footer.professional-footer{
 <section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your next project can start with one minute.</h2><p>No prerequisite knowledge required. Choose your domain and start your application.</p></div><button class="open-application" type="button">Start Application <span>→</span></button></section>
 </main>
 
-<footer id="contact" class="professional-footer">
-  <div class="professional-footer-inner">
-    <div class="professional-footer-main">
-      <div class="professional-footer-brand-block">
-        <a class="footer-brand" href="#home" aria-label="InternsForge home">
-          <img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge">
-          <span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span>
-        </a>
-        <p>Practical learning, guided projects and career preparation for students and fresh graduates.</p>
-        <div class="footer-status"><span></span> Applications are open</div>
-      </div>
-
-      <div class="professional-footer-column">
-        <span class="footer-kicker">PROGRAMME</span>
-        <a href="#home">Overview</a>
-        <a href="#domains">Domains</a>
-        <a href="#faq">FAQs</a>
-        <button class="footer-apply open-application" type="button">Start Application <b>→</b></button>
-      </div>
-
-      <div class="professional-footer-column">
-        <span class="footer-kicker">RESOURCES</span>
-        <a href="privacy.html">Privacy Notice</a>
-        <a href="terms.html">Programme Terms</a>
-        <a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a>
-      </div>
-    </div>
-
-    <div class="professional-footer-bottom">
-      <div><small>© 2026 InternsForge Internship Programme</small><span>Designed for a focused, student-first application experience.</span></div>
-      <button id="backToTop" type="button" aria-label="Back to top">↑</button>
-    </div>
-  </div>
+<footer id="contact">
+  <a class="footer-brand" href="#home"><img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge"><span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span></a>
+  <p>Practical learning and career preparation for students.</p>
+  <div><small>© 2026 InternsForge Internship Programme</small><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a></nav></div>
+  <button id="backToTop" type="button" aria-label="Back to top">↑</button>
 </footer>
 
 <button class="floating-cta" id="floatingCta" type="button"><span>Applications Open</span><strong>Apply in 60 Seconds →</strong></button>
@@ -3585,7 +3505,7 @@ window.setInterval(() => {
 }, 5000);
 
 // Visible in DevTools so the deployed build can be verified without guessing.
-console.info('InternsForge landing build: professional initial application popup + responsive footer 2026-10-06');
+console.info('SkillPath guided form build: Final V11');
 
 </script>
 <script id="skillpath-ui-inline-js">
@@ -3776,6 +3696,7 @@ console.info('InternsForge landing build: professional initial application popup
     applicationCard?.setAttribute('aria-label','Internship application');
     window.setTimeout(()=>document.getElementById('name')?.focus(),120);
   }
+  window.__internsforgeOpenApplication = openApplication;
   let closeConfirmOpen = false;
   let pendingExit = null;
   let allowHistoryNavigation = false;
@@ -4357,45 +4278,29 @@ console.info('InternsForge landing build: professional initial application popup
 })();
 </script>
 
-
-<script id="internsforge-new-visitor-application-popup-2026-10-06">
-(() => {
-  const POPUP_SEEN_KEY = 'internsforge_initial_application_popup_v3';
-  const OPEN_DELAY = 900;
-
-  function shouldAutoOpen() {
-    try {
-      if (sessionStorage.getItem(POPUP_SEEN_KEY) === '1') return false;
-      if (document.body?.classList.contains('application-modal-open')) return false;
-      return typeof window.openApplication === 'function';
-    } catch (_) {
-      return typeof window.openApplication === 'function';
-    }
+<script id="internsforge-auto-application-popup-v1">
+(function(){
+  'use strict';
+  const KEY='internsforge_auto_application_popup_v1';
+  function shouldOpen(){
+    try{
+      if(sessionStorage.getItem(KEY)==='1') return false;
+      sessionStorage.setItem(KEY,'1');
+      return true;
+    }catch(_){ return true; }
   }
-
-  function markSeen() {
-    try { sessionStorage.setItem(POPUP_SEEN_KEY, '1'); } catch (_) {}
+  function launch(){
+    if(!shouldOpen()) return;
+    const open=window.__internsforgeOpenApplication;
+    if(typeof open!=='function') return;
+    window.setTimeout(function(){
+      // Never interrupt an already-open modal or an explicit hash/target interaction.
+      if(document.body.classList.contains('application-modal-open')) return;
+      open();
+    },900);
   }
-
-  function launch() {
-    if (!shouldAutoOpen()) return;
-    markSeen();
-    window.setTimeout(() => {
-      if (!document.body.classList.contains('application-modal-open')) {
-        try {
-          window.openApplication();
-        } catch (error) {
-          console.warn('Initial application popup could not open:', error);
-        }
-      }
-    }, OPEN_DELAY);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', launch, { once: true });
-  } else {
-    window.setTimeout(launch, 60);
-  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',launch,{once:true});
+  else launch();
 })();
 </script>
 </body>

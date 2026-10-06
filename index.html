@@ -495,6 +495,75 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 .motion-reveal{opacity:0;transform:translateY(24px);transition:opacity .65s ease,transform .65s cubic-bezier(.2,.8,.2,1)}.motion-reveal.motion-visible{opacity:1;transform:none}@media(prefers-reduced-motion:reduce){.student-ticker-track{animation:none!important}.journey-step-card,.persona-card{transition:none!important}.motion-reveal{opacity:1;transform:none}}
 </style>
 
+
+<style id="auto-application-launch-ux">
+/* Automatic application launch: prominent but still closable. */
+body.auto-application-opening .application-zone::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:radial-gradient(circle at 50% 45%,rgba(91,112,246,.24),transparent 34%);
+  animation:autoApplyHalo 1.15s ease-out forwards;
+}
+body.auto-application-opening .application-card.wizard-shell{
+  animation:autoApplyCard .82s cubic-bezier(.18,.88,.25,1.12) both;
+}
+body.auto-application-opening .application-card.wizard-shell::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  border-radius:32px;
+  padding:2px;
+  background:linear-gradient(115deg,rgba(83,111,245,.0),rgba(83,111,245,.75),rgba(55,209,171,.62),rgba(145,83,255,.75),rgba(83,111,245,.0));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  animation:autoApplySweep 1.35s ease-out both;
+  pointer-events:none;
+  z-index:8;
+}
+.auto-apply-banner{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:12px;
+  margin:4px 8px 10px;
+  padding:11px 13px;
+  border:1px solid rgba(83,111,245,.20);
+  border-radius:14px;
+  background:linear-gradient(100deg,rgba(238,242,255,.96),rgba(242,249,255,.96));
+  box-shadow:0 10px 26px rgba(62,82,175,.08);
+  animation:autoApplyBanner .65s .12s both;
+}
+.auto-apply-banner-icon{
+  width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  background:linear-gradient(135deg,#4f6df0,#8a5be6);color:#fff;font-size:16px;
+  box-shadow:0 8px 18px rgba(77,91,216,.22)
+}
+.auto-apply-banner strong{display:block;font:800 12px Manrope;color:#23385f}
+.auto-apply-banner span{display:block;margin-top:2px;font-size:9px;color:#687994}
+.auto-apply-banner small{font-size:9px;font-weight:800;color:#3457d4;white-space:nowrap}
+.auto-apply-progress{
+  height:3px;border-radius:999px;background:#dfe7fb;overflow:hidden;margin:0 8px 12px;
+}
+.auto-apply-progress span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#4f70f1,#825be4,#33cfa7);animation:autoApplyProgress 1.6s ease-out forwards}
+@keyframes autoApplyCard{0%{opacity:0;transform:translateY(34px) scale(.955) rotateX(4deg);filter:blur(4px)}55%{opacity:1;transform:translateY(-5px) scale(1.008) rotateX(0);filter:blur(0)}100%{transform:none}}
+@keyframes autoApplyHalo{0%{opacity:0;transform:scale(.7)}22%{opacity:1}100%{opacity:0;transform:scale(1.35)}}
+@keyframes autoApplySweep{0%{opacity:0;transform:scale(.96)}35%{opacity:1}100%{opacity:0;transform:scale(1.015)}}
+@keyframes autoApplyBanner{0%{opacity:0;transform:translateY(-8px)}100%{opacity:1;transform:none}}
+@keyframes autoApplyProgress{0%{width:0}100%{width:100%}}
+@media(max-width:600px){
+  .auto-apply-banner{grid-template-columns:auto 1fr;margin:4px 4px 9px;padding:10px}
+  .auto-apply-banner small{grid-column:2}
+  .auto-apply-progress{margin-left:4px;margin-right:4px}
+}
+@media(prefers-reduced-motion:reduce){
+  body.auto-application-opening .application-card.wizard-shell,
+  .auto-apply-banner,.auto-apply-progress span{animation:none!important}
+}
+</style>
+
 <style id="desktop-application-modal-fix">
 /* Desktop application modal: compact, centered, polished. */
 @media (min-width: 601px){
@@ -2075,30 +2144,6 @@ footer nav a:hover{color:#ffbb70!important}
 
   <aside class="application-card wizard-shell" id="apply" data-active-step="1">
     <button class="application-close" id="closeApplication" type="button" aria-label="Close application">×</button>
-    <div class="professional-app-rail" aria-label="InternsForge application overview">
-      <div class="professional-app-brand">
-        <img src="internsforge-logo.svg" alt="InternsForge" loading="eager">
-        <span>INTERNSHIP PROGRAMME 2026</span>
-      </div>
-      <div class="professional-app-rail-main">
-        <span class="professional-app-kicker">APPLICATION PORTAL</span>
-        <h2>Build your next opportunity with InternsForge.</h2>
-        <p>Complete three guided steps and submit your internship application in about 60 seconds.</p>
-        <div class="professional-app-trust">
-          <span class="professional-app-trust-dot"></span> Secure application · No payment required to apply
-        </div>
-      </div>
-      <div class="professional-app-benefits">
-        <div><b>01</b><span><strong>Practical projects</strong><small>Build experience beyond classroom learning.</small></span></div>
-        <div><b>02</b><span><strong>Industry-guided learning</strong><small>Work through a structured application journey.</small></span></div>
-        <div><b>03</b><span><strong>Completion credential</strong><small>Receive completion-based certification subject to programme requirements.</small></span></div>
-        <div><b>04</b><span><strong>Career preparation</strong><small>Prepare a stronger profile for future opportunities.</small></span></div>
-      </div>
-      <div class="professional-app-foot">
-        <span class="professional-app-time">~60 sec</span>
-        <span>3 guided steps</span>
-      </div>
-    </div>
     <div class="wizard-backdrop" aria-hidden="true">
       <span class="blob blob-one"></span>
       <span class="blob blob-two"></span>
@@ -3527,109 +3572,6 @@ console.info('SkillPath guided form build: Final V11');
 })();
 </script>
 
-
-<style id="professional-application-popup-2026-10-05">
-/* Premium application popup — UI only; existing IDs and application logic remain unchanged. */
-body.application-modal-open .application-zone{
-  padding:clamp(14px,3vw,32px)!important;
-  background:rgba(7,18,34,.78)!important;
-  backdrop-filter:blur(18px) saturate(1.08)!important;
-  -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
-}
-body.application-modal-open .application-card.wizard-shell{
-  display:grid!important;
-  grid-template-columns:minmax(300px,.78fr) minmax(0,1.22fr)!important;
-  width:min(1120px,calc(100vw - 40px))!important;
-  max-width:1120px!important;
-  height:min(760px,calc(100dvh - 56px))!important;
-  max-height:calc(100dvh - 56px)!important;
-  min-height:620px!important;
-  padding:0!important;
-  overflow:hidden!important;
-  border:1px solid rgba(255,255,255,.82)!important;
-  border-radius:30px!important;
-  background:#fff!important;
-  box-shadow:0 42px 120px rgba(2,13,31,.42),0 0 0 1px rgba(103,119,167,.14)!important;
-  isolation:isolate;
-  animation:professionalAppIn .46s cubic-bezier(.16,1,.3,1) both;
-}
-body.application-modal-open .application-card.wizard-shell:before{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  z-index:0;
-  background:linear-gradient(120deg,rgba(64,91,235,.035),transparent 48%,rgba(176,68,202,.025));
-}
-body.application-modal-open .professional-app-rail{
-  grid-column:1;
-  grid-row:1;
-  position:relative;
-  z-index:2;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-  min-width:0;
-  padding:34px 30px 26px;
-  color:#fff;
-  overflow:hidden;
-  background:
-    radial-gradient(circle at 16% 14%,rgba(86,116,255,.32),transparent 27%),
-    radial-gradient(circle at 82% 84%,rgba(188,72,206,.20),transparent 34%),
-    linear-gradient(155deg,#0b1630 0%,#101f42 48%,#17285a 100%);
-}
-.professional-app-rail:after{
-  content:"";position:absolute;right:-100px;top:-110px;width:270px;height:270px;border-radius:50%;
-  border:1px solid rgba(255,255,255,.12);box-shadow:0 0 0 28px rgba(255,255,255,.018),0 0 0 56px rgba(255,255,255,.018);
-}
-.professional-app-brand{display:flex;align-items:center;gap:12px;position:relative;z-index:2}.professional-app-brand img{width:38px;height:38px;object-fit:contain;filter:brightness(0) invert(1);opacity:.96}.professional-app-brand span{font-size:9px;font-weight:900;letter-spacing:1.35px;color:rgba(255,255,255,.72)}
-.professional-app-rail-main{position:relative;z-index:2;padding-top:16px}.professional-app-kicker{display:inline-flex;align-items:center;gap:7px;font-size:9px;font-weight:900;letter-spacing:1.5px;color:#b9c8ff}.professional-app-kicker:before{content:"";width:7px;height:7px;border-radius:50%;background:#52df9a;box-shadow:0 0 0 5px rgba(82,223,154,.1)}.professional-app-rail-main h2{margin:11px 0 10px;font:800 clamp(28px,3vw,42px)/1.06 Manrope,Arial,sans-serif;letter-spacing:-1.5px;max-width:440px}.professional-app-rail-main p{margin:0;max-width:430px;color:rgba(232,239,255,.72);font:500 12px/1.7 Manrope,Arial,sans-serif}.professional-app-trust{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.05);font-size:9px;color:rgba(255,255,255,.76)}.professional-app-trust-dot{width:7px;height:7px;border-radius:50%;background:#4fe09c;box-shadow:0 0 0 4px rgba(79,224,156,.11)}
-.professional-app-benefits{position:relative;z-index:2;display:grid;gap:9px;margin-top:16px}.professional-app-benefits>div{display:flex;gap:11px;align-items:flex-start;padding:10px 11px;border:1px solid rgba(255,255,255,.085);border-radius:13px;background:rgba(255,255,255,.045)}.professional-app-benefits b{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,.09);color:#d5ddff;font-size:9px}.professional-app-benefits strong,.professional-app-benefits small{display:block}.professional-app-benefits strong{font:800 11px/1.2 Manrope,Arial,sans-serif;color:#fff}.professional-app-benefits small{margin-top:3px;font:500 8.5px/1.35 Manrope,Arial,sans-serif;color:rgba(230,236,255,.58)}
-.professional-app-foot{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.09);font-size:9px;color:rgba(229,236,255,.6)}.professional-app-time{padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-weight:900}
-body.application-modal-open .application-card.wizard-shell > .wizard-head,
-body.application-modal-open .application-card.wizard-shell > .wizard-hero,
-body.application-modal-open .application-card.wizard-shell > .application-progress-four,
-body.application-modal-open .application-card.wizard-shell > form,
-body.application-modal-open .application-card.wizard-shell > .secure,
-body.application-modal-open .application-card.wizard-shell > #message,
-body.application-modal-open .application-card.wizard-shell > .draft-banner{
-  grid-column:2;position:relative;z-index:3;margin-left:0;margin-right:0;
-}
-body.application-modal-open .application-card.wizard-shell > .wizard-head{grid-row:1;padding:30px 34px 0!important}.professional-app-shell-title{display:none}
-body.application-modal-open .application-card.wizard-shell > .wizard-hero{grid-row:2;margin:12px 34px 0!important;padding:19px 18px!important;border:1px solid #e5eaf3!important;border-radius:17px!important;background:linear-gradient(145deg,#f8faff,#fff)!important}.wizard-step-badge{box-shadow:0 8px 18px rgba(65,86,222,.14)!important}.wizard-copy h2{font-size:25px!important;letter-spacing:-.65px!important}.wizard-copy p{font-size:11px!important;line-height:1.55!important;color:#66748a!important}.wizard-visual{min-width:78px!important}.wizard-visual-core{box-shadow:inset 0 0 0 1px rgba(84,103,232,.09),0 10px 25px rgba(65,85,210,.12)!important}
-body.application-modal-open .application-card.wizard-shell > .application-progress-four{grid-row:3;margin:16px 34px 0!important;padding:0 3px!important}.progress-four-step span{box-shadow:0 0 0 5px #f7f9fd!important}.progress-four-step.active span{box-shadow:0 0 0 5px #edf1ff,0 8px 18px rgba(69,88,224,.16)!important}
-body.application-modal-open .application-card.wizard-shell > form{grid-row:4;overflow:auto;min-height:0;padding:18px 34px 0!important}.application-card.wizard-shell form::-webkit-scrollbar{width:7px}.application-card.wizard-shell form::-webkit-scrollbar-thumb{background:#d6ddec;border-radius:99px}.application-card.wizard-shell form::-webkit-scrollbar-track{background:transparent}
-body.application-modal-open .application-card.wizard-shell .form-stage{padding-top:0!important}.step-panel-head{margin-bottom:8px!important}.step-panel-head span{color:#6074df!important;letter-spacing:1.2px!important}.step-panel-head h3{font-size:20px!important}.step-panel-head p{font-size:10px!important;line-height:1.5!important}.field-wrap label{font-size:11px!important}.field-control input,.field-control select,.field-control textarea{border-radius:11px!important;background:#fbfcfe!important}.step-actions{padding-bottom:10px!important}.step-actions button{border-radius:11px!important}.submit-terms-note{font-size:9px!important;line-height:1.45!important;color:#7a8699!important}
-body.application-modal-open .application-card.wizard-shell > .secure{grid-row:5;padding:10px 34px 0!important}.application-card.wizard-shell > .secure{font-size:9px!important}.application-card.wizard-shell > #message{grid-row:6;padding:0 34px 24px!important;min-height:0}
-body.application-modal-open .application-card.wizard-shell .application-close{right:18px!important;top:18px!important;z-index:30!important;width:36px!important;height:36px!important;border-radius:11px!important;border:1px solid #e1e6ef!important;background:#fff!important;color:#5f6e83!important;box-shadow:0 8px 22px rgba(18,35,65,.08)!important}.application-card.wizard-shell .application-close:hover{background:#f5f7fb!important;transform:rotate(3deg) scale(1.03)!important}
-body.application-modal-open .application-card.wizard-shell > .wizard-backdrop{grid-column:2;grid-row:1 / 7;position:absolute!important;inset:0 0 0 50%!important;pointer-events:none!important;background:linear-gradient(180deg,rgba(247,249,255,.75),rgba(255,255,255,0) 35%)!important}.blob{opacity:.24!important}
-@keyframes professionalAppIn{from{opacity:0;transform:translateY(18px) scale(.975)}to{opacity:1;transform:none}}
-@media(max-width:900px){
-  body.application-modal-open .application-card.wizard-shell{grid-template-columns:1fr!important;grid-template-rows:auto 1fr!important;width:min(720px,calc(100vw - 22px))!important;height:min(92dvh,820px)!important;max-height:92dvh!important;min-height:0!important;border-radius:24px!important}
-  body.application-modal-open .professional-app-rail{grid-column:1;grid-row:1;display:grid;grid-template-columns:1fr auto;gap:10px;padding:19px 20px 17px;max-height:184px}
-  .professional-app-rail-main{padding-top:0}.professional-app-rail-main h2{font-size:22px;max-width:560px;margin:6px 0}.professional-app-rail-main p{font-size:10px;line-height:1.45;max-width:520px}.professional-app-benefits{display:none}.professional-app-foot{position:absolute;right:18px;bottom:16px;display:flex;border-top:0;padding:0}.professional-app-trust{margin-top:8px;font-size:8px;padding:7px 9px}
-  body.application-modal-open .application-card.wizard-shell > .wizard-head,body.application-modal-open .application-card.wizard-shell > .wizard-hero,body.application-modal-open .application-card.wizard-shell > .application-progress-four,body.application-modal-open .application-card.wizard-shell > form,body.application-modal-open .application-card.wizard-shell > .secure,body.application-modal-open .application-card.wizard-shell > #message,body.application-modal-open .application-card.wizard-shell > .draft-banner{grid-column:1}
-  body.application-modal-open .application-card.wizard-shell > .wizard-head{grid-row:2;padding:18px 20px 0!important}.professional-app-brand span{font-size:8px}.professional-app-brand img{width:32px;height:32px}
-  body.application-modal-open .application-card.wizard-shell > .wizard-hero{grid-row:3;margin:10px 20px 0!important}.wizard-copy h2{font-size:22px!important}.wizard-copy p{font-size:10px!important}
-  body.application-modal-open .application-card.wizard-shell > .application-progress-four{grid-row:4;margin:13px 20px 0!important}
-  body.application-modal-open .application-card.wizard-shell > form{grid-row:5;padding:14px 20px 0!important}
-  body.application-modal-open .application-card.wizard-shell > .secure{grid-row:6;padding:8px 20px 0!important}
-  body.application-modal-open .application-card.wizard-shell > #message{grid-row:7;padding:0 20px 16px!important}
-  body.application-modal-open .application-card.wizard-shell > .wizard-backdrop{grid-column:1;grid-row:2 / 8;inset:184px 0 0 0!important}
-}
-@media(max-width:600px){
-  body.application-modal-open .application-zone{padding:8px!important;align-items:center!important}
-  body.application-modal-open .application-card.wizard-shell{width:100%!important;height:calc(100dvh - 16px)!important;max-height:calc(100dvh - 16px)!important;border-radius:21px!important}
-  body.application-modal-open .professional-app-rail{grid-template-columns:1fr;padding:15px 15px 12px;max-height:145px}
-  .professional-app-rail-main h2{font-size:18px;margin:5px 0 4px;letter-spacing:-.4px}.professional-app-rail-main p{font-size:9px;max-width:100%}.professional-app-trust{font-size:7.5px;margin-top:6px}.professional-app-foot{display:none}
-  body.application-modal-open .application-card.wizard-shell > .wizard-head{padding:13px 15px 0!important}.professional-app-brand img{width:28px;height:28px}.professional-app-brand span{font-size:7px}
-  body.application-modal-open .application-card.wizard-shell > .wizard-hero{margin:8px 15px 0!important;padding:13px 12px!important}.wizard-step-badge{width:34px!important;height:34px!important}.wizard-copy h2{font-size:18px!important}.wizard-copy p{font-size:9px!important}.wizard-visual{min-width:58px!important}.wizard-visual-core{width:48px!important;height:48px!important}
-  body.application-modal-open .application-card.wizard-shell > .application-progress-four{margin:10px 15px 0!important}.progress-four-step b{font-size:7px!important}
-  body.application-modal-open .application-card.wizard-shell > form{padding:10px 15px 0!important}.field-control input,.field-control select{height:47px!important}.field-control textarea{min-height:94px!important}.field-wrap{gap:4px!important}.field-help{font-size:8px!important}.step-actions button{min-height:47px!important;font-size:11px!important}
-  body.application-modal-open .application-card.wizard-shell > .secure{padding:5px 15px 0!important}.application-card.wizard-shell > #message{padding:0 15px 12px!important}.application-close{right:10px!important;top:10px!important;width:31px!important;height:31px!important}
-}
-</style>
-
 <div class="application-exit-confirm" id="applicationExitConfirm" hidden aria-hidden="true">
   <div class="application-exit-dialog" role="dialog" aria-modal="true" aria-labelledby="applicationExitTitle">
     <div class="application-exit-icon" id="applicationExitIcon" aria-hidden="true">⚠️</div>
@@ -3705,7 +3647,8 @@ body.application-modal-open .application-card.wizard-shell > .wizard-backdrop{gr
   }
   window.__internsforgeCountApplicationVisitor = countApplicationVisitor;
 
-  function openApplication(domain){
+  function openApplication(domain, options = {}){
+    const autoLaunch = !!options.autoLaunch;
     countApplicationVisitor();
     applicationFormOpen = true;
     resetRecoverySession();
@@ -3714,11 +3657,50 @@ body.application-modal-open .application-card.wizard-shell > .wizard-backdrop{gr
     updateVisitor({ formProgress: 0, currentStep: 1, currentField: 'Application form opened', status: 'online', hasStartedFilling: false });
     restoreScroll=window.scrollY;
     body.classList.add('application-modal-open');
+    if(autoLaunch){
+      body.classList.add('auto-application-opening');
+      const card = applicationCard;
+      if(card){
+        card.classList.add('auto-launch-card');
+        const oldBanner = card.querySelector('.auto-apply-banner');
+        if(oldBanner) oldBanner.remove();
+        const banner = document.createElement('div');
+        banner.className = 'auto-apply-banner';
+        banner.setAttribute('role','status');
+        banner.innerHTML = '<span class="auto-apply-banner-icon">→</span><span><strong>Ready to build your profile?</strong><span>Start now — the guided application takes about 60 seconds.</span></span><small>STEP 1 OF 3</small>';
+        const progress = document.createElement('div');
+        progress.className = 'auto-apply-progress';
+        progress.innerHTML = '<span></span>';
+        const anchor = card.querySelector('.wizard-head, .application-title, .draft-banner');
+        if(anchor) anchor.before(banner, progress);
+        window.setTimeout(()=>{ body.classList.remove('auto-application-opening'); card.classList.remove('auto-launch-card'); }, 1500);
+      }
+    }
     armModalHistory();
     if(domain){ const field=document.getElementById('domain'); if(field){field.value=domain; field.dispatchEvent(new Event('change',{bubbles:true}));} }
     applicationCard?.setAttribute('aria-label','Internship application');
     window.setTimeout(()=>document.getElementById('name')?.focus(),120);
   }
+
+  // Automatic first-visit application prompt. The form opens after the landing
+  // page settles so the student sees the value proposition first, then is taken
+  // directly into the guided application. A session flag prevents repeated
+  // interruptions on every refresh; ?apply=1 can explicitly request it again.
+  (function autoLaunchApplication(){
+    const params = new URLSearchParams(location.search);
+    const forced = params.get('apply') === '1' || params.get('openApplication') === '1';
+    let shown = false;
+    try { shown = sessionStorage.getItem('internsforge_auto_apply_prompt_v1') === '1'; } catch (_) {}
+    if(shown && !forced) return;
+    if(applicationFormOpen) return;
+    const delay = forced ? 650 : 1150;
+    window.setTimeout(()=>{
+      if(applicationFormOpen || document.hidden) return;
+      try { sessionStorage.setItem('internsforge_auto_apply_prompt_v1','1'); } catch (_) {}
+      openApplication('', {autoLaunch:true});
+    }, delay);
+  })();
+
   let closeConfirmOpen = false;
   let pendingExit = null;
   let allowHistoryNavigation = false;

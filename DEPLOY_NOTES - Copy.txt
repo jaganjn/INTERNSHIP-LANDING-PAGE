@@ -1,0 +1,22 @@
+INTERNSFORGE COUNSELOR ASSIGNMENT — V4 DIRECT ROUTING
+
+This version removes Firebase receipt polling from the Admin Dashboard assignment flow.
+
+Flow:
+1. Admin updates submittedApplications/{firebaseKey}.assignedTo.
+2. Admin calls Apps Script GET/JSONP action: routeApplicationToCounselorGet.
+3. Apps Script reads the canonical application from Firebase using the service account.
+4. Apps Script writes/routes the lead to the selected counselor sheet.
+5. Apps Script returns the actual routing result directly to the browser.
+
+Replace:
+- Code.gs
+- admin.js
+
+Then deploy Apps Script as a NEW Web App version:
+- Execute as: Me
+- Who has access: Anyone
+
+Hard-refresh Admin Dashboard (Ctrl+F5).
+
+The Master Sheet1 dashboard assignment path remains counselor-only; this change does not intentionally write Assigned To into Master Sheet1.

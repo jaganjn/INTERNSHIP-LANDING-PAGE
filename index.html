@@ -1969,233 +1969,6 @@ footer nav a:hover{color:#ffbb70!important}
 .final-cta h2{color:#fffaf4!important}
 </style>
 
-
-<style id="internsforge-application-popup-v2">
-/* ==========================================================
-   APPLICATION POPUP V2 — PRESENTATION ONLY
-   Existing application HTML / fields / JS remain untouched.
-   ========================================================== */
-.final-cta .open-application,
-.final-cta .open-application:hover,
-.final-cta .open-application:focus-visible{
-  min-height:54px!important;
-  padding:0 21px!important;
-  border-radius:13px!important;
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:14px!important;
-  text-decoration:none!important;
-  font-weight:800!important;
-  font-size:14px!important;
-  border:0!important;
-  cursor:pointer!important;
-  color:#fff!important;
-  background:linear-gradient(100deg,var(--blue),var(--violet),#bc3fc8)!important;
-  box-shadow:0 14px 35px rgba(82,71,224,.24)!important;
-  transform:none!important;
-}
-.final-cta .open-application:hover{transform:translateY(-2px)!important;box-shadow:0 18px 42px rgba(82,71,224,.32)!important}
-
-/* Professional modal frame */
-body.application-modal-open .application-zone{
-  padding:22px!important;
-  background:rgba(7,17,34,.78)!important;
-  backdrop-filter:blur(16px)!important;
-  -webkit-backdrop-filter:blur(16px)!important;
-  animation:ifModalBackdropIn .28s ease-out both;
-}
-body.application-modal-open .application-zone:after{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:
-    radial-gradient(circle at 12% 18%,rgba(86,115,235,.18),transparent 31%),
-    radial-gradient(circle at 88% 80%,rgba(183,68,210,.16),transparent 30%),
-    linear-gradient(180deg,rgba(255,255,255,.025),transparent 45%);
-}
-body.application-modal-open .application-card.wizard-shell{
-  position:relative!important;
-  z-index:4!important;
-  width:min(1060px,100%)!important;
-  max-width:1060px!important;
-  max-height:min(90dvh,900px)!important;
-  overflow:auto!important;
-  padding:22px!important;
-  border-radius:30px!important;
-  border:1px solid rgba(255,255,255,.60)!important;
-  background:linear-gradient(180deg,#fff 0%,#f8faff 100%)!important;
-  box-shadow:0 40px 120px rgba(2,13,35,.42),0 0 0 1px rgba(80,105,190,.08)!important;
-  animation:ifApplicationModalIn .42s cubic-bezier(.18,.82,.24,1) both;
-}
-body.application-modal-open .application-card.wizard-shell:before{
-  content:"";
-  position:absolute;
-  left:22px;right:22px;top:0;height:4px;
-  border-radius:0 0 999px 999px;
-  background:linear-gradient(90deg,#506bea,#7b4bdd,#bb50c9);
-  box-shadow:0 6px 22px rgba(82,90,220,.22);
-}
-body.application-modal-open .application-card.wizard-shell:after{
-  content:"NEW APPLICATION";
-  position:absolute;
-  right:72px;top:13px;
-  padding:6px 9px;
-  border:1px solid #dfe5f2;
-  border-radius:999px;
-  background:rgba(255,255,255,.92);
-  color:#5b6b85;
-  font-size:8px;font-weight:900;letter-spacing:1.25px;
-  pointer-events:none;
-}
-
-/* Desktop: professional two-column shell around the unchanged form fields */
-@media(min-width:901px){
-  body.application-modal-open .application-card.wizard-shell{
-    display:grid!important;
-    grid-template-columns:260px minmax(0,1fr)!important;
-    grid-template-rows:auto auto auto auto!important;
-    column-gap:22px!important;
-    align-content:start!important;
-  }
-  body.application-modal-open .application-card.wizard-shell > .draft-banner{grid-column:1/-1!important}
-  body.application-modal-open .application-card.wizard-shell > .wizard-head{
-    grid-column:1!important;grid-row:2!important;
-    padding:8px 8px 0!important;
-    align-self:start!important;
-  }
-  body.application-modal-open .application-card.wizard-shell > .wizard-hero{
-    grid-column:1!important;grid-row:3!important;
-    margin:12px 0 0!important;
-    min-height:210px!important;
-    align-self:stretch!important;
-    display:flex!important;
-    flex-direction:column!important;
-    justify-content:space-between!important;
-  }
-  body.application-modal-open .application-card.wizard-shell > .application-progress-four{
-    grid-column:1!important;grid-row:4!important;
-    margin:14px 4px 6px!important;
-    padding:14px!important;
-    border:1px solid #dfe6f1!important;
-    border-radius:18px!important;
-    background:#fff!important;
-    align-self:start!important;
-  }
-  body.application-modal-open .application-card.wizard-shell > form{
-    grid-column:2!important;grid-row:2 / span 3!important;
-    min-width:0!important;
-    margin:0!important;
-    padding:2px!important;
-  }
-  body.application-modal-open .application-card.wizard-shell > #message{
-    grid-column:1/-1!important;
-  }
-  body.application-modal-open .application-card.wizard-shell .wizard-hero .wizard-copy h2{
-    font-size:25px!important;letter-spacing:-.7px!important;
-  }
-  body.application-modal-open .application-card.wizard-shell .wizard-hero .wizard-copy p{
-    font-size:11px!important;line-height:1.6!important;
-  }
-  body.application-modal-open .application-card.wizard-shell .step-panel{
-    border:1px solid #e0e6f0!important;
-    border-radius:22px!important;
-    background:#fff!important;
-    padding:22px!important;
-    box-shadow:0 8px 28px rgba(25,43,76,.045)!important;
-  }
-}
-
-/* Mobile / tablet: preserve a single-column, touch-first form */
-@media(max-width:900px){
-  body.application-modal-open .application-card.wizard-shell{
-    max-height:calc(100dvh - 28px)!important;
-  }
-  body.application-modal-open .application-card.wizard-shell:after{right:56px;top:11px;font-size:7px}
-}
-@media(max-width:600px){
-  body.application-modal-open .application-zone{padding:8px!important}
-  body.application-modal-open .application-card.wizard-shell{
-    width:100%!important;
-    max-width:100%!important;
-    max-height:calc(100dvh - 16px)!important;
-    border-radius:22px!important;
-    padding:13px!important;
-  }
-  body.application-modal-open .application-card.wizard-shell:before{left:13px;right:13px}
-  body.application-modal-open .application-card.wizard-shell:after{right:48px;top:10px}
-  body.application-modal-open .application-card.wizard-shell > .wizard-hero{margin-top:11px!important;border-radius:19px!important}
-}
-
-@keyframes ifModalBackdropIn{from{opacity:0}to{opacity:1}}
-@keyframes ifApplicationModalIn{from{opacity:0;transform:translateY(22px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
-@media(prefers-reduced-motion:reduce){
-  body.application-modal-open .application-zone,
-  body.application-modal-open .application-card.wizard-shell{animation:none!important}
-}
-</style>
-
-
-<style id="footer-professional-overhaul">
-/* Professional responsive footer overhaul — presentation only. */
-.site-footer{
-  width:100%!important;
-  max-width:none!important;
-  margin:0!important;
-  padding:0!important;
-  background:linear-gradient(180deg,#0d1b2c 0%,#0b1726 100%)!important;
-  color:#c7d2dc!important;
-  border-top:1px solid rgba(255,255,255,.08)!important;
-  box-shadow:0 -18px 50px rgba(9,22,38,.08);
-}
-.site-footer .footer-inner{
-  width:min(1240px,calc(100% - 48px));
-  margin:0 auto;
-  padding:42px 0 30px;
-  display:grid;
-  grid-template-columns:minmax(260px,1.1fr) minmax(240px,1fr) minmax(290px,1.1fr) auto;
-  align-items:center;
-  gap:34px;
-}
-.footer-brand-block{min-width:0}
-.site-footer .footer-brand{display:inline-flex;align-items:center;gap:12px;min-width:0}
-.site-footer .footer-brand .brand-mark{width:50px;height:50px;border-radius:13px;object-fit:contain;flex:0 0 auto}
-.site-footer .footer-brand strong{display:block!important;margin:0;color:#f7fbff!important;font:800 17px Manrope,sans-serif!important;letter-spacing:.3px!important}
-.site-footer .footer-brand small{display:block!important;margin-top:5px;color:#91a5b6!important;font:700 8px Inter,sans-serif!important;letter-spacing:1.2px!important}
-.footer-brand-block>p{margin:13px 0 0;max-width:310px;color:#91a3b4!important;font-size:11px!important;line-height:1.7!important}
-.footer-program-block{min-width:0;padding-left:2px;border-left:1px solid rgba(255,255,255,.09);padding-right:12px}
-.footer-kicker{display:block;color:#6f86a0;font-size:8px;font-weight:900;letter-spacing:1.5px;margin-bottom:9px}
-.footer-program-block strong{display:block;color:#d7e0e8;font-size:11px;font-weight:700;line-height:1.55}
-.footer-links{display:flex!important;align-items:center;justify-content:flex-end;gap:10px!important;flex-wrap:wrap;min-width:0}
-.footer-links>a{display:inline-flex!important;align-items:center;justify-content:center;min-height:36px;padding:0 12px;border:1px solid rgba(185,205,225,.16);border-radius:10px;background:rgba(255,255,255,.035);color:#cbd6df!important;text-decoration:none;font-size:10px!important;font-weight:800!important;white-space:nowrap;transition:transform .2s ease,border-color .2s ease,background .2s ease,color .2s ease}
-.footer-links>a:hover{transform:translateY(-2px);border-color:rgba(255,187,112,.48);background:rgba(255,187,112,.07);color:#ffc477!important}
-.footer-links .admin-login-link{gap:6px;padding:0 13px!important;border-color:rgba(255,193,121,.28)!important;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03))!important;color:#ffe0bb!important;box-shadow:0 10px 24px rgba(0,0,0,.14)}
-.footer-links .admin-login-link span{font-size:12px;line-height:1}
-#backToTop{width:42px!important;height:42px!important;display:grid!important;place-items:center!important;border:1px solid rgba(255,193,121,.32)!important;border-radius:12px!important;background:#fff4e5!important;color:#a85e25!important;font-weight:900!important;font-size:18px!important;cursor:pointer;box-shadow:0 10px 22px rgba(0,0,0,.18);transition:transform .2s ease,box-shadow .2s ease}
-#backToTop:hover{transform:translateY(-3px)!important;box-shadow:0 14px 28px rgba(0,0,0,.25)!important}
-.footer-bottom{width:min(1240px,calc(100% - 48px));margin:0 auto;border-top:1px solid rgba(255,255,255,.07);padding:15px 0 19px;display:flex;align-items:center;justify-content:space-between;gap:20px;color:#71869a;font-size:8px;letter-spacing:.2px}
-.footer-bottom span:last-child{text-align:right}
-@media(max-width:1080px){
-  .site-footer .footer-inner{grid-template-columns:1.15fr .95fr;gap:26px 30px;padding:34px 0 26px}
-  .footer-program-block{border-left:0;border-top:1px solid rgba(255,255,255,.09);padding:18px 0 0}
-  .footer-links{justify-content:flex-start!important}
-  #backToTop{justify-self:end}
-}
-@media(max-width:640px){
-  .site-footer .footer-inner{width:calc(100% - 30px);grid-template-columns:1fr;gap:20px;padding:30px 0 20px}
-  .site-footer .footer-brand .brand-mark{width:44px;height:44px}
-  .site-footer .footer-brand strong{font-size:15px!important}
-  .footer-brand-block>p{max-width:100%;font-size:10px!important;margin-top:10px}
-  .footer-program-block{padding-top:16px;padding-right:0}
-  .footer-links{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px!important}
-  .footer-links>a{width:100%;min-height:40px;padding:0 9px!important}
-  .footer-links .admin-login-link{grid-column:1/-1}
-  #backToTop{width:100%!important;height:42px!important;justify-self:stretch}
-  .footer-bottom{width:calc(100% - 30px);padding:13px 0 calc(18px + env(safe-area-inset-bottom));display:grid;gap:6px;font-size:8px;line-height:1.5}
-  .footer-bottom span:last-child{text-align:left}
-}
-</style>
 </head>
 <body data-build="skillpath-final-production-v13-live-field-sync">
 <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
@@ -2302,6 +2075,30 @@ body.application-modal-open .application-card.wizard-shell:after{
 
   <aside class="application-card wizard-shell" id="apply" data-active-step="1">
     <button class="application-close" id="closeApplication" type="button" aria-label="Close application">×</button>
+    <div class="professional-app-rail" aria-label="InternsForge application overview">
+      <div class="professional-app-brand">
+        <img src="internsforge-logo.svg" alt="InternsForge" loading="eager">
+        <span>INTERNSHIP PROGRAMME 2026</span>
+      </div>
+      <div class="professional-app-rail-main">
+        <span class="professional-app-kicker">APPLICATION PORTAL</span>
+        <h2>Build your next opportunity with InternsForge.</h2>
+        <p>Complete three guided steps and submit your internship application in about 60 seconds.</p>
+        <div class="professional-app-trust">
+          <span class="professional-app-trust-dot"></span> Secure application · No payment required to apply
+        </div>
+      </div>
+      <div class="professional-app-benefits">
+        <div><b>01</b><span><strong>Practical projects</strong><small>Build experience beyond classroom learning.</small></span></div>
+        <div><b>02</b><span><strong>Industry-guided learning</strong><small>Work through a structured application journey.</small></span></div>
+        <div><b>03</b><span><strong>Completion credential</strong><small>Receive completion-based certification subject to programme requirements.</small></span></div>
+        <div><b>04</b><span><strong>Career preparation</strong><small>Prepare a stronger profile for future opportunities.</small></span></div>
+      </div>
+      <div class="professional-app-foot">
+        <span class="professional-app-time">~60 sec</span>
+        <span>3 guided steps</span>
+      </div>
+    </div>
     <div class="wizard-backdrop" aria-hidden="true">
       <span class="blob blob-one"></span>
       <span class="blob blob-two"></span>
@@ -2556,34 +2353,11 @@ body.application-modal-open .application-card.wizard-shell:after{
 <section class="final-cta"><div><span>READY TO BEGIN?</span><h2>Your next project can start with one minute.</h2><p>No prerequisite knowledge required. Choose your domain and start your application.</p></div><button class="open-application" type="button">Start Application <span>→</span></button></section>
 </main>
 
-<footer id="contact" class="site-footer">
-  <div class="footer-inner">
-    <div class="footer-brand-block">
-      <a class="footer-brand" href="#home">
-        <img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge">
-        <span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span>
-      </a>
-      <p>Practical learning and career preparation for students.</p>
-    </div>
-
-    <div class="footer-program-block">
-      <span class="footer-kicker">INTERNSHIP PROGRAMME 2026</span>
-      <strong>© 2026 InternsForge Internship Programme</strong>
-    </div>
-
-    <nav class="footer-links" aria-label="Footer links">
-      <a href="privacy.html">Privacy</a>
-      <a href="terms.html">Terms</a>
-      <a class="admin-login-link" href="login.html" aria-label="Open admin login"><span aria-hidden="true">↗</span> Admin Panel</a>
-    </nav>
-
-    <button id="backToTop" type="button" aria-label="Back to top" title="Back to top">↑</button>
-  </div>
-
-  <div class="footer-bottom">
-    <span>InternsForge · Learn · Build · Grow</span>
-    <span>Student-focused learning &amp; career preparation</span>
-  </div>
+<footer id="contact">
+  <a class="footer-brand" href="#home"><img class="brand-mark" src="internsforge-logo.svg" alt="InternsForge"><span><strong>InternsForge</strong><small>LEARN · BUILD · GROW</small></span></a>
+  <p>Practical learning and career preparation for students.</p>
+  <div><small>© 2026 InternsForge Internship Programme</small><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a class="admin-login-link" href="login.html" aria-label="Open admin login">🔒 Admin Panel</a></nav></div>
+  <button id="backToTop" type="button" aria-label="Back to top">↑</button>
 </footer>
 
 <button class="floating-cta" id="floatingCta" type="button"><span>Applications Open</span><strong>Apply in 60 Seconds →</strong></button>
@@ -3753,6 +3527,109 @@ console.info('SkillPath guided form build: Final V11');
 })();
 </script>
 
+
+<style id="professional-application-popup-2026-10-05">
+/* Premium application popup — UI only; existing IDs and application logic remain unchanged. */
+body.application-modal-open .application-zone{
+  padding:clamp(14px,3vw,32px)!important;
+  background:rgba(7,18,34,.78)!important;
+  backdrop-filter:blur(18px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
+}
+body.application-modal-open .application-card.wizard-shell{
+  display:grid!important;
+  grid-template-columns:minmax(300px,.78fr) minmax(0,1.22fr)!important;
+  width:min(1120px,calc(100vw - 40px))!important;
+  max-width:1120px!important;
+  height:min(760px,calc(100dvh - 56px))!important;
+  max-height:calc(100dvh - 56px)!important;
+  min-height:620px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.82)!important;
+  border-radius:30px!important;
+  background:#fff!important;
+  box-shadow:0 42px 120px rgba(2,13,31,.42),0 0 0 1px rgba(103,119,167,.14)!important;
+  isolation:isolate;
+  animation:professionalAppIn .46s cubic-bezier(.16,1,.3,1) both;
+}
+body.application-modal-open .application-card.wizard-shell:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  z-index:0;
+  background:linear-gradient(120deg,rgba(64,91,235,.035),transparent 48%,rgba(176,68,202,.025));
+}
+body.application-modal-open .professional-app-rail{
+  grid-column:1;
+  grid-row:1;
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  min-width:0;
+  padding:34px 30px 26px;
+  color:#fff;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 16% 14%,rgba(86,116,255,.32),transparent 27%),
+    radial-gradient(circle at 82% 84%,rgba(188,72,206,.20),transparent 34%),
+    linear-gradient(155deg,#0b1630 0%,#101f42 48%,#17285a 100%);
+}
+.professional-app-rail:after{
+  content:"";position:absolute;right:-100px;top:-110px;width:270px;height:270px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 0 0 28px rgba(255,255,255,.018),0 0 0 56px rgba(255,255,255,.018);
+}
+.professional-app-brand{display:flex;align-items:center;gap:12px;position:relative;z-index:2}.professional-app-brand img{width:38px;height:38px;object-fit:contain;filter:brightness(0) invert(1);opacity:.96}.professional-app-brand span{font-size:9px;font-weight:900;letter-spacing:1.35px;color:rgba(255,255,255,.72)}
+.professional-app-rail-main{position:relative;z-index:2;padding-top:16px}.professional-app-kicker{display:inline-flex;align-items:center;gap:7px;font-size:9px;font-weight:900;letter-spacing:1.5px;color:#b9c8ff}.professional-app-kicker:before{content:"";width:7px;height:7px;border-radius:50%;background:#52df9a;box-shadow:0 0 0 5px rgba(82,223,154,.1)}.professional-app-rail-main h2{margin:11px 0 10px;font:800 clamp(28px,3vw,42px)/1.06 Manrope,Arial,sans-serif;letter-spacing:-1.5px;max-width:440px}.professional-app-rail-main p{margin:0;max-width:430px;color:rgba(232,239,255,.72);font:500 12px/1.7 Manrope,Arial,sans-serif}.professional-app-trust{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:9px 11px;border:1px solid rgba(255,255,255,.12);border-radius:12px;background:rgba(255,255,255,.05);font-size:9px;color:rgba(255,255,255,.76)}.professional-app-trust-dot{width:7px;height:7px;border-radius:50%;background:#4fe09c;box-shadow:0 0 0 4px rgba(79,224,156,.11)}
+.professional-app-benefits{position:relative;z-index:2;display:grid;gap:9px;margin-top:16px}.professional-app-benefits>div{display:flex;gap:11px;align-items:flex-start;padding:10px 11px;border:1px solid rgba(255,255,255,.085);border-radius:13px;background:rgba(255,255,255,.045)}.professional-app-benefits b{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,.09);color:#d5ddff;font-size:9px}.professional-app-benefits strong,.professional-app-benefits small{display:block}.professional-app-benefits strong{font:800 11px/1.2 Manrope,Arial,sans-serif;color:#fff}.professional-app-benefits small{margin-top:3px;font:500 8.5px/1.35 Manrope,Arial,sans-serif;color:rgba(230,236,255,.58)}
+.professional-app-foot{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:14px;border-top:1px solid rgba(255,255,255,.09);font-size:9px;color:rgba(229,236,255,.6)}.professional-app-time{padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.08);color:#fff;font-weight:900}
+body.application-modal-open .application-card.wizard-shell > .wizard-head,
+body.application-modal-open .application-card.wizard-shell > .wizard-hero,
+body.application-modal-open .application-card.wizard-shell > .application-progress-four,
+body.application-modal-open .application-card.wizard-shell > form,
+body.application-modal-open .application-card.wizard-shell > .secure,
+body.application-modal-open .application-card.wizard-shell > #message,
+body.application-modal-open .application-card.wizard-shell > .draft-banner{
+  grid-column:2;position:relative;z-index:3;margin-left:0;margin-right:0;
+}
+body.application-modal-open .application-card.wizard-shell > .wizard-head{grid-row:1;padding:30px 34px 0!important}.professional-app-shell-title{display:none}
+body.application-modal-open .application-card.wizard-shell > .wizard-hero{grid-row:2;margin:12px 34px 0!important;padding:19px 18px!important;border:1px solid #e5eaf3!important;border-radius:17px!important;background:linear-gradient(145deg,#f8faff,#fff)!important}.wizard-step-badge{box-shadow:0 8px 18px rgba(65,86,222,.14)!important}.wizard-copy h2{font-size:25px!important;letter-spacing:-.65px!important}.wizard-copy p{font-size:11px!important;line-height:1.55!important;color:#66748a!important}.wizard-visual{min-width:78px!important}.wizard-visual-core{box-shadow:inset 0 0 0 1px rgba(84,103,232,.09),0 10px 25px rgba(65,85,210,.12)!important}
+body.application-modal-open .application-card.wizard-shell > .application-progress-four{grid-row:3;margin:16px 34px 0!important;padding:0 3px!important}.progress-four-step span{box-shadow:0 0 0 5px #f7f9fd!important}.progress-four-step.active span{box-shadow:0 0 0 5px #edf1ff,0 8px 18px rgba(69,88,224,.16)!important}
+body.application-modal-open .application-card.wizard-shell > form{grid-row:4;overflow:auto;min-height:0;padding:18px 34px 0!important}.application-card.wizard-shell form::-webkit-scrollbar{width:7px}.application-card.wizard-shell form::-webkit-scrollbar-thumb{background:#d6ddec;border-radius:99px}.application-card.wizard-shell form::-webkit-scrollbar-track{background:transparent}
+body.application-modal-open .application-card.wizard-shell .form-stage{padding-top:0!important}.step-panel-head{margin-bottom:8px!important}.step-panel-head span{color:#6074df!important;letter-spacing:1.2px!important}.step-panel-head h3{font-size:20px!important}.step-panel-head p{font-size:10px!important;line-height:1.5!important}.field-wrap label{font-size:11px!important}.field-control input,.field-control select,.field-control textarea{border-radius:11px!important;background:#fbfcfe!important}.step-actions{padding-bottom:10px!important}.step-actions button{border-radius:11px!important}.submit-terms-note{font-size:9px!important;line-height:1.45!important;color:#7a8699!important}
+body.application-modal-open .application-card.wizard-shell > .secure{grid-row:5;padding:10px 34px 0!important}.application-card.wizard-shell > .secure{font-size:9px!important}.application-card.wizard-shell > #message{grid-row:6;padding:0 34px 24px!important;min-height:0}
+body.application-modal-open .application-card.wizard-shell .application-close{right:18px!important;top:18px!important;z-index:30!important;width:36px!important;height:36px!important;border-radius:11px!important;border:1px solid #e1e6ef!important;background:#fff!important;color:#5f6e83!important;box-shadow:0 8px 22px rgba(18,35,65,.08)!important}.application-card.wizard-shell .application-close:hover{background:#f5f7fb!important;transform:rotate(3deg) scale(1.03)!important}
+body.application-modal-open .application-card.wizard-shell > .wizard-backdrop{grid-column:2;grid-row:1 / 7;position:absolute!important;inset:0 0 0 50%!important;pointer-events:none!important;background:linear-gradient(180deg,rgba(247,249,255,.75),rgba(255,255,255,0) 35%)!important}.blob{opacity:.24!important}
+@keyframes professionalAppIn{from{opacity:0;transform:translateY(18px) scale(.975)}to{opacity:1;transform:none}}
+@media(max-width:900px){
+  body.application-modal-open .application-card.wizard-shell{grid-template-columns:1fr!important;grid-template-rows:auto 1fr!important;width:min(720px,calc(100vw - 22px))!important;height:min(92dvh,820px)!important;max-height:92dvh!important;min-height:0!important;border-radius:24px!important}
+  body.application-modal-open .professional-app-rail{grid-column:1;grid-row:1;display:grid;grid-template-columns:1fr auto;gap:10px;padding:19px 20px 17px;max-height:184px}
+  .professional-app-rail-main{padding-top:0}.professional-app-rail-main h2{font-size:22px;max-width:560px;margin:6px 0}.professional-app-rail-main p{font-size:10px;line-height:1.45;max-width:520px}.professional-app-benefits{display:none}.professional-app-foot{position:absolute;right:18px;bottom:16px;display:flex;border-top:0;padding:0}.professional-app-trust{margin-top:8px;font-size:8px;padding:7px 9px}
+  body.application-modal-open .application-card.wizard-shell > .wizard-head,body.application-modal-open .application-card.wizard-shell > .wizard-hero,body.application-modal-open .application-card.wizard-shell > .application-progress-four,body.application-modal-open .application-card.wizard-shell > form,body.application-modal-open .application-card.wizard-shell > .secure,body.application-modal-open .application-card.wizard-shell > #message,body.application-modal-open .application-card.wizard-shell > .draft-banner{grid-column:1}
+  body.application-modal-open .application-card.wizard-shell > .wizard-head{grid-row:2;padding:18px 20px 0!important}.professional-app-brand span{font-size:8px}.professional-app-brand img{width:32px;height:32px}
+  body.application-modal-open .application-card.wizard-shell > .wizard-hero{grid-row:3;margin:10px 20px 0!important}.wizard-copy h2{font-size:22px!important}.wizard-copy p{font-size:10px!important}
+  body.application-modal-open .application-card.wizard-shell > .application-progress-four{grid-row:4;margin:13px 20px 0!important}
+  body.application-modal-open .application-card.wizard-shell > form{grid-row:5;padding:14px 20px 0!important}
+  body.application-modal-open .application-card.wizard-shell > .secure{grid-row:6;padding:8px 20px 0!important}
+  body.application-modal-open .application-card.wizard-shell > #message{grid-row:7;padding:0 20px 16px!important}
+  body.application-modal-open .application-card.wizard-shell > .wizard-backdrop{grid-column:1;grid-row:2 / 8;inset:184px 0 0 0!important}
+}
+@media(max-width:600px){
+  body.application-modal-open .application-zone{padding:8px!important;align-items:center!important}
+  body.application-modal-open .application-card.wizard-shell{width:100%!important;height:calc(100dvh - 16px)!important;max-height:calc(100dvh - 16px)!important;border-radius:21px!important}
+  body.application-modal-open .professional-app-rail{grid-template-columns:1fr;padding:15px 15px 12px;max-height:145px}
+  .professional-app-rail-main h2{font-size:18px;margin:5px 0 4px;letter-spacing:-.4px}.professional-app-rail-main p{font-size:9px;max-width:100%}.professional-app-trust{font-size:7.5px;margin-top:6px}.professional-app-foot{display:none}
+  body.application-modal-open .application-card.wizard-shell > .wizard-head{padding:13px 15px 0!important}.professional-app-brand img{width:28px;height:28px}.professional-app-brand span{font-size:7px}
+  body.application-modal-open .application-card.wizard-shell > .wizard-hero{margin:8px 15px 0!important;padding:13px 12px!important}.wizard-step-badge{width:34px!important;height:34px!important}.wizard-copy h2{font-size:18px!important}.wizard-copy p{font-size:9px!important}.wizard-visual{min-width:58px!important}.wizard-visual-core{width:48px!important;height:48px!important}
+  body.application-modal-open .application-card.wizard-shell > .application-progress-four{margin:10px 15px 0!important}.progress-four-step b{font-size:7px!important}
+  body.application-modal-open .application-card.wizard-shell > form{padding:10px 15px 0!important}.field-control input,.field-control select{height:47px!important}.field-control textarea{min-height:94px!important}.field-wrap{gap:4px!important}.field-help{font-size:8px!important}.step-actions button{min-height:47px!important;font-size:11px!important}
+  body.application-modal-open .application-card.wizard-shell > .secure{padding:5px 15px 0!important}.application-card.wizard-shell > #message{padding:0 15px 12px!important}.application-close{right:10px!important;top:10px!important;width:31px!important;height:31px!important}
+}
+</style>
+
 <div class="application-exit-confirm" id="applicationExitConfirm" hidden aria-hidden="true">
   <div class="application-exit-dialog" role="dialog" aria-modal="true" aria-labelledby="applicationExitTitle">
     <div class="application-exit-icon" id="applicationExitIcon" aria-hidden="true">⚠️</div>
@@ -3842,7 +3719,6 @@ console.info('SkillPath guided form build: Final V11');
     applicationCard?.setAttribute('aria-label','Internship application');
     window.setTimeout(()=>document.getElementById('name')?.focus(),120);
   }
-  window.__internsforgeOpenApplication = openApplication;
   let closeConfirmOpen = false;
   let pendingExit = null;
   let allowHistoryNavigation = false;
@@ -4421,41 +4297,6 @@ console.info('SkillPath guided form build: Final V11');
     py = 0;
     if (!frame) frame = requestAnimationFrame(render);
   }, {passive:true});
-})();
-</script>
-
-
-<script id="internsforge-new-user-application-popup-v2">
-(function setupNewVisitorApplicationPopup(){
-  const AUTO_OPEN_KEY = 'internsforge_application_popup_seen_v2';
-  const params = new URLSearchParams(window.location.search);
-  const forceOpen = params.get('apply') === '1' || params.get('openApplication') === '1';
-  const zone = document.querySelector('.application-zone');
-  const hasApplication = !!document.getElementById('internshipForm');
-  if (!zone || !hasApplication) return;
-
-  let alreadySeen = false;
-  try { alreadySeen = localStorage.getItem(AUTO_OPEN_KEY) === '1'; } catch (_) {}
-  if (alreadySeen && !forceOpen) return;
-
-  // Do not interfere with a student who has already opened the application through
-  // an existing CTA while the landing page is still settling.
-  const open = () => {
-    if (document.body.classList.contains('application-modal-open')) return;
-    if (typeof window.__internsforgeOpenApplication === 'function') {
-      window.__internsforgeOpenApplication();
-      return;
-    }
-    // Existing openApplication() is scoped inside the page script, so trigger the
-    // exact existing CTA path instead of duplicating application logic.
-    const trigger = document.querySelector('.open-application, #floatingCta');
-    if (trigger) trigger.click();
-    try { localStorage.setItem(AUTO_OPEN_KEY, '1'); } catch (_) {}
-  };
-
-  // First entry feels intentional rather than intrusive: brief settle time,
-  // then the unchanged application form opens inside the professional modal.
-  window.setTimeout(open, forceOpen ? 220 : 900);
 })();
 </script>
 

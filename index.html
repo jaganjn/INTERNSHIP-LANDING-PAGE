@@ -495,75 +495,6 @@ html,body{max-width:100%;overflow-x:clip}.student-ticker-viewport{min-width:0}.s
 .motion-reveal{opacity:0;transform:translateY(24px);transition:opacity .65s ease,transform .65s cubic-bezier(.2,.8,.2,1)}.motion-reveal.motion-visible{opacity:1;transform:none}@media(prefers-reduced-motion:reduce){.student-ticker-track{animation:none!important}.journey-step-card,.persona-card{transition:none!important}.motion-reveal{opacity:1;transform:none}}
 </style>
 
-
-<style id="auto-application-launch-ux">
-/* Automatic application launch: prominent but still closable. */
-body.auto-application-opening .application-zone::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  pointer-events:none;
-  background:radial-gradient(circle at 50% 45%,rgba(91,112,246,.24),transparent 34%);
-  animation:autoApplyHalo 1.15s ease-out forwards;
-}
-body.auto-application-opening .application-card.wizard-shell{
-  animation:autoApplyCard .82s cubic-bezier(.18,.88,.25,1.12) both;
-}
-body.auto-application-opening .application-card.wizard-shell::before{
-  content:"";
-  position:absolute;
-  inset:-2px;
-  border-radius:32px;
-  padding:2px;
-  background:linear-gradient(115deg,rgba(83,111,245,.0),rgba(83,111,245,.75),rgba(55,209,171,.62),rgba(145,83,255,.75),rgba(83,111,245,.0));
-  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;
-  mask-composite:exclude;
-  animation:autoApplySweep 1.35s ease-out both;
-  pointer-events:none;
-  z-index:8;
-}
-.auto-apply-banner{
-  display:grid;
-  grid-template-columns:auto 1fr auto;
-  align-items:center;
-  gap:12px;
-  margin:4px 8px 10px;
-  padding:11px 13px;
-  border:1px solid rgba(83,111,245,.20);
-  border-radius:14px;
-  background:linear-gradient(100deg,rgba(238,242,255,.96),rgba(242,249,255,.96));
-  box-shadow:0 10px 26px rgba(62,82,175,.08);
-  animation:autoApplyBanner .65s .12s both;
-}
-.auto-apply-banner-icon{
-  width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
-  background:linear-gradient(135deg,#4f6df0,#8a5be6);color:#fff;font-size:16px;
-  box-shadow:0 8px 18px rgba(77,91,216,.22)
-}
-.auto-apply-banner strong{display:block;font:800 12px Manrope;color:#23385f}
-.auto-apply-banner span{display:block;margin-top:2px;font-size:9px;color:#687994}
-.auto-apply-banner small{font-size:9px;font-weight:800;color:#3457d4;white-space:nowrap}
-.auto-apply-progress{
-  height:3px;border-radius:999px;background:#dfe7fb;overflow:hidden;margin:0 8px 12px;
-}
-.auto-apply-progress span{display:block;width:0;height:100%;border-radius:inherit;background:linear-gradient(90deg,#4f70f1,#825be4,#33cfa7);animation:autoApplyProgress 1.6s ease-out forwards}
-@keyframes autoApplyCard{0%{opacity:0;transform:translateY(34px) scale(.955) rotateX(4deg);filter:blur(4px)}55%{opacity:1;transform:translateY(-5px) scale(1.008) rotateX(0);filter:blur(0)}100%{transform:none}}
-@keyframes autoApplyHalo{0%{opacity:0;transform:scale(.7)}22%{opacity:1}100%{opacity:0;transform:scale(1.35)}}
-@keyframes autoApplySweep{0%{opacity:0;transform:scale(.96)}35%{opacity:1}100%{opacity:0;transform:scale(1.015)}}
-@keyframes autoApplyBanner{0%{opacity:0;transform:translateY(-8px)}100%{opacity:1;transform:none}}
-@keyframes autoApplyProgress{0%{width:0}100%{width:100%}}
-@media(max-width:600px){
-  .auto-apply-banner{grid-template-columns:auto 1fr;margin:4px 4px 9px;padding:10px}
-  .auto-apply-banner small{grid-column:2}
-  .auto-apply-progress{margin-left:4px;margin-right:4px}
-}
-@media(prefers-reduced-motion:reduce){
-  body.auto-application-opening .application-card.wizard-shell,
-  .auto-apply-banner,.auto-apply-progress span{animation:none!important}
-}
-</style>
-
 <style id="desktop-application-modal-fix">
 /* Desktop application modal: compact, centered, polished. */
 @media (min-width: 601px){
@@ -3647,8 +3578,7 @@ console.info('SkillPath guided form build: Final V11');
   }
   window.__internsforgeCountApplicationVisitor = countApplicationVisitor;
 
-  function openApplication(domain, options = {}){
-    const autoLaunch = !!options.autoLaunch;
+  function openApplication(domain){
     countApplicationVisitor();
     applicationFormOpen = true;
     resetRecoverySession();
@@ -3657,50 +3587,11 @@ console.info('SkillPath guided form build: Final V11');
     updateVisitor({ formProgress: 0, currentStep: 1, currentField: 'Application form opened', status: 'online', hasStartedFilling: false });
     restoreScroll=window.scrollY;
     body.classList.add('application-modal-open');
-    if(autoLaunch){
-      body.classList.add('auto-application-opening');
-      const card = applicationCard;
-      if(card){
-        card.classList.add('auto-launch-card');
-        const oldBanner = card.querySelector('.auto-apply-banner');
-        if(oldBanner) oldBanner.remove();
-        const banner = document.createElement('div');
-        banner.className = 'auto-apply-banner';
-        banner.setAttribute('role','status');
-        banner.innerHTML = '<span class="auto-apply-banner-icon">→</span><span><strong>Ready to build your profile?</strong><span>Start now — the guided application takes about 60 seconds.</span></span><small>STEP 1 OF 3</small>';
-        const progress = document.createElement('div');
-        progress.className = 'auto-apply-progress';
-        progress.innerHTML = '<span></span>';
-        const anchor = card.querySelector('.wizard-head, .application-title, .draft-banner');
-        if(anchor) anchor.before(banner, progress);
-        window.setTimeout(()=>{ body.classList.remove('auto-application-opening'); card.classList.remove('auto-launch-card'); }, 1500);
-      }
-    }
     armModalHistory();
     if(domain){ const field=document.getElementById('domain'); if(field){field.value=domain; field.dispatchEvent(new Event('change',{bubbles:true}));} }
     applicationCard?.setAttribute('aria-label','Internship application');
     window.setTimeout(()=>document.getElementById('name')?.focus(),120);
   }
-
-  // Automatic first-visit application prompt. The form opens after the landing
-  // page settles so the student sees the value proposition first, then is taken
-  // directly into the guided application. A session flag prevents repeated
-  // interruptions on every refresh; ?apply=1 can explicitly request it again.
-  (function autoLaunchApplication(){
-    const params = new URLSearchParams(location.search);
-    const forced = params.get('apply') === '1' || params.get('openApplication') === '1';
-    let shown = false;
-    try { shown = sessionStorage.getItem('internsforge_auto_apply_prompt_v1') === '1'; } catch (_) {}
-    if(shown && !forced) return;
-    if(applicationFormOpen) return;
-    const delay = forced ? 650 : 1150;
-    window.setTimeout(()=>{
-      if(applicationFormOpen || document.hidden) return;
-      try { sessionStorage.setItem('internsforge_auto_apply_prompt_v1','1'); } catch (_) {}
-      openApplication('', {autoLaunch:true});
-    }, delay);
-  })();
-
   let closeConfirmOpen = false;
   let pendingExit = null;
   let allowHistoryNavigation = false;

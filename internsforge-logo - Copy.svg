@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="112" viewBox="0 0 520 112" role="img" aria-labelledby="title desc">
+  <title id="title">InternsForge</title>
+  <desc id="desc">InternsForge — Learn, Build, Grow</desc>
+  <defs>
+    <linearGradient id="mark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17b7a4"/>
+      <stop offset="1" stop-color="#3978ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Simple career-growth mark -->
+  <g transform="translate(8 10)">
+    <path d="M44 4c-14 2-27 12-33 27-3 7-4 15-3 22 7 1 15 0 22-3C45 44 54 31 56 17c1-5 0-9-1-13-3-1-7-1-11 0Z" fill="url(#mark)"/>
+    <path d="M16 54 5 67l17-7 7-8Z" fill="#0d1b2a"/>
+    <circle cx="39" cy="23" r="6" fill="#fff"/>
+    <path d="M17 38c10 2 19 7 26 15" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".8"/>
+  </g>
+
+  <text x="78" y="57" font-family="Inter, Arial, sans-serif" font-size="40" font-weight="800" letter-spacing="-1.4">
+    <tspan fill="#14243d">Interns</tspan><tspan fill="#13a995">Forge</tspan>
+  </text>
+  <text x="80" y="84" font-family="Inter, Arial, sans-serif" font-size="12" font-weight="700" letter-spacing="3.1" fill="#71809a">
+    LEARN · BUILD · GROW
+  </text>
+</svg>
